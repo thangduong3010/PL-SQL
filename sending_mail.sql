@@ -12,8 +12,8 @@ BEGIN
   
   UTL_SMTP.helo(l_mail_conn, p_smtp_host);
   utl_smtp.command( l_mail_conn, 'AUTH LOGIN'); 
-  utl_smtp.command( l_mail_conn, utl_raw.cast_to_varchar2( utl_encode.base64_encode( utl_raw.cast_to_raw('thangduong.hanu@gmail.com')))); 
-  utl_smtp.command( l_mail_conn, utl_raw.cast_to_varchar2( utl_encode.base64_encode( utl_raw.cast_to_raw('thangduong3010')))); 
+  utl_smtp.command( l_mail_conn, utl_raw.cast_to_varchar2( utl_encode.base64_encode( utl_raw.cast_to_raw('username')))); 
+  utl_smtp.command( l_mail_conn, utl_raw.cast_to_varchar2( utl_encode.base64_encode( utl_raw.cast_to_raw('password')))); 
  
 	UTL_SMTP.mail(l_mail_conn, p_from);
 	UTL_SMTP.rcpt(l_mail_conn, p_to);
