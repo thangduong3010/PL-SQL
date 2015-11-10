@@ -1,11 +1,16 @@
-variable b_result number
-set autoprint on
+VARIABLE b_result NUMBER
+SET AUTOPRINT ON
 
-begin
-	select HR.EMPLOYEES.SALARY
-    into :b_result
-    from HR.EMPLOYEES
-    where EMPLOYEE_ID = 144;
-end;
+
+BEGIN
+   SELECT HR.EMPLOYEES.SALARY
+     INTO :b_result
+     FROM HR.EMPLOYEES
+    WHERE EMPLOYEE_ID = 144;
+END;
 
 --print b_result
+
+SELECT FIRST_NAME
+  FROM hr.employees
+WHERE salary = :b_result;
