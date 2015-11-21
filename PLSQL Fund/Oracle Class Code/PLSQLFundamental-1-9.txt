@@ -1,0 +1,111 @@
+-- Initialize dept for subsquent samples
+--CREATE TABLE dept AS SELECT * FROM departments;
+-- Create Stored Procedure
+CREATE
+PROCEDURE add_dept
+IS
+  v_dept_id dept.department_id%TYPE;
+  v_dept_name dept.department_name%TYPE;
+BEGIN
+  v_dept_id  :=280;
+  v_dept_name:='ST-Curriculum';
+  INSERT
+  INTO dept
+    (
+      department_id,
+      department_name
+    )
+    VALUES
+    (
+      v_dept_id,
+      v_dept_name
+    );
+  DBMS_OUTPUT.PUT_LINE(' Inserted '|| SQL%ROWCOUNT ||' row ');
+END;
+-- Let's make sure the procedure is saved
+SELECT object_name,
+  object_type
+FROM user_objects
+WHERE Object_name LIKE 'ADD%';
+; -- find all of MY objects starting with the name ADD
+-- What is the content of our procedure?
+SELECT *
+FROM user_source
+WHERE name='ADD_DEPT';
+-- Run the procedure
+BEGIN
+  add_dept;
+END;
+-- Let's see a sample function
+CREATE
+  FUNCTION check_sal
+    RETURN BOOLEAN
+  IS
+    v_dept_id employees.department_id%TYPE;
+    v_empno employees.employee_id%TYPE;
+    v_sal employees.salary%TYPE;
+    v_avg_sal employees.salary%TYPE;
+  BEGIN
+    v_empno:=205;
+    SELECT salary,
+      department_id
+    INTO v_sal,
+      v_dept_id
+    FROM employees
+    WHERE employee_id= v_empno;
+    SELECT AVG(salary)
+    INTO v_avg_sal
+    FROM employees
+    WHERE department_id=v_dept_id;
+    IF v_sal           > v_avg_sal THEN
+      RETURN TRUE;
+    ELSE
+      RETURN FALSE;
+    END IF;
+  EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    RETURN NULL;
+  END;
+  -- Test Drive our function
+  BEGIN
+    IF (check_sal IS NULL) THEN
+      DBMS_OUTPUT.PUT_LINE('The function returned
+NULL due to exception');
+    ELSIF (check_sal) THEN
+      DBMS_OUTPUT.PUT_LINE('Salary > average');
+    ELSE
+      DBMS_OUTPUT.PUT_LINE('Salary < average');
+    END IF;
+  END;
+  /
+  
+-- Spice it up by add parameter  
+CREATE
+FUNCTION Sal_Level(
+    p_empno employees.employee_id%TYPE)
+  RETURN Varchar
+IS
+  v_dept_id employees.department_id%TYPE;
+  v_sal employees.salary%TYPE;
+  v_avg_sal employees.salary%TYPE;
+BEGIN
+  SELECT salary,
+    department_id
+  INTO v_sal,
+    v_dept_id
+  FROM employees
+  WHERE employee_id=p_empno;
+  SELECT AVG(salary)
+  INTO v_avg_sal
+  FROM employees
+  WHERE department_id=v_dept_id;
+  IF v_sal           > v_avg_sal THEN
+    RETURN 'Above Average';
+  ELSE
+    RETURN 'Below Average';
+  END IF; 
+End;
+
+-- This is why we create function
+Select Sal_Level(Employee_ID), Last_Name
+From Employees;

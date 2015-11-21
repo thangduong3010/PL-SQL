@@ -1,0 +1,165 @@
+-- IF Statement
+DECLARE
+  salary NUMBER := 20000;
+  employee_id NUMBER := 36325;
+
+  PROCEDURE give_bonus (emp_id IN NUMBER, bonus_amt IN NUMBER) IS
+  BEGIN
+    DBMS_OUTPUT.PUT_LINE(emp_id);
+    DBMS_OUTPUT.PUT_LINE(bonus_amt);
+  END;
+
+BEGIN
+IF salary BETWEEN 10000 AND 20000
+THEN
+   give_bonus(employee_id, 1500);
+ELSIF salary BETWEEN 20000 AND 40000
+THEN
+   give_bonus(employee_id, 1000);
+ELSIF salary > 40000
+THEN
+   give_bonus(employee_id, 500);
+ELSE
+   give_bonus(employee_id, 0);
+END;
+
+
+-- Null Effect
+DECLARE
+   x NUMBER := NULL;
+BEGIN
+   IF x = 2 THEN
+      DBMS_OUTPUT.PUT_LINE('x contains 2 - first block');
+   ELSE
+      DBMS_OUTPUT.PUT_LINE('x doesn''t contain 2 - first block');
+   END IF;
+
+   IF x <> 2 THEN
+      DBMS_OUTPUT.PUT_LINE('x doesn''t contain 2 - second block');
+   ELSE
+      DBMS_OUTPUT.PUT_LINE('x contains 2 - second block');
+   END IF;
+
+   IF x IS NULL THEN
+      DBMS_OUTPUT.PUT_LINE('x is null');
+   ELSE
+      DBMS_OUTPUT.PUT_LINE('x is not null');
+   END IF;
+END;
+
+
+-- CASE Statement - 01
+DECLARE
+  salary NUMBER := 20000;
+  employee_id NUMBER := 36325;
+
+  PROCEDURE give_bonus (emp_id IN NUMBER, bonus_amt IN NUMBER) IS
+  BEGIN
+    DBMS_OUTPUT.PUT_LINE(emp_id);
+    DBMS_OUTPUT.PUT_LINE(bonus_amt);
+  END;
+
+BEGIN
+CASE TRUE
+WHEN salary >= 10000 AND salary <=20000 THEN
+   give_bonus(employee_id, 1500);
+WHEN salary > 20000 AND salary <= 40000 THEN
+   give_bonus(employee_id, 1000);
+WHEN salary > 40000 THEN
+   give_bonus(employee_id, 500);
+ELSE
+   give_bonus(employee_id, 0);
+END CASE;
+END;
+/
+-- CASE Statement - 02
+/* Searched CASE solution to the bonus problem */
+DECLARE
+  salary NUMBER := 20000;
+  employee_id NUMBER := 36325;
+
+  PROCEDURE give_bonus (emp_id IN NUMBER, bonus_amt IN NUMBER) IS
+  BEGIN
+    DBMS_OUTPUT.PUT_LINE(emp_id);
+    DBMS_OUTPUT.PUT_LINE(bonus_amt);
+  END;
+
+BEGIN
+CASE
+WHEN salary >= 10000 AND salary <=20000 THEN
+   give_bonus(employee_id, 1500);
+WHEN salary > 20000 AND salary <= 40000 THEN
+   give_bonus(employee_id, 1000);
+WHEN salary > 40000 THEN
+   give_bonus(employee_id, 500);
+ELSE
+   give_bonus(employee_id, 0);
+END CASE;
+END;
+/
+-- Basic For Loop - 01
+DECLARE
+v_countryid    locations.country_id%TYPE := 'CA';
+v_loc_id       locations.location_id%TYPE;
+v_counter NUMBER(2) := 1;
+v_new_city     locations.city%TYPE := 'Montreal';
+BEGIN
+SELECT MAX(location_id) INTO v_loc_id FROM locations
+WHERE country_id = v_countryid;
+LOOP
+INSERT INTO locations(location_id, city, country_id)   
+VALUES((v_loc_id + v_counter), v_new_city, v_countryid);
+v_counter := v_counter + 1;
+EXIT WHEN v_counter > 3;
+END LOOP;
+END;
+/
+-- While Loop - 02
+DECLARE
+v_countryid   locations.country_id%TYPE := 'CA';
+v_loc_id      locations.location_id%TYPE;
+v_new_city    locations.city%TYPE := 'Montreal';
+v_counter     NUMBER := 1;
+BEGIN
+SELECT MAX(location_id) INTO v_loc_id FROM locations
+WHERE country_id = v_countryid;
+WHILE v_counter <= 3 LOOP
+INSERT INTO locations(location_id, city, country_id)   
+VALUES((v_loc_id + v_counter), v_new_city, v_countryid);
+v_counter := v_counter + 1;
+END LOOP;
+END;
+/
+-- For Loop - 03
+DECLARE
+v_countryid   locations.country_id%TYPE := 'CA';
+v_loc_id      locations.location_id%TYPE;
+v_new_city    locations.city%TYPE := 'Montreal';
+BEGIN
+SELECT MAX(location_id) INTO v_loc_id 
+FROM locations
+WHERE country_id = v_countryid;
+FOR i IN 1..3 LOOP
+INSERT INTO locations(location_id, city, country_id)   
+VALUES((v_loc_id + i), v_new_city, v_countryid );
+END LOOP;
+END;
+/
+
+-- Continue Statement
+DECLARE
+v_total SIMPLE_INTEGER := 0;
+BEGIN
+FOR i IN 1..10 LOOP
+v_total := v_total + i;
+dbms_output.put_line
+('Total is: '|| v_total);
+CONTINUE WHEN i > 5;
+v_total := v_total + i; 
+dbms_output.put_line
+('Out of Loop Total is:
+'|| v_total);    
+END LOOP;
+END;
+/
+
