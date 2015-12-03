@@ -1,15 +1,23 @@
+/* Finally fixed */
 SET SERVEROUTPUT ON
 
 DECLARE
    v_locid       HR.LOCATIONS.COUNTRY_ID%TYPE;
    v_message     VARCHAR2 (50);
-   v_mess        VARCHAR2 (60) := 'Ok, you can visit the following state:';
+   v_mess        VARCHAR2 (60)
+                    := 'Ok, you can visit the following states/provinces:';
    v_counter     NUMBER (2);
 
    TYPE state_type_table IS TABLE OF HR.LOCATIONS.STATE_PROVINCE%TYPE
       INDEX BY PLS_INTEGER;
 
    state_visit   state_type_table;
+
+   CURSOR state_cursor
+   IS
+      SELECT state_province
+        FROM HR.LOCATIONS
+       WHERE country_id = v_locid;
 BEGIN
    SELECT country_id
      INTO v_locid
@@ -25,6 +33,10 @@ BEGIN
          WHEN 'BR' THEN 'Brazil'
          WHEN 'IN' THEN 'India'
          WHEN 'DE' THEN 'Germany'
+         WHEN 'US' THEN 'The United States'
+         WHEN 'CA' THEN 'Canada'
+         WHEN 'CH' THEN 'Switzerland'
+         WHEN 'UK' THEN 'The United Kingdom'
          ELSE 'NULL'
       END;
 
@@ -50,20 +62,29 @@ BEGIN
       WHEN v_message = 'Germany'
       THEN
          GOTO state_choice;
-      ELSE
-         DBMS_OUTPUT.put_line (
-            'This country has a lot of states and I can''t handle it for now. And I''ll try to fix it');
-         GOTO conclusion;
+      WHEN v_message = 'The United States'
+      THEN
+         GOTO state_choice;
+      WHEN v_message = 'Canada'
+      THEN
+         GOTO state_choice;
+      WHEN v_message = 'Switzerland'
+      THEN
+         GOTO state_choice;
+      WHEN v_message = 'The United Kingdom'
+      THEN
+         GOTO state_choice;
    END CASE;
 
   <<state_choice>>
+   OPEN state_cursor;
+
    FOR i IN 1 .. v_counter
    LOOP
-      SELECT state_province
-        INTO state_visit (i)
-        FROM HR.LOCATIONS
-       WHERE country_id = v_locid;
+      FETCH state_cursor INTO state_visit (i);
    END LOOP;
+
+   CLOSE state_cursor;
 
    DBMS_OUTPUT.put_line (v_mess);
 
@@ -74,4 +95,8 @@ BEGIN
 
   <<conclusion>>
    NULL;
+EXCEPTION
+   WHEN case_not_found
+   THEN
+      DBMS_OUTPUT.put_line ('Nothing to do here');
 END;
