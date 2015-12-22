@@ -1,0 +1,20 @@
+select index_name, status from user_indexes
+where table_name in ('SYS_TRANSACTION','CUSTOMER','CUSTOMER_BUSINESS','CUSTOMER_BUSINESS_INFO','CUSTOMER_BIZ_BUYER','CUSTOMER_BIZ_PRODUCT','CUSTOMER_BIZ_COMPETITOR',
+'CUSTOMER_BIZ_SUPPLIER','CUSTOMER_RELATION','CUSTOMER_BANK_ACCOUNT','CUSTOMER_EXT_BORROWS','CUSTOMER_OUTSTANDING_LOANS','CUSTOMER_LOAN_COLLATERAL',
+'CUSTOMER_CREDIT_RATING','CUSTOMER_DOCUMENT','CUSTOMER_GROUP_MEMBER','CUSTOMER_ADDRESS','CUSTOMER_CONTACT','CUSTOMER_IDENTITY',
+'CUSTOMER_BIZ_INDEX','COLLATERAL','COLLATERAL_PLEDGOR','COLLATERAL_PRICING','COLLATERAL_DOCUMENT','CREDIT_APPLICATION_REQUEST','CAR_COMMENTS',
+'CAR_RELATIONSHIP','CAR_LIMIT','CAR_COLLATERAL','LIMIT','FACILITY','CAR_CUSTOMER_DOCUMENTS','CAR_COLLATERAL_DOCUMENTS','CAR_APPLICATION_DOCUMENTS',
+'CAR_CUSTOMER_CONDITIONS','CAR_COLLATERAL_CONDITIONS','CAR_APPLICATION_CONDITIONS') and uniqueness != 'UNIQUE';
+
+select * from user_indexes
+where table_name = 'CUSTOMER_IDENTITY';
+
+alter index idx_customer_customer_name unusable;
+alter index IDX_CUSTOMER_CUSTOMER_NUMBER unusable;
+alter index IDX_CUSTOMER_AMND_STATE unusable;
+drop index idx_cust_iden_id_number;
+create index idx_customer_lower_name on customer(lower(customer_name));
+create index idx_customer_lower_number on customer(lower(customer_number));
+create index idx_cust_iden_lower_id on customer_identity(lower(id_number));
+
+
