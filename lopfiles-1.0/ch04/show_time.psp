@@ -1,0 +1,16 @@
+<% /* $Id: show_time.psp,v 1.1 2001/11/30 23:20:19 bill Exp $
+From "Learning Oracle PL/SQL" page 125
+
+"PL/SQL Server Page" program to display the current time
+*/ %>
+
+<%@ page language="PL/SQL" %>
+<%@ plsql procedure="show_time" %>
+<HTML>
+   <HEAD>
+      <TITLE>What time is it on the server?</TITLE>
+   </HEAD>
+   <BODY>
+      It is now: <%= TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI') %>
+   </BODY>
+</HTML>

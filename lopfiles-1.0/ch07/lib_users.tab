@@ -1,0 +1,17 @@
+REM $Id: lib_users.tab,v 1.1 2001/11/30 23:22:18 bill Exp $
+REM From "Learning Oracle PL/SQL" page 247
+
+REM Create table to hold list of library users
+
+CREATE TABLE lib_users (
+   id NUMBER NOT NULL,
+   username VARCHAR2(60) NOT NULL,
+   encrypted_password RAW(16) NOT NULL,
+   account_creation_date DATE DEFAULT SYSDATE NOT NULL,
+   email_address VARCHAR2(2000),
+   cardid VARCHAR2(30),
+   CONSTRAINT lib_accounts_pk PRIMARY KEY (id),
+   CONSTRAINT username_uk UNIQUE (username),
+   CONSTRAINT username_length_ck CHECK (LENGTH(username) >= 6)
+);
+

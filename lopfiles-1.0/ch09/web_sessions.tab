@@ -1,0 +1,15 @@
+REM $Id: web_sessions.tab,v 1.1 2001/11/30 23:24:55 bill Exp $
+REM From "Learning Oracle PL/SQL" Chapter 9
+
+REM Table of web sessions which associates a session id with a given user id
+
+CREATE TABLE web_sessions (
+   id VARCHAR2(45) NOT NULL,
+   user_id NUMBER NOT NULL,
+   expiration_date DATE NOT NULL,
+   CONSTRAINT wwwsessions_pk PRIMARY KEY (id, user_id),
+   CONSTRAINT wwwsessions_userid_fk FOREIGN KEY (user_id)
+      REFERENCES lib_users (id)
+      ON DELETE CASCADE
+);
+

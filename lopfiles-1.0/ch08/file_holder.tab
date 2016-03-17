@@ -1,0 +1,13 @@
+REM $Id$
+REM From "Learning Oracle PL/SQL" page 280
+
+REM Create table to hold contents of text files (to be loaded with UTL_FILE)
+
+CREATE TABLE file_holder (
+   dirname VARCHAR2(512) NOT NULL,
+   filename VARCHAR2(512) NOT NULL,
+   line_no INTEGER,
+   text VARCHAR2(4000),
+   CONSTRAINT file_holder_pk PRIMARY KEY (dirname, filename, line_no)
+);
+

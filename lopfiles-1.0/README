@@ -1,0 +1,55 @@
+              Sample files for the book Learning Oracle PL/SQL
+                    by Bill Pribyl with Steven Feuerstein
+
+Version
+   This is version 1.0
+
+Organization
+   Files are organized by chapter.  Each chapter has a subdirectory with a
+   "build.sql" and a "drop.sql" script that will create and remove everything
+   needed for that chapter.
+
+   Some chapters have an "interim" subdirectory giving interim versions of
+   programs used in the development of the "final" version for that chapter.
+
+   Chapter 8 has two subdirectories, one for java and one for C external
+   external procedures.
+
+   There is also a "util" subdirectory with the master copy of login.sql and
+   a script that will create a demo user and grant the necessary privileges
+   to run the rest of the scripts.
+
+Dependencies
+   In most cases, the build.sql script refers to files in other subdirectories,
+   so you should probably download everything if you intend to actually run
+   these scripts.
+
+Possible errors in MS Windows-based operating systems
+   I use forward slashes ("/") as directory separators.  As you may know, this
+   is the "unix" flavor, and MS operating systems use backslashes ("\").
+
+   It turns out that the limiting factor on interpreting these slashes is
+   SQL*Plus, not the operating system.  It works fine using the version of
+   SQL*Plus that shipped with Oracle versions 8.1.6, 8.1.7, and 9.0.0 for
+   Windows 2000 (and of course it works on the unix versions ;>).  I haven't
+   tested it on other SQL*Plus versions; please let me know if you have any
+   trouble.
+
+Web sites
+   Official: http://www.oreilly.com/catalog/learnoracle/
+   Author's: http://www.datacraft.com
+
+Version history
+   1.0   Initial release, 30 November 2001
+
+Corrections and enhancement requests
+   Please send corrections and enhancement requests to:
+       bill at plnet.org
+   (remove the spaces and replace the word "at" with "@").
+
+Copyright
+   Don't try to sell these, and don't claim that you wrote them. Especially
+   don't put any of them in your own web sites, books, articles, presentations,
+   or anything else unless you have specific written permission from O'Reilly
+   or the author.  Written permission is a real piece of paper bearing an
+   authorized signature, not just an email.

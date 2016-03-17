@@ -1,0 +1,25 @@
+REM $Id: lib_patron_t.tys,v 1.1 2001/11/30 23:24:55 bill Exp $
+REM From "Learning Oracle PL/SQL" page 352
+
+REM Spec of object type intended to represent library patrons.
+
+CREATE OR REPLACE TYPE lib_patron_t
+AS OBJECT (
+   id NUMBER,
+   username VARCHAR2(60),
+   encrypted_password RAW(16),
+   account_creation_date DATE,
+   email_address VARCHAR2(2000),
+   STATIC FUNCTION make (username IN VARCHAR2,
+      plaintext_password IN VARCHAR2,
+      email_address IN VARCHAR2,
+      requestor_id IN NUMBER)
+      RETURN lib_patron_t,
+   MEMBER PROCEDURE save,
+   MEMBER PROCEDURE remove
+)
+NOT FINAL;
+/
+
+SHOW ERRORS
+

@@ -1,0 +1,223 @@
+<% /* $Id: bookform.psp,v 1.1 2001/11/30 23:24:55 bill Exp $
+From "Learning Oracle PL/SQL" page 350
+
+Version of bookform PSP that adds security features
+
+*/ %>
+<%@ page language="PL/SQL" %>
+<%@ plsql procedure="bookform" %>
+<%@ plsql parameter="session_id_" default="null" %>
+<%@ plsql parameter="submit" default="null" %>
+<%@ plsql parameter="subtitle_" default="null" %>
+<%@ plsql parameter="skip_" default="null" %>
+<%@ plsql parameter="isbn_" default="null" %>
+<%@ plsql parameter="title_" default="null" %>
+<%@ plsql parameter="author_" default="null" %>
+<%@ plsql parameter="page_count_" default="null" %>
+<%@ plsql parameter="summary_" default="null" %>
+<%@ plsql parameter="mon_published_" default="null" %>
+<%@ plsql parameter="dd_published_" default="null" %>
+<%@ plsql parameter="yyyy_published_" default="null" %>
+<%@ plsql parameter="delete_copies_arr_" type="owa_util.ident_arr" default="webu.empty_ident_arr" %>
+<%@ plsql parameter="new_barcodes_arr_" type="owa_util.ident_arr" default="webu.empty_ident_arr" %>
+<%!
+   bk bookweb.flatbook_t;
+   bccur book.refcur_t;
+   bcops book_copies%ROWTYPE;
+%>
+
+<HTML>
+<HEAD>
+   <TITLE>Book details</TITLE>
+</HEAD>
+<BODY bgcolor="white">
+   <H1>Book details</H1>
+   <P><%= subtitle_ %></P>
+<% 
+      privweb.assert_allowed(session_id_, priv.use_bookform_c);
+
+      bk := bookweb.process_edits(session_id => session_id_, skip => skip_,
+         submit => submit, isbn => isbn_, title => title_, author => author_,
+         page_count => page_count_, summary => summary_,
+         yyyy_published => yyyy_published_, mon_published => mon_published_,
+         dd_published => dd_published_, new_barcodes_arr => new_barcodes_arr_,
+         delete_copies_arr => delete_copies_arr_);
+
+      IF bk.passes = lopu.sqltrue
+      THEN
+         webu.printinfo(bk.action_msg);
+      ELSIF bk.passes = lopu.sqlfalse
+      THEN
+         webu.printerr(bk.action_msg);
+      END IF;
+%>
+   <FORM method="POST" action="bookform">
+
+      <INPUT type="hidden" name="session_id_" value="<%= session_id_ %>">
+
+      <P>ISBN
+<%
+         IF bk.isbn IS NOT NULL
+            AND bk.passes = lopu.sqltrue
+            AND (submit IS NULL OR submit != webu.delete_c)
+         THEN
+%>
+            <B><%= bk.isbn %></B>
+            <INPUT type="hidden" name="isbn_" value="<%= bk.isbn %>">
+<%
+         ELSE
+%>
+            <INPUT type="text" name="isbn_" value="<%= HTF.ESCAPE_SC(bk.isbn) %>">
+<%
+         END IF;
+%>
+         <%= webu.errfont(bk.isbn_msg) %>
+      </P>
+
+<%
+      IF bk.isbn IS NOT NULL
+         AND (((submit IS NULL OR submit = webu.edit_c) AND bk.passes = lopu.sqltrue)
+               OR
+               (submit = webu.save_c))
+      THEN
+%>
+         <P>Title
+            <INPUT type="text" name="title_" value="<%= HTF.ESCAPE_SC(bk.title) %>"
+             size="70" maxlength="2000">
+            <%= webu.errfont(bk.title_msg) %>
+         </P>
+
+         <P>Summary
+            <TEXTAREA name="summary_" cols="60" rows="8" wrap="soft"><%= HTF.ESCAPE_SC(bk.summary) %></TEXTAREA>
+            <%= webu.errfont(bk.summary_msg) %>
+         </P>
+
+         <P>Author
+            <INPUT type="text" name="author_" value="<%= HTF.ESCAPE_SC(bk.author) %>" 
+             maxlength="200" size="40">
+            <%= webu.errfont(bk.author_msg) %>
+         </P>
+
+         <P>Date published
+            <SELECT NAME="mon_published_" SIZE="1">
+               <%= webu.mon_option_list(bk.mon_published) %>
+            </SELECT>
+            <SELECT NAME="dd_published_" SIZE="1">
+               <%= webu.dd_option_list(bk.dd_published) %>
+            </SELECT>
+            <INPUT type="text" name="yyyy_published_"
+              value="<%= bk.yyyy_published %>"
+              maxlength="4" size="5">
+            <%= webu.errfont(bk.date_published_msg) %>
+         </P>
+
+         <P>Page count
+            <INPUT type="text" name="page_count_" value="<%= HTF.ESCAPE_SC(bk.page_count_str) %>" 
+             maxlength="6" size="7">
+            <%= webu.errfont(bk.page_count_msg) %>
+         </P>
+
+         <P><TABLE border="0">
+            <TR>
+               <TH>Barcode</TH>
+               <TH>Remove?</TH>
+            </TR>
+<%
+            bccur :=  book.book_copies_cur(isbn_);
+            LOOP
+               FETCH bccur INTO bcops;
+               EXIT WHEN bccur%NOTFOUND;
+%>
+               <TR>
+                  <TD><%= bcops.barcode_id %></TD>
+                  <TD><DIV align="center">
+                     <INPUT type=checkbox name="delete_copies_arr_" value="<%= HTF.ESCAPE_SC(bcops.barcode_id) %>">
+                     </DIV>
+                  </TD>
+               </TR>
+<%
+            END LOOP;
+            CLOSE bccur;
+            FOR field IN 1..3
+            LOOP
+%>
+               <TR>
+                  <TD><INPUT TYPE="text" name="new_barcodes_arr_"></TD>
+                  <TD>&nbsp;</TD>
+               </TR>
+<%
+            END LOOP;
+%>
+            </TABLE>
+         </P>
+<%
+      END IF;
+%>
+      <P>
+<%
+      IF bk.isbn IS NOT NULL
+         AND (submit = webu.save_c
+             OR ((bk.passes = lopu.sqltrue)
+                 AND (submit IS NULL OR submit = webu.edit_c)
+                )
+              )
+      THEN
+%>
+         <INPUT type="submit" name="Submit" value="<%= webu.save_c %>">
+<%
+      END IF;
+
+      IF submit = webu.save_c AND bk.passes = lopu.sqlfalse
+      THEN
+         NULL;
+      ELSE
+%>
+         <INPUT type="submit" name="Submit" value="<%= webu.delete_c %>">
+<%
+      END IF;
+
+      IF (bk.isbn IS NULL)
+         OR
+         (bk.isbn IS NOT NULL
+            AND ((submit IS NULL OR submit = webu.edit_c) AND bk.passes = lopu.sqlfalse)
+                OR
+                submit = webu.delete_c)
+      THEN
+%>
+         <INPUT type="submit" name="Submit" value="<%= webu.edit_c %>">
+<%
+      END IF;
+%>
+      <INPUT type="submit" name="Submit" value="<%= webu.new_search_c %>">
+      </P>
+   </FORM>
+</BODY>
+</HTML>
+<%
+   EXCEPTION
+      WHEN exc.not_logged_in
+        OR exc.session_timed_out
+        OR exc.authorization_required
+      THEN
+         HTP.INIT;
+         login(subtitle_ => webu.errfont(HTF.ESCAPE_SC(SQLERRM)),
+            destination_ => 'bookform?isbn_=' || HTF.ESCAPE_SC(isbn_));
+
+      WHEN OTHERS
+      THEN
+         ROLLBACK;
+         HTP.INIT;
+         bookform(session_id_ => HTF.ESCAPE_SC(session_id_),
+               skip_ => 'TRUE',
+               subtitle_ => HTF.ESCAPE_SC(SQLERRM),
+               isbn_ => HTF.ESCAPE_SC(isbn_),
+               title_ => HTF.ESCAPE_SC(title_),
+               author_ => HTF.ESCAPE_SC(author_),
+               page_count_ => HTF.ESCAPE_SC(page_count_),
+               summary_ => HTF.ESCAPE_SC(summary_),
+               mon_published_ => HTF.ESCAPE_SC(mon_published_),
+               dd_published_ => HTF.ESCAPE_SC(dd_published_),
+               yyyy_published_ => HTF.ESCAPE_SC(yyyy_published_),
+               delete_copies_arr_ => delete_copies_arr_,
+               new_barcodes_arr_ => new_barcodes_arr_);
+%>

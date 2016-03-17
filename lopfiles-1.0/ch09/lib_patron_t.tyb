@@ -1,0 +1,40 @@
+REM $Id: lib_patron_t.tyb,v 1.1 2001/11/30 23:24:55 bill Exp $
+REM From "Learning Oracle PL/SQL" page 352
+
+REM Body of object type intended to represent library patrons.
+
+REM Note that some of the functions have not been implemented.  This is
+REM primarily because I am lazy.  However, this should stil compile.
+
+CREATE OR REPLACE TYPE BODY lib_patron_t
+AS
+
+   STATIC FUNCTION make (username IN VARCHAR2,
+      plaintext_password IN VARCHAR2,
+      email_address IN VARCHAR2,
+      requestor_id IN NUMBER)
+      RETURN lib_patron_t
+   IS
+   BEGIN
+      RETURN lib_patron_t(TO_NUMBER(NULL), username,
+         lopu.encrypted_password(username, plaintext_password),
+         SYSDATE, email_address);
+   END;
+
+   MEMBER PROCEDURE save
+   IS
+   BEGIN
+      NULL;
+   END;
+
+   MEMBER PROCEDURE remove
+   IS
+   BEGIN
+      NULL;
+      SELF := NULL;
+   END;
+END;
+/
+
+SHOW ERRORS
+

@@ -1,0 +1,94 @@
+<% /* $Id: bookform.psp,v 1.1 2001/11/30 23:20:19 bill Exp $
+From "Learning Oracle PL/SQL" Chapter 4
+
+Final version of bookform PSP in Chapter 4, which generates a web page allowing
+entry of books into the database
+*/ %>
+
+<%@ page language="PL/SQL" %>
+<%@ plsql procedure="bookform" %>
+<%@ plsql parameter="submit" default="null" %>
+<%@ plsql parameter="isbn_" default="null" %>
+<%@ plsql parameter="title_" default="null" %>
+<%@ plsql parameter="author_" default="null" %>
+<%@ plsql parameter="page_count_" default="null" %>
+<%@ plsql parameter="summary_" default="null" %>
+<%@ plsql parameter="mon_published_" default="null" %>
+<%@ plsql parameter="dd_published_" default="null" %>
+<%@ plsql parameter="yyyy_published_" default="null" %>
+<%@ plsql parameter="barcode_id_" default="null" %>
+<%!
+   bk bookweb.bookrec_t;
+%>
+
+<HTML>
+<HEAD>
+   <TITLE>Book details</TITLE>
+</HEAD>
+<BODY bgcolor="white">
+   <H1>Book details</H1>
+<%
+   bk := bookweb.process_edits(
+         submit => submit, isbn => isbn_, title => title_, author => author_,
+         page_count => page_count_, summary => summary_,
+         yyyy_published => yyyy_published_, mon_published => mon_published_,
+         dd_published => dd_published_,
+         barcode_id => barcode_id_);
+%>
+   <H2><%= bk.action_msg %></H2>
+   <FORM method="POST" action="bookform">
+
+      <P>ISBN
+         <INPUT type="text" name="isbn_" value="<%= HTF.ESCAPE_SC(bk.isbn) %>"
+          size="15" maxlength="13">
+         <%= webu.errfont(bk.isbn_msg) %>
+      </P>
+
+      <P>Title
+         <INPUT type="text" name="title_" value="<%= HTF.ESCAPE_SC(bk.title) %>"
+          size="70" maxlength="2000">
+         <%= webu.errfont(bk.title_msg) %>
+      </P>
+
+      <P>Summary
+         <TEXTAREA name="summary_" cols="60" rows="8" wrap="soft"><%= HTF.ESCAPE_SC(bk.summary) %></TEXTAREA>
+         <%= webu.errfont(bk.summary_msg) %>
+      </P>
+
+      <P>Author
+         <INPUT type="text" name="author_" value="<%= HTF.ESCAPE_SC(bk.author) %>"
+          maxlength="200" size="40">
+         <%= webu.errfont(bk.author_msg) %>
+      </P>
+
+      <P>Date published
+         <SELECT NAME="mon_published_" SIZE="1">
+            <%= webu.mon_option_list(bk.mon_published) %>
+         </SELECT>
+         <SELECT NAME="dd_published_" SIZE="1">
+            <%= webu.dd_option_list(bk.dd_published) %>
+         </SELECT>
+         <INPUT type="text" name="yyyy_published_"
+           value="<%= bk.yyyy_published %>"
+           maxlength="4" size="5"> (YYYY)
+         <%= webu.errfont(bk.date_published_msg) %>
+      </P>
+
+      <P>Page count
+         <INPUT type="text" name="page_count_" value="<%= HTF.ESCAPE_SC(bk.page_count_str) %>"
+          maxlength="6" size="7">
+         <%= webu.errfont(bk.page_count_msg) %>
+      </P>
+
+      <P>Bar code id
+         <INPUT type="text" name="barcode_id_" value="<%= HTF.ESCAPE_SC(bk.barcode_id) %>"
+          maxlength="45" size="20">
+         <%= webu.errfont(bk.barcode_id_msg) %>
+      </P>
+
+      <P>
+         <INPUT type="submit" name="Submit" value="<%= webu.save_c %>">
+      </P>
+   </FORM>
+</BODY>
+</HTML>

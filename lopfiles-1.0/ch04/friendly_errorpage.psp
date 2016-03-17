@@ -1,0 +1,20 @@
+<% /* $Id: friendly_errorpage.psp,v 1.1 2001/11/30 23:20:19 bill Exp $
+From "Learning Oracle PL/SQL" page 131
+
+Generic, though not terribly useful, error page for use in PSP programming.
+*/ %>
+<%@ page language="PL/SQL" %>
+<%@ plsql procedure="friendly_errorpage" %>
+<HTML>
+   <HEAD><TITLE>Error</TITLE></HEAD>
+   <BODY>
+      <P>
+      The system encountered a problem it couldn't handle.
+      </P>
+      <P>
+      Please print out the following information:
+      </P>
+      Oracle error code: <%= SQLCODE %><BR>
+      <%= SQLERRM %>
+   </BODY>
+</HTML>

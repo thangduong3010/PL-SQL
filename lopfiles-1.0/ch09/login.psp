@@ -1,0 +1,72 @@
+<%
+   IF submit IS NOT NULL
+   THEN
+      loginweb.process_login(username_, plaintext_password_, destination_);
+      RETURN;
+   END IF;
+%>
+<HTML>
+<HEAD>
+   <TITLE>Log in</TITLE>
+</HEAD>
+<BODY bgcolor="white">
+<H1>Please log in</H1>
+<%= subtitle_ %>
+<FORM method="POST" action="login">
+
+   <P>Username: <INPUT type="text" name="username_" value="<%= username_ %>">
+   </P>
+
+   <P>Password: <INPUT type="password" name="plaintext_password_" value="">
+   </P>
+
+   <P><INPUT type="submit" name=submit value="submit">
+   </P>
+
+   <INPUT type="hidden" name="destination_" value="<%= destination_ %>">
+
+</FORM>
+</BODY>
+</HTML>
+<% EXCEPTION
+      WHEN OTHERS
+      THEN
+
+         /* Method 1: could be more secure because privweb.pkb could do a
+         |            redirection, which should go through web server "Location"
+         |            security settings (see code in privweb.pkb)
+         |  Method 2: would allow this page to be "normal" with declarations
+         |            at the top.
+         |  THESE MUST BE COORDINATED with code in privweb.pkb
+         */
+
+         /* Begin method 1 */
+         HTP.INIT;
+         login(username_ => HTF.ESCAPE_SC(username_),
+               destination_ => HTF.ESCAPE_SC(destination_),
+               subtitle_ => webu.errfont(HTF.ESCAPE_SC(SQLERRM)));
+         /* End method 1 */
+               
+         /* Begin method 2
+         |
+         |  login(username_ => HTF.ESCAPE_SC(username_),
+         |        destination_ => HTF.ESCAPE_SC(destination_),
+         |        subtitle_ => webu.errfont(HTF.ESCAPE_SC(SQLERRM)));
+         |
+         | End method 2
+         */
+%>
+
+<%@ page language="PL/SQL" %>
+<%@ plsql procedure="login" %>
+<%@ plsql parameter="username_" default="null" %>
+<%@ plsql parameter="plaintext_password_" default="null" %>
+<%@ plsql parameter="destination_" default="null" %>
+<%@ plsql parameter="subtitle_" default="null" %>
+<%@ plsql parameter="submit" default="null" %>
+
+<% /* $Id: login.psp,v 1.1 2001/11/30 23:24:55 bill Exp $
+From "Learning Oracle PL/SQL" page 347
+
+Create login PSP which requires user to supply username and password
+*/ %>

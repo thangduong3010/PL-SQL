@@ -1,0 +1,11 @@
+REM $Id: book_copies.tab,v 1.1 2001/11/30 23:09:48 bill Exp $
+REM From "Learning Oracle PL/SQL" page 64
+
+REM Create the book_copies table
+
+CREATE TABLE book_copies(
+   barcode_id VARCHAR2(100) NOT NULL PRIMARY KEY,
+   isbn VARCHAR2(13) NOT NULL,
+   CONSTRAINT book_copies_isbn_fk FOREIGN KEY (isbn) REFERENCES books (isbn)
+);
+

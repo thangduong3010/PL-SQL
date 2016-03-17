@@ -1,0 +1,15 @@
+REM $Id: lib_privileges.tab,v 1.1 2001/11/30 23:24:55 bill Exp $
+REM From "Learning Oracle PL/SQL" Chpater 9
+
+REM Create lib_privileges table to store the master list of privileges
+REM available to users of the library system.  See populate_lib_privileges.sql.
+
+CREATE TABLE lib_privileges (
+   id NUMBER NOT NULL,
+   name VARCHAR2(240) NOT NULL,
+   requires_additional_value VARCHAR2(1),
+   CONSTRAINT privileges_pk PRIMARY KEY (id),
+   CONSTRAINT privs_requires_ck
+      CHECK (requires_additional_value IN (NULL, 'T', 'F'))
+);
+

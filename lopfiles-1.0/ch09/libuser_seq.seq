@@ -1,0 +1,8 @@
+REM $Id: libuser_seq.seq,v 1.1 2001/11/30 23:24:55 bill Exp $
+REM From "Learning Oracle PL/SQL" page 340
+
+REM Create sequence from which library user ids will be assigned (see libuser
+REM package)
+
+CREATE SEQUENCE libuser_seq START WITH 10000;
+

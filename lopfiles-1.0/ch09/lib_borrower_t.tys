@@ -1,0 +1,17 @@
+REM $Id: lib_borrower_t.tys,v 1.1 2001/11/30 23:24:55 bill Exp $
+REM From "Learning Oracle PL/SQL" page 352
+
+REM Spec of object type intended to represent library borrowers.
+
+CREATE OR REPLACE TYPE lib_borrower_t
+ UNDER lib_patron_t (
+   cardid VARCHAR2(30),
+   STATIC FUNCTION make (patron lib_patron_t, cardid IN VARCHAR2) 
+   RETURN lib_borrower_t,
+   OVERRIDING MEMBER PROCEDURE save,
+   OVERRIDING MEMBER PROCEDURE remove
+);
+/
+
+SHOW ERRORS
+

@@ -1,0 +1,49 @@
+<% /* $Id: eat_add_book_form.psp,v 1.1 2001/11/30 23:20:19 bill Exp $
+From "Learning Oracle PL/SQL" page 128
+
+Simple PL/SQL Server Page program that will process data submitted by
+user via add_book_form
+*/ %>
+<%@ page language="PL/SQL" %>
+<%@ plsql procedure="eat_add_book_form" %>
+<%@ plsql parameter="submit" %>
+<%@ plsql parameter="isbn" %>
+<%@ plsql parameter="barcode_id" %>
+<%@ plsql parameter="title" %>
+<%@ plsql parameter="author" %>
+<%@ plsql parameter="page_count" %>
+<%@ plsql parameter="summary" %>
+<%@ plsql parameter="date_published" %>
+<HTML>
+<HEAD>
+   <TITLE>Add Book to Catalog</TITLE>
+</HEAD>
+
+<BODY bgcolor="white">
+   <P>submit: <%= submit %>
+   </P>
+   <P>isbn: <%= isbn %>
+   </P>
+   <P>barcode_id: <%= barcode_id %>
+   </P>
+   <P>title: <%= title %>
+   </P>
+   <P>author: <%= author %>
+   </P>
+   <P>page_count: <%= page_count %>
+   </P>
+   <P>summary: <%= summary %>
+   </P>
+   <P>date_published: <%= date_published %>
+   </P>
+
+   <% book.add(isbn_in => isbn, barcode_id_in => barcode_id, title_in => title,
+           author_in => author, page_count_in => TO_NUMBER(page_count),
+           summary_in => summary, 
+           date_published_in => TO_DATE(date_published, 'DD-MON-YYYY'));
+   %>
+
+   <I>Book added successfully.</I>
+
+</BODY>
+</HTML>

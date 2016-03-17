@@ -1,0 +1,42 @@
+<% /* $Id: qtab.psp,v 1.1 2001/11/30 23:19:51 bill Exp $
+From "Learning Oracle PL/SQL" page 167
+
+Display of data from an Oracle table inside an HTML table
+*/ %>
+
+<%@ page language="PL/SQL" %>
+<%@ plsql procedure="qtab" %>
+
+<HTML>
+<HEAD>
+   <TITLE>Search</TITLE>
+</HEAD>
+<BODY bgcolor="white">
+   <TABLE border="1">
+   <TR>
+      <TH>ISBN</TH>
+      <TH>Title</TH>
+      <TH>Author</TH>
+      <TH>Publish date</TH>
+      <TH>Pages</TH>
+      <TH>Summary</TH>
+   </TR>
+<%
+   FOR bk IN (SELECT * FROM books)
+   LOOP
+%>
+      <TR>
+         <TD><%= bk.isbn %></TD>
+         <TD><%= bk.title %></TD>
+         <TD><%= bk.author %></TD>
+         <TD><%= bk.date_published %></TD>
+         <TD><%= bk.page_count %></TD>
+         <TD><%= bk.summary %></TD>
+      </TR>
+<%
+   END LOOP;
+%>
+   </TABLE>
+
+</BODY>
+</HTML>

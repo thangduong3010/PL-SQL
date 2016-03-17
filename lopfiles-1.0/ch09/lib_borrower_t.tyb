@@ -1,0 +1,38 @@
+REM $Id: lib_borrower_t.tyb,v 1.1 2001/11/30 23:24:55 bill Exp $
+REM From "Learning Oracle PL/SQL" page 352
+
+REM Body of object type intended to represent library borrowers.
+
+REM Note that some of the functions have not been implemented.  This is
+REM primarily because I am lazy.  However, this should stil compile.
+
+CREATE OR REPLACE TYPE BODY lib_borrower_t
+AS
+   STATIC FUNCTION make (patron IN lib_patron_t,
+      cardid IN VARCHAR2)
+      RETURN lib_borrower_t
+   IS
+   BEGIN
+      RETURN lib_borrower_t(patron.id, patron.username,
+         patron.encrypted_password, patron.account_creation_date,
+         patron.email_address, cardid);
+   END;
+
+   OVERRIDING MEMBER PROCEDURE save
+   IS
+   BEGIN
+      NULL;
+   END;
+
+   OVERRIDING MEMBER PROCEDURE remove
+   IS
+   BEGIN
+      NULL;
+   END;
+
+
+END;
+/
+
+SHOW ERRORS
+

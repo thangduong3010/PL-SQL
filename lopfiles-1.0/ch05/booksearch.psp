@@ -1,0 +1,151 @@
+<% /* $Id: booksearch.psp,v 1.1 2001/11/30 23:19:50 bill Exp $
+From "Learning Oracle PL/SQL" Chapter 5
+
+Final version of booksearch PSP as implied by Chapter 5
+
+*/ %>
+
+<%@ page language="PL/SQL" %>
+<%@ plsql procedure="booksearch" %>
+<%@ plsql parameter="isbn_" default="NULL" %>
+<%@ plsql parameter="author_" default="NULL" %>
+<%@ plsql parameter="title_" default="NULL" %>
+<%@ plsql parameter="yyyy_published_" default="NULL" %>
+<%@ plsql parameter="mon_published_" default="NULL" %>
+<%@ plsql parameter="dd_published_" default="NULL" %>
+<%@ plsql parameter="session_id_" default="NULL" %>
+<%@ plsql parameter="startrec_" default="NULL" %>
+<%@ plsql parameter="submit" default="NULL" %>
+<%@ plsql parameter="previous" default="NULL" %>
+<%@ plsql parameter="next" default="NULL" %>
+<%!
+   bcur book.refcur_t;
+   bk books%ROWTYPE;
+   startrec PLS_INTEGER := 1;
+   rows_to_fetch PLS_INTEGER := 2;
+%>
+<HTML>
+<HEAD>
+   <TITLE>Book search</TITLE>
+</HEAD>
+<BODY bgcolor="#FFFFFF">
+<H1>Search</H1>
+<FORM method="post" action="booksearch">
+   <P>ISBN
+      <INPUT type="hidden" name="session_id_" value="<%= session_id_ %>">
+      <INPUT type="text" name="isbn_" size="15" maxlength="15"
+           value="<%= htf.escape_sc(isbn_) %>">
+   </P>
+   <P>Author
+      <INPUT type="text" name="author_" value="<%= htf.escape_sc(author_) %>">
+   </P>
+   <P>Title
+      <INPUT type="text" name="title_" size="64" maxlength="512"
+         value="<%= htf.escape_sc(title_) %>">
+   </P>
+   <P>Date published
+      <SELECT NAME="mon_published_" SIZE="1">
+         <%= webu.mon_option_list(mon_published_) %>
+      </SELECT>
+      <SELECT NAME="dd_published_" SIZE="1">
+         <%= webu.dd_option_list(dd_published_) %>
+      </SELECT>
+      <INPUT type="text" name="yyyy_published_"
+             value="<%= yyyy_published_ %>"
+             maxlength="4" size="4">
+   </P>
+   <P>
+      <INPUT type="submit" name="Submit" value="Search">
+   </P>
+<%
+   lopu.set_dflt_date_format('YYYYMONDD');
+
+   IF submit IS NOT NULL
+      OR previous IS NOT NULL
+      OR next IS NOT NULL
+   THEN
+      IF lopu.IS_NUMBER(startrec_)
+      THEN
+         startrec := NVL(TO_NUMBER(startrec_),1);
+      END IF;
+
+      IF previous IS NOT NULL
+      THEN
+         startrec := startrec - rows_to_fetch;
+      END IF;
+
+      IF next IS NOT NULL
+      THEN
+         startrec := startrec + rows_to_fetch;
+      END IF;
+%>
+    <INPUT type="hidden" name="startrec_" value="<%= TO_CHAR(startrec) %>">
+      <TABLE border="1">
+      <TR>
+         <TH>ISBN</TH>
+         <TH>Title</TH>
+         <TH>Author</TH>
+         <TH>Publish date</TH>
+         <TH>Pages</TH>
+         <TH>Summary</TH>
+      </TR>
+<%
+      bcur :=  book.book_cur(isbn_, title_, author_,
+                   yyyy_published_ || mon_published_ || dd_published_,
+                   startrec => startrec, rows_to_fetch => rows_to_fetch);
+      LOOP
+         FETCH bcur INTO bk;
+         EXIT WHEN bcur%NOTFOUND;
+%>
+         <TR>
+            <TD><A href="bookform?isbn_=<%= bk.isbn %>&session_id_=<%= session_id_ %>"><%= bk.isbn %></A></TD>
+            <TD><%= htf.escape_sc(bk.title) %></TD>
+            <TD><%= htf.escape_sc(bk.author) %></TD>
+            <TD><%= TO_CHAR(bk.date_published,'DD-MON-YYYY') %></TD>
+            <TD><%= TO_CHAR(bk.page_count) %></TD>
+            <TD><%= htf.escape_sc(bk.summary) %></TD>
+         </TR>
+<%
+      END LOOP;
+%>
+      </TABLE>
+<!--
+   </FORM>
+-->
+   <P>
+<%
+
+      IF startrec != 1
+      THEN
+%>
+<!--
+         <A href="/pls/lopweb/booksearch?isbn_=<%= htf.escape_url(isbn_) %>&author_=<%= htf.escape_url(author_) %>&title_=<%= htf.escape_url(title_) %>&yyyy_published_=<%= yyyy_published_ %>&mon_published_=<%= mon_published_ %>&dd_published_=<%= dd_published_ %>&startrec_=<%= startrec - rows_to_fetch %>&submit=submit">Previous</A>
+<FORM>
+    <INPUT type="hidden" name="isbn_" value="<%= htf.escape_sc(isbn_) %>">
+    <INPUT type="hidden" name="author_" value="<%= htf.escape_sc(author_) %>">
+    <INPUT type="hidden" name="title_" value="<%= htf.escape_sc(title_) %>">
+    <INPUT type="hidden" name="startrec_" value="<%= startrec - rows_to_fetch %>">
+    <INPUT type="submit" name="Submit" value="Previous">
+</FORM>
+-->
+    <INPUT type="submit" name="previous" value="Previous">
+<%
+      END IF;
+
+      IF bcur%ROWCOUNT = rows_to_fetch
+      THEN
+%>
+    <INPUT type="submit" name="next" value="Next">
+<%
+      END IF;
+
+      CLOSE bcur;
+%>
+      </P>
+<%
+   END IF;
+%>
+   </FORM>
+</BODY>
+</HTML>
+

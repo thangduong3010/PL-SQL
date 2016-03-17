@@ -1,0 +1,17 @@
+REM $Id: lib_user_privileges.tab,v 1.1 2001/11/30 23:24:55 bill Exp $
+REM From "Learning Oracle PL/SQL" Chapter 9
+
+REM Create table lib_user_privileges which stores a list of those privileges
+REM which each actual library user enjoys.
+
+CREATE TABLE lib_user_privileges (
+   user_id NUMBER NOT NULL,
+   privilege_id NUMBER NOT NULL,
+   privilege_value VARCHAR2(512),
+   CONSTRAINT user_privs_pk PRIMARY KEY (user_id, privilege_id),
+   CONSTRAINT user_privs_priv_fk FOREIGN KEY (privilege_id) REFERENCES
+      lib_privileges (id),
+   CONSTRAINT user_privs_user_fk FOREIGN KEY (user_id)
+      REFERENCES lib_users (id)
+);
+

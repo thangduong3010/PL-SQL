@@ -1,0 +1,32 @@
+<% /* $Id: q.psp,v 1.1 2001/11/30 23:19:51 bill Exp $
+From "Learning Oracle PL/SQL" page 165
+
+Ugly display of data from an Oracle database table
+*/ %>
+
+<%@ page language="PL/SQL" %>
+<%@ plsql procedure="q" %>
+
+<HTML>
+<HEAD>
+   <TITLE>Search</TITLE>
+</HEAD>
+<BODY bgcolor="white">
+
+<%
+   FOR bk IN (SELECT * FROM books)
+   LOOP
+%>
+      <%= bk.isbn %>
+      <%= bk.title %>
+      <%= bk.author %>
+      <%= bk.date_published %>
+      <%= bk.page_count %>
+      <%= bk.summary %>
+      <BR>
+<%
+   END LOOP;
+%>
+
+</BODY>
+</HTML>

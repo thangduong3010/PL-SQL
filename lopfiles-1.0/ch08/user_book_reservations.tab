@@ -1,0 +1,13 @@
+REM $Id$
+REM From "Learning Oracle PL/SQL" page 273
+
+REM Create table to store book reservations by library patrons
+
+CREATE TABLE user_book_reservations (
+   isbn VARCHAR2(13) NOT NULL REFERENCES books (isbn),
+   borrower_id NUMBER NOT NULL REFERENCES lib_users (id),
+   date_queued DATE DEFAULT SYSDATE NOT NULL,
+   date_notified DATE,
+   CONSTRAINT user_book_reservations_pk PRIMARY KEY
+      (isbn, borrower_id, date_queued));
+

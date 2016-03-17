@@ -1,0 +1,13 @@
+REM $Id: loptypes.pkg,v 1.1 2001/11/30 23:24:55 bill Exp $
+REM From "Learning Oracle PL/SQL" page 310
+
+REM (Beginning of) bodiless package containing datatypes
+
+CREATE OR REPLACE PACKAGE loptypes
+AS
+   TYPE book_tab_t IS TABLE OF books%ROWTYPE INDEX BY BINARY_INTEGER;
+END;
+/
+
+SHOW ERRORS
+

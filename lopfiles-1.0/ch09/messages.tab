@@ -1,0 +1,11 @@
+REM $Id: messages.tab,v 1.1 2001/11/30 23:24:55 bill Exp $
+REM From "Learning Oracle PL/SQL" page 326
+
+REM Messages table (used by logerror procedure)
+
+CREATE TABLE messages (
+   username VARCHAR2(30),
+   from_where VARCHAR2(512),
+   timestamp DATE,
+   text VARCHAR2(512));
+

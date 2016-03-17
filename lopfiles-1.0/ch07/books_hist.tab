@@ -1,0 +1,24 @@
+REM $Id: books_hist.tab,v 1.1 2001/11/30 23:22:18 bill Exp $
+REM From "Learning Oracle PL/SQL" page 253
+
+REM Create table to hold audit trail of changes to books table data
+
+CREATE TABLE books_hist (
+   isbn VARCHAR2(13) NOT NULL,
+   action CHAR(1) NOT NULL,
+   datestamp DATE NOT NULL,
+   oracle_user VARCHAR2(30) NOT NULL,
+   real_user VARCHAR2(60),
+   old_title VARCHAR2(200),
+   old_summary VARCHAR2(2000),
+   old_author VARCHAR2(200),
+   old_date_published DATE,
+   old_page_count NUMBER,
+   new_title VARCHAR2(200),
+   new_summary VARCHAR2(2000),
+   new_author VARCHAR2(200),
+   new_date_published DATE,
+   new_page_count NUMBER,
+   CONSTRAINT action_ck CHECK (action IN ('I', 'D', 'U'))
+);
+

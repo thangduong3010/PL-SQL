@@ -1,0 +1,17 @@
+REM $Id$
+REM From "Learning Oracle PL/SQL" page 272
+
+REM Create table to record events experienced by copies of each book
+
+CREATE TABLE user_book_copy_events (
+   barcode_id VARCHAR2(100) NOT NULL
+      REFERENCES book_copies (barcode_id),
+   borrower_id NUMBER NOT NULL
+      REFERENCES lib_users (id),
+   event_name VARCHAR2(30) NOT NULL
+      CHECK (event_name IN ('checkin','checkout', 'reserve')),
+   timestamp DATE DEFAULT SYSDATE NOT NULL,
+   CONSTRAINT user_book_events_pk PRIMARY KEY
+      (barcode_id, borrower_id, event_name, timestamp)
+);
+
