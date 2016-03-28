@@ -1,0 +1,23 @@
+CREATE OR REPLACE PACKAGE thisuser
+IS
+   cname CONSTANT VARCHAR2(30) := USER;
+
+   FUNCTION name RETURN VARCHAR2;
+END;
+/
+CREATE OR REPLACE PACKAGE BODY thisuser
+IS
+   g_user VARCHAR2(30) := USER;
+   
+   FUNCTION name RETURN VARCHAR2
+      IS BEGIN RETURN g_user; END;      
+END;
+/
+
+
+/*======================================================================
+| Supplement to the third edition of Oracle PL/SQL Programming by Steven
+| Feuerstein with Bill Pribyl, Copyright (c) 1997-2002 O'Reilly &
+| Associates, Inc. To submit corrections or find more code samples visit
+| http://www.oreilly.com/catalog/oraclep3/
+*/

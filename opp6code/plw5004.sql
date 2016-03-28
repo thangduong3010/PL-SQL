@@ -1,0 +1,18 @@
+ALTER SESSION SET plsql_warnings = 'ENABLE:ALL'
+/
+
+CREATE OR REPLACE PROCEDURE plw5004
+IS
+   INTEGER   NUMBER;
+
+   PROCEDURE TO_CHAR
+   IS
+   BEGIN
+      INTEGER := 10;
+   END TO_CHAR;
+BEGIN
+   TO_CHAR;
+END plw5004;
+/
+
+SHOW errors procedure plw5004

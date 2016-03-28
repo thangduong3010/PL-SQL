@@ -1,0 +1,18 @@
+
+Session altered.
+
+Elapsed: 00:00:00.00
+
+Running pipelined in a loop...
+===============================================
+
+PL/SQL procedure successfully completed.
+
+Elapsed: 00:02:36.32
+
+Running table in a loop...
+===============================================
+
+PL/SQL procedure successfully completed.
+
+Elapsed: 00:02:24.29
