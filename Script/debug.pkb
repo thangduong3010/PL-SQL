@@ -1,27 +1,36 @@
 create or replace package body debug
 as
 g_session_id varchar2(2000);
+
+-- determine what procedure is being called
 procedure who_called_me(
 	o_owner out varchar2,
 	o_object out varchar2,
 	o_lineno out number)
 is
-	l_call_stack long default dbms_utility.format_call_stack;
+	l_call_stack long default dbms_utility.format_call_stack; -- get the call stack
 	l_line varchar2(4000);
 begin
+	-- skip the first 6 lines of call stack. These are just heading information and calls from inside the DEBUG package itself
 	for i in 1..6 loop
 		l_call_stack := substr(l_call_stack,
 				instr(l_call_stack, chr(10)) + 1);
 	end loop;
+	-- remove all leading whitespace
 	l_line := ltrim(substr(l_call_stack, 1,
 			instr(l_call_stack, chr(10)) - 1));
+	-- remove object handle
 	l_line := ltrim(substr(l_line, instr(l_line, ' ')));
+	-- get line number
 	o_lineno := to_number(substr(l_line, 1, instr(l_line, ' ')));
+	-- remove line number
 	l_line := ltrim(substr(l_line, instr(l_line, ' ')));
+	-- remove the word 'body' or 'block'
 	l_line := ltrim(substr(l_line, instr(l_line, ' ')));
 	if l_line like 'block%' or l_line like 'body%' then
 		l_line := ltrim(substr(l_line, instr(l_line, ' ')));
 	end if;
+	-- get owner and object name
 	o_owner := ltrim(rtrim(substr(l_line, 1,
 				instr(l_line, '.') - 1)));
 	o_object := ltrim(rtrim(substr(l_line,
@@ -31,6 +40,8 @@ begin
 		o_object := 'ANONYMOUS BLOCK';
 	end if;
 end who_called_me;
+
+-- return header of message
 function build_it(
 	p_debug_row in debugtab%rowtype,
 	p_owner in varchar2,
@@ -46,14 +57,13 @@ begin
 		l_header := l_header || to_char(sysdate,
 			nvl(p_debug_row.date_format, 'MMDDYYYY HH24MISS'));
 	end if;
-	l_header := l_header || '(' ||
-			lpad(substr(p_owner || '.' || p_object,
-			greatest(1, length(p_owner || '.' || p_object) -
-			least(p_debug_row.name_length, 61) + 1)),
-			least(p_debug_row.name_length, 61)) ||
-			lpad(p_lineno, 5) || ') ';
+	l_header := l_header || '(' || lpad(substr(p_owner || '.' || p_object,
+			greatest(1, length(p_owner || '.' || p_object) - least(p_debug_row.name_length, 61) + 1)),
+			least(p_debug_row.name_length, 61)) || lpad(p_lineno, 5) || ') ';
 	return l_header;
 end build_it;
+
+-- parse the message
 function parse_it(
 	p_message in varchar2,
 	p_argv in argv,
@@ -64,15 +74,19 @@ is
 	l_idx number := 1;
 	l_ptr number := 1;
 begin
-	if nvl(instr(p_message, '%'), 0) = 0 and
-		nvl(instr(p_message, '\'), 0) = 0 then
+	-- check whether the message needs to be altered
+	if nvl(instr(p_message, '%'), 0) = 0 and nvl(instr(p_message, '\'), 0) = 0 then
 		return p_message;
 	end if;
+	
 	loop
+		-- looking for character '%'
 		l_ptr := instr(l_str, '%');
 		exit when l_ptr = 0 or l_ptr is null;
+		-- if '%' is found, add all prior character to l_message
 		l_message := l_message || substr(l_str, 1, l_ptr - 1);
 		l_str := substr(l_str, l_ptr + 1);
+		
 		if substr(l_str, 1, 1) = 's' then
 			l_message := l_message || p_argv(l_idx);
 			l_idx := l_idx + 1;
@@ -84,6 +98,7 @@ begin
 			l_message := l_message || '%';
 		end if;
 	end loop;
+	
 	l_str := l_message || l_str;
 	l_message := null;
 	loop
@@ -107,6 +122,8 @@ begin
 	end loop;
 	return l_message || l_str;
 end parse_it;
+
+
 function file_it(
 	p_file in debugtab.filename%type,
 	p_message in varchar2) return boolean
@@ -134,6 +151,8 @@ exception
 		end if;
 		return false;
 end file_it;
+
+
 procedure debug_it(
 	p_message in varchar2, p_argv in argv)
 is
@@ -145,18 +164,21 @@ is
 	l_lineno number;
 	l_dummy boolean;
 begin
-	for c in (select * from debugtab where userid = user) loop
+	for c in (select * from debugtab where userid = user) loop --check whether the current user has DEBUG enabled
 		if call_who_called_me then
-			who_called_me(l_owner, l_object, l_lineno);
-			call_who_called_me := false;
+			who_called_me(l_owner, l_object, l_lineno); -- get owner, object, line number
+			call_who_called_me := false; -- if there are 2 records with the same USERID but different FILENAME. There's no need to call who_called_me again, waste of CPU cycle
 		end if;
-	if instr(',' || c.modules || ',', ',' || l_object || ',') != 0 or c.modules = 'ALL' then
-		l_header := build_it(c, l_owner, l_object, l_lineno);
-		l_message := parse_it(p_message, p_argv, length(l_header));
-		l_dummy := file_it(c.filename, l_header || l_message);
-	end if;
+		-- check whether object is currently being debugged
+		if instr(',' || c.modules || ',', ',' || l_object || ',') != 0 or c.modules = 'ALL' then
+			l_header := build_it(c, l_owner, l_object, l_lineno); -- get header message
+			l_message := parse_it(p_message, p_argv, length(l_header));
+			l_dummy := file_it(c.filename, l_header || l_message);
+		end if;
 	end loop;
 end debug_it;
+
+
 procedure init(
 	p_modules in varchar2 default 'ALL',
 	p_file in varchar2 default '/tmp/' || user || '.dbg',
@@ -206,6 +228,8 @@ begin
 	end if;
 	commit;
 end init;
+
+-- generate message to a file
 procedure f(
 	p_message in varchar2,
 	p_arg1 in varchar2 default null,
@@ -231,6 +255,8 @@ begin
 				substr(p_arg9, 1, 4000),
 				substr(p_arg10, 1, 4000)));
 end f;
+
+-- generate message to a file
 procedure fa(
 	p_message in varchar2,
 	p_args in argv default emptyDebugArgv)
@@ -238,6 +264,8 @@ is
 begin
 	debug_it(p_message, p_args);
 end fa;
+
+
 procedure status(
 	p_user in varchar2 default user,
 	p_file in varchar2 default null)
@@ -271,6 +299,8 @@ begin
 		dbms_output.put_line('No debug setup.');
 	end if;
 end status;
+
+
 procedure clear(
 	p_user in varchar2 default user,
 	p_file in varchar2 default null)
@@ -281,6 +311,8 @@ begin
 		and filename = nvl(p_file, filename);
 	commit;
 end clear;
+
+
 begin
 	g_session_id := userenv('SESSIONID');
 end debug;

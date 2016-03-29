@@ -1,0 +1,137 @@
+Oracle PL/SQL supports all the usual sorts of datatypes, such as strings, numbers and dates, and then adds a number of its own more specialized or unique datatypes, including records and collections.
+
+A composite data type stores values that have internal components. You can pass entire composite variables to subprograms as parameters, and you can access internal components of composite variables individually. Internal components can be either scalar or composite. You can use scalar components wherever you can use scalar variables. PL/SQL lets you define two kinds of composite data types: collection and record. You can use composite components wherever you can use composite variables of the same type.
+
+In a collection, the internal components always have the same data type, and are called elements. You can access each element of a collection variable by its unique index, with this syntax: variable_name(index). To create a collection variable, you either define a collection type and then create a variable of that type or use %TYPE against a column in a relational table that is itself a collection.
+
+Oracle offers a set of methods that both give you information about the contents of a collection and also can add or remove elements from a collection. Methods that return information about or modify the contents of a collection include:
+
+DELETE - Deletes elements from collection.
+TRIM - Deletes elements from end of varray or nested table.
+EXTEND - Adds elements to end of varray or nested table.
+EXISTS - Returns TRUE if and only if specified element of the collection exists.
+FIRST - Returns first index in collection.
+LAST - Returns last index in collection.
+COUNT - Returns number of elements in collection.
+LIMIT - Returns maximum number of elements that collection can have.
+PRIOR - Returns index that precedes specified index.
+NEXT - Returns index that succeeds specified index.
+You invoke a collection method using object-oriented syntax as in:
+
+collection_variable.method_name
+
+
+A very common operation on collections is to iterate through all of its elements, to display information in the collection, execute a DML statement using data in the element, search for specific data, or some other action.
+
+The kind of code you write to perform this "full collection scan" is determined by the type of collection with which you are working and how it was populated. Generally, you will choose between a numeric FOR loop and a WHILE loop.
+
+Use a numeric FOR loop when:
+
+Your collection is densely filled (every index value between the lowest and highest is defined).
+When you want to scan the entire collection; you will not terminate your scan if some condition is met.
+Conversely, use a WHILE loop when either of these are true:
+
+You collection may be sparse.
+You may terminate the loop before you have iterated through all the elements in the collection.
+You should only use a numeric FOR loop with dense collections to avoid a NO_DATA_FOUND exception. PL/SQL developers know that this exception is raised when a SELECT-INTO (implicit query) statement does not identify any rows. Oracle will also raise this exception, however, if you try to "read" an element in a collection at an undefined index value.
+
+The following block, for example, raises NO_DATA_FOUND:
+
+DECLARE
+   TYPE numbers_aat IS TABLE OF NUMBER
+           INDEX BY PLS_INTEGER; 
+   l_numbers numbers_aat;
+BEGIN
+   DBMS_OUTPUT.PUT_LINE (l_numbers (100));
+END;
+If, however, you know for certain that your collection is - and will always be - densely filled, then the FOR loop offers the simplest code to get the job done. The procedure below, for example, displays all the strings found in a collection defined with the DBMS_UTILITY.
+
+CREATE OR REPLACE PROCEDURE show_contents (
+   names_in IN DBMS_UTILITY.maxname_array)
+IS
+BEGIN
+   FOR indx IN names_in.FIRST .. names_in.LAST
+   LOOP
+      DBMS_OUTPUT.put_line (names_in (indx));
+   END LOOP;
+END;
+/
+This procedure calls two methods: FIRST and LAST. FIRST returns the lowest defined index value in the collection, while LAST returns the highest defined index value in the collection.
+
+The following block will display the three names of artists; notice that the index values do not need to start at 1.
+
+DECLARE
+   l_names   DBMS_UTILITY.maxname_array;
+BEGIN
+   l_names (100) := 'Picasso';
+   l_names (101) := 'O''Keefe';
+   l_names (102) := 'Dali';
+   show_contents (l_names);
+END;
+/
+If your collection may be sparse or you want to terminate the loop conditionally, then a WHILE loop is the best fit. The following procedure shows this approach:
+
+CREATE OR REPLACE PROCEDURE show_contents (
+   names_in IN DBMS_UTILITY.maxname_array)
+IS
+   l_index   PLS_INTEGER := names_in.FIRST;
+BEGIN
+   WHILE (l_index IS NOT NULL)
+   LOOP
+      DBMS_OUTPUT.put_line (names_in (l_index));
+      l_index := names_in.NEXT (l_index);
+   END LOOP;
+END;
+/
+In this procedure, my iterator (l_index) is initially set to the lowest defined index value. If the collection is empty, both FIRST and LAST return NULL. The WHILE loop terminates when l_index is NULL. I then display the name at the current index value, and then call the NEXT method to get the next defined index value higher than l_index. This function returns NULL when there is no higher index value.
+
+I call this procedure in the following block, with a collection that is not sequentially-filled. It will display the three names without raising NO_DATA_FOUND:
+
+DECLARE
+   l_names   DBMS_UTILITY.maxname_array;
+BEGIN
+   l_names (-150) := 'Picasso';
+   l_names (0) := 'O''Keefe';
+   l_names (307) := 'Dali';
+   show_contents (l_names);
+END;
+/
+I can also scan the contents of a collection in reverse by starting with LAST and using the PRIOR method:
+
+CREATE OR REPLACE PROCEDURE show_contents (
+   names_in IN DBMS_UTILITY.maxname_array)
+IS
+   l_index   PLS_INTEGER := names_in.LAST;
+BEGIN
+   WHILE (l_index IS NOT NULL)
+   LOOP
+      DBMS_OUTPUT.put_line (names_in (l_index));
+      l_index := names_in.PRIOR (l_index);
+   END LOOP;
+END;
+/
+
+[Note from Steven Feuerstein: the guidance offered by Jeroen below differs from my view about the best way to construct these loops, which you can read above.]
+
+The FIRST and NEXT methods in conjunction with WHILE or simple loops are usually presented as the preferred approach to take for this scenario. With this technique, the block would look like this:
+
+DECLARE
+  a_test      plch_pkg.ta_test;
+  t_tabindex  PLS_INTEGER;
+BEGIN
+  a_test(10)   :=  'A';
+  a_test(20)   :=  'B';
+  a_test(30)   :=  'C';
+  --
+  t_tabindex   :=  a_test.FIRST;
+  --
+  LOOP
+    EXIT WHEN t_tabindex IS NULL;
+    dbms_output.put(a_test(t_tabindex));
+    t_tabindex  :=  a_test.NEXT(t_tabindex);
+  END LOOP;
+  --
+  dbms_output.new_line;
+END;
+/
+But the actual processing of the iterated value might be a bit more complex. On could easily err and accidently delete or disable the call to the NEXT method. That could cause an endless loop, that would in this case be caught by the ORU-10028 error. Using the FOR loop to iterate as many times as there are entries (returned by the COUNT method) is much safer.
