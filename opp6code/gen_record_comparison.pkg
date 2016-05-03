@@ -15,7 +15,7 @@ END gen_record_comparison;
 /
 CREATE OR REPLACE PACKAGE BODY gen_record_comparison
 IS
-   bdy_lines   DBMS_SQL.varchar2s;
+   bdy_lines   DBMS_SQL.varchar2s; -- varchar2s is TABLE of varchar2(256) index by BINARY_INTEGER
 
    -- Private function and procedure implementations
 

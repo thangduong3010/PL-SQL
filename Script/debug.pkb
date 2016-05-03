@@ -85,12 +85,14 @@ begin
 		exit when l_ptr = 0 or l_ptr is null;
 		-- if '%' is found, add all prior character to l_message
 		l_message := l_message || substr(l_str, 1, l_ptr - 1);
+		-- examine the following character
 		l_str := substr(l_str, l_ptr + 1);
-		
+		-- if the immdiate following character is 's' then substitute it
 		if substr(l_str, 1, 1) = 's' then
 			l_message := l_message || p_argv(l_idx);
 			l_idx := l_idx + 1;
 			l_str := substr(l_str, 2);
+		-- if the immdiate following character is '%' then add one more '%'
 		elsif substr(l_str, 1, 1) = '%' then
 			l_message := l_message || '%';
 			l_str := substr(l_str, 2);
@@ -101,10 +103,13 @@ begin
 	
 	l_str := l_message || l_str;
 	l_message := null;
+	-- search for '\' character
 	loop
 		l_ptr := instr(l_str, '\');
 		exit when l_ptr = 0 or l_ptr is null;
+		-- if found, append prior character to l_message
 		l_message := l_message || substr(l_str, 1, l_ptr - 1);
+		-- examine the following character
 		l_str := substr(l_str, l_ptr + 1);
 		if substr(l_str, 1, 1) = 'n' then
 			l_message := l_message || chr(10) ||
@@ -123,7 +128,7 @@ begin
 	return l_message || l_str;
 end parse_it;
 
-
+-- write to file
 function file_it(
 	p_file in debugtab.filename%type,
 	p_message in varchar2) return boolean
@@ -172,13 +177,13 @@ begin
 		-- check whether object is currently being debugged
 		if instr(',' || c.modules || ',', ',' || l_object || ',') != 0 or c.modules = 'ALL' then
 			l_header := build_it(c, l_owner, l_object, l_lineno); -- get header message
-			l_message := parse_it(p_message, p_argv, length(l_header));
-			l_dummy := file_it(c.filename, l_header || l_message);
+			l_message := parse_it(p_message, p_argv, length(l_header)); -- modify message
+			l_dummy := file_it(c.filename, l_header || l_message); -- write to file
 		end if;
 	end loop;
 end debug_it;
 
-
+-- initialise debug
 procedure init(
 	p_modules in varchar2 default 'ALL',
 	p_file in varchar2 default '/tmp/' || user || '.dbg',
@@ -204,6 +209,7 @@ begin
 		debugtab_rec.userid, debugtab_rec.modules, debugtab_rec.filename,
 		debugtab_rec.show_date, debugtab_rec.date_format,
 		debugtab_rec.name_length, debugtab_rec.session_id;
+		
 	l_message := chr(10) || 'Debug parameters initialized on ' ||
 		to_char(sysdate, 'dd-MON-yyyy hh24:mi:ss') || chr(10);
 	l_message := l_message || '		USER: ' ||
