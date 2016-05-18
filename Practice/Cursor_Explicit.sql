@@ -3,31 +3,31 @@ SET SERVEROUTPUT ON
 DECLARE
    CURSOR c_emp_cursor
    IS
-      SELECT employee_id, last_name
-        FROM hr.employees
-       WHERE department_id = 30;
+      SELECT id, customer_name
+        FROM backend_dev.customer where rownum < 50;
 
-   TYPE emp_type_record IS RECORD
+   TYPE cust_type_record IS RECORD
    (
-      emp_id    hr.employees.employee_id%TYPE,
-      v_lname   HR.EMPLOYEES.LAST_NAME%TYPE
+      cust_id    backend_dev.customer.id%TYPE,
+      v_lname   backend_dev.customer.customer_name%TYPE
    );
 
-   emp_record   emp_type_record;
+   cust_record   cust_type_record;
 BEGIN
    OPEN c_emp_cursor;
 
    LOOP
-      FETCH c_emp_cursor INTO emp_record;
+      FETCH c_emp_cursor INTO cust_record;
 
       EXIT WHEN c_emp_cursor%NOTFOUND;
       DBMS_OUTPUT.put_line (
-            'Empno: '
-         || emp_record.emp_id
+            'Customer ID: '
+         || cust_record.cust_id
          || ' '
-         || 'Last name: '
-         || emp_record.v_lname);
+         || 'Customer name: '
+         || cust_record.v_lname);
    END LOOP;
 
    CLOSE c_emp_cursor;
 END;
+/
