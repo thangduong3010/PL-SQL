@@ -1,0 +1,10 @@
+# export metadata only
+expdp user_name/******* schemas=schema_name directory=directory_name dumpfile=file_name.dmp logfile=log_file.log content=METADATA_ONLY
+
+# export specified objects
+expdp user_name/******* schemas=schema_name directory=directory_name dumpfile=file_name.dmp include=trigger,[table,index,...]
+
+# import to different schema
+imp user_name/******* file=file_name.dmp fromuser=schema_name touser=schema_name
+
+impdp user_name/******* directory=directory_name dumpfile=file_name.dmp include=trigger,[table,index,...] remap_schema=schema_name:schema_name

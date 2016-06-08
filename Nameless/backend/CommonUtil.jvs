@@ -1,0 +1,26 @@
+DROP JAVA SOURCE BACKEND_DEV."CommonUtil";
+
+CREATE OR REPLACE AND RESOLVE JAVA SOURCE NAMED BACKEND_DEV."CommonUtil" as import java.lang.Runtime;
+public class CommandUtil
+
+{
+    public static void execute (String command) throws java.io.IOException
+    {
+       String[] finalCommand;
+        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+            finalCommand = new String[4];
+            finalCommand[0] = "C:\\Windows\\system32\\cmd.exe";
+            finalCommand[1] = "/y";
+            finalCommand[2] = "/c";
+            finalCommand[3] = command;
+        } else { // Linux or Unix System
+            finalCommand = new String[3];
+            finalCommand[0] = "/bin/bash";
+            finalCommand[1] = "-c";
+            finalCommand[2] = command;
+        }
+        Runtime rt = java.lang.Runtime.getRuntime();
+        rt.exec(finalCommand);
+    }
+}
+/

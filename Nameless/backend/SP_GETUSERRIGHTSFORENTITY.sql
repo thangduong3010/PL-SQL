@@ -1,0 +1,61 @@
+CREATE OR REPLACE PROCEDURE BACKEND_DEV.sp_GetUserRightsForEntity(userId NUMBER, entitySid NUMBER, rights OUT VARCHAR2) IS
+BEGIN
+   WITH GRPMEMBER AS
+    (
+        SELECT 
+            GRP.ID,
+            GRP_MEMBER.MEMBER_ID,
+            GRP.SID
+        FROM 
+            SYS_USER USR
+            INNER JOIN SYS_GROUP_USER GRP_USR ON USR.ID = GRP_USR.USER_ID AND USR.AMND_STATE = GRP_USR.AMND_STATE
+            INNER JOIN SYS_GROUP GRP ON GRP_USR.GROUP_ID = GRP.ID AND GRP_USR.AMND_STATE = GRP.AMND_STATE
+            INNER JOIN SYS_GROUP_MEMBER GRP_MEMBER ON GRP.ID = GRP_MEMBER.GROUP_ID AND GRP.AMND_STATE = GRP_MEMBER.AMND_STATE
+        WHERE USR.AMND_STATE = 'F' AND USR.ID = userId
+    )
+    --SELECT * FROM GRPMEMBER;
+    ,MEMBERS AS (
+        SELECT 
+            DISTINCT(GRP.SID)
+        FROM
+            GRPMEMBER
+            INNER JOIN SYS_GROUP GRP ON GRPMEMBER.MEMBER_ID = GRP.ID
+        WHERE
+            GRP.AMND_STATE = 'F'
+        CONNECT BY GRPMEMBER.ID = PRIOR GRPMEMBER.MEMBER_ID 
+    )
+    ,SIDLIST AS (
+        SELECT SID FROM MEMBERS
+        UNION
+        SELECT SID FROM GRPMEMBER
+        UNION
+        SELECT SID FROM SYS_USER WHERE ID = userId
+    )
+    --SELECT * FROM SIDLIST;
+    , RESULTSET AS
+    (
+        SELECT 
+            R.ACL,
+            'group_value' GROUPBY
+        FROM 
+            SYS_RIGHT R
+            INNER JOIN SIDLIST ON R.ASSIGNEE_ID = SIDLIST.SID
+        WHERE
+            R.AMND_STATE = 'F'
+            AND R.OBJECT_ID = entitySid
+    )
+    SELECT
+        LISTAGG(ACL, '') WITHIN GROUP (ORDER BY GROUPBY) INTO rights
+    FROM
+        RESULTSET
+    GROUP BY
+        GROUPBY
+        ;
+   EXCEPTION
+     WHEN NO_DATA_FOUND THEN
+       NULL;
+     WHEN OTHERS THEN
+       -- Consider logging the error and then re-raise
+       RAISE;
+END sp_GetUserRightsForEntity;
+/
