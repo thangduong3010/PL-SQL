@@ -1,7 +1,7 @@
 SET SERVEROUTPUT ON
 
 DECLARE
-   TextRecord   VARCHAR2 (2000);
+   TextRecord   utl_file.file_type;
    TextFile     UTL_FILE.file_type;
 BEGIN
    TextFile := UTL_FILE.fopen ('MY_DIR', 'Employees.csv', 'r');
