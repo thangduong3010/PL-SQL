@@ -1,0 +1,136 @@
+create or replace package xdb.dbms_xdbutil_int wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+af1 447
+Udl3tOaXzUr5uIZhlxWZIX+XbhQwgzsrLiAFfHRVMjqURT37GGvXeYKfyGyDPGYM7CIlXZEO
+fWPdYdl7cCSqiZBXYYZF3H/vWnkHXe9PHPqrl2GgppvSzk6/c/4pCHLZTtCSOrGZa6+crLZv
+2ERDHo/d0+4r1eZflJfq7ITXqLA1IxWgwEHFrsNNZaD4m41oYx0MY9XlXz3ULoiasH9IHI5O
+5tVGszF4cLymRKcjj70i1aP78xiKTQFsDRO60nW+dtXGHPbSS4/WXIB9qPy88X02lDIZnrYe
+eeEUzQzik19Dy7m2q5LWN3jTEWTRR5tHBdW2GIOEmvButLzMksku/5V8JgN/N3WM4Qd3Quyh
+Wuy7bXqF/LVlFnHWjNaxvo6evhIo0bMoxSd5f377h6/WYC1BzVYQEV/JIk1gOXpUyo0WUUdN
+iVq6SDKBQse/T/8S0At8vcO+rIuDOdbuVxoKNzXR1tWkVwc+KE5ylUFlWBH6CHJakR5eNe2/
+KWPH1/egOYHsfFU96QtvyOchm2nNRoE3l3YdrC4Ri3SBQ49U3DWCOwuB7akKr+6POoyC1rG6
+vU9CjPPvTPCCHZ5LFggL5LZwLI9fqYDNKvxmf2/I8Owp3468Dw+FySr94MdcX/+kqghFRhBR
+Ua72xBzFUqv+XVOT/ELza/2jhYJbHVqM4Fv0kAT6SgCzK1LaVVzWiKwd1NY7RuYgryV4qBIw
+Sx2+56XnsdqLscxy7Ybdhnoxq6vq9/2R3/zdcCe0/Tg3scW/WRiZB+LLJoHfdWGJcAElVUye
+z/XTt6hL0hqY/eewSZrMjJVh0FXaudj6sjfapUe5ifuwQdSaxgAks0EdBi+QjW9fnxX2EkuP
+uOnBUePF8sHbB+wKE72a9b80bL3e6r9VQSKH6la8jPYDlhnB/OY8Iw+7qz79jPEmgm7Nxp/1
+UWHHpALjz3VAk64iStQFfqMwpp63GLX0TayP5kwr18t+cZbGsGN2j5vYgiYxYWMdr5LNvodi
+jA5JFsyIee3Wu/sHHRQaeW1DiJB6nIO7TXS42M5XhAvxV27ncsXqu0JvNMgtGtJqJERXIGc=
+
+
+/
+show errors
+create or replace package xdb.dbms_xdb_print wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+21f 150
+06MzMQ13qNBWcasUBbFw7YjSNNEwg/BQr/Idfy85cHL4jsfDpQmU99EARxvrq0UTRvo2/N4O
+0gY184GPhhNAUQd+lXZq/hebrqIDlbKvOLWbaw8H7bztJJ0/4clC9W9ZyRuW7LZ/U3cypvdM
+vkug1HoYYMv3VEHdNk827aly62mlwERt+QeAG1jpeJ3UB0INcVWkzINFTVk+kd8aEdQ8AKDi
+BD5Eo5lt+Css9jzyJrJoPGSnGfw0kKrCGL2/F6JVoX+BiT5AfsmsogkffEQMnFIABjluJOni
+krWX9leyALcq76i1rbDvIK/LXiWQpKAl+Qb9WTv3CQ==
+
+/
+show errors
+create or replace package xdb.dbms_xdbnfs wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+107 103
+5QG3870YoD9NaXMixasqrO61ZQkwg0zwf8sVfHTpWBKe0Ong4NeJG9z9jej3zed1ZlyU/VZM
+VyJr002lSdmau60n6x5vOEG5DD//64ZhqdwlQpkb8zjIbgS9euoTU45fzn9nuIpF76gSupjL
+z6YlwQAv8lEyKz2uZvA5eWY2vDleU3/3ryOUzxENAAPe477POLMVJ16ONkMFd2j4zm/bthcs
+NroaHefe1qoFUQee1kQFdG6WYT6eDRL7pM3moA==
+
+/
+show errors
+grant execute on xdb.dbms_xdbnfs to public
+/
+create or replace package xdb.dbms_csx_int wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+b58 398
+CHFQ7xlpnu9yhQD29TKizsguq2gwg+0r2eKDfC/Nb7zgpzXmXNlVlDLuxi9xdtqb1hWeJs3o
+bZ/HmH3BsZ/TSPETZ6kKo+Oi+liCKHKIsBR+gMBGLJo/AE+8JLUAc+RzW+O/uq83QgtpvrfE
+EWe0OnaphkAwKdzT/hb7dSs880OpnulHCBSJanqpJBBAKB6mv0bfUFPR3SQbVw227goyX8mG
+lMfm1YWzzSrvd9mp2SV54w9NQUPTiwMxdCUSv1ZSpn8HLQHAD1Krmw0mHRaWQ2YxBPUZFkuA
++Plphdv/s2s+RtM8vZ+oj/CzAuvaw5OS0CIz20tifwoBTdpS/3Tpq16tlly08fDBdsj0+IvY
+mnxznD1iNgNb2WFUL4Xl1bFWeydSYjnO2l83wiHsqP45NSdhDDFvogIZ3zEwikzxQm0adwG0
+dgdcMeeNEbM11PTv7Y+nfPSqfv6Nn1syDRfrRWRSter+K/TnEwdvPBlVswveshFw5SnpO0fi
+1USDU1uBwL78eMPWiHR5znvj+lz7MKJkADv8UY7TQmx3o2QZhTM/YvyeGbFUTCjSFjDN6U/V
+OqkdBzxr4OyGH6d/Jt5uKghFRpxx//T1elCpo/6+VzxxoItR9NW+L8UgzD1WVi311I2veqIY
+6CLh55A8Oi4s1Q9QIRvUazjK063wMu+hSLC4QQCWGXykINsh0k3+yX67Uz1SZen7yWKU0Yzi
+O5r1q2HGzD7iKs4FNhBLFvJ5cTcbILrSZykyAqJBcBBGlmr605KWXNEJkRiOMOsE2Cizulnl
+0DtwzCDOlDDFhF6FOj1/ImmLN2vTV5A/o2OrIAhQLRHD63pUKOzGEOK9QSuxiuu0MHMSzA0Z
+tj4GyZHMj9b1VTV2WsxSj6BLsKVitixkmnMdwPNKbQ==
+
+/
+show errors
+grant execute on xdb.dbms_csx_int to public
+/
+create or replace public synonym dbms_csx_int for xdb.dbms_csx_int
+/

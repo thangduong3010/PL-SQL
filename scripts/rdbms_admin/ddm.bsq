@@ -1,0 +1,81 @@
+rem   pstengar   05/22/06 - add audit$ column to model$
+rem   mmcracke   03/14/05 - creation
+
+rem data mining model table
+create table model$
+(
+  obj#          number not null,                   /* unique model object id */
+  func          number,                       /* mining function (bit flags) */
+  alg           number,                      /* mining algorithm (bit flags) */
+  bdur          number,                                     /* time to build */
+  msize         number,                                /* size of model (MB) */
+  version       number,                                     /* model version */
+  audit$        varchar2("S_OPFL") not null              /* auditing options */
+)
+storage (maxextents unlimited)
+tablespace SYSAUX
+/
+create unique index model$idx
+  on model$ (obj#)
+storage (maxextents unlimited)
+tablespace SYSAUX
+/
+rem data mining model components table
+create table modeltab$
+(
+  mod#                number       not null,              /* model object id */
+  obj#                number       not null,              /* table object id */
+  typ#                number       not null              /* model table type */
+)
+storage (maxextents unlimited)
+tablespace SYSAUX
+/
+create unique index modeltab$idx
+  on modeltab$ (mod#, typ#)
+storage (maxextents unlimited)
+tablespace SYSAUX
+/
+rem data mining model attribute table
+create table modelatt$
+(
+  mod#                number         not null,            /* model object id */
+  name                varchar2(30)   not null,             /* attribute name */
+  atyp                number,                              /* attribute type */
+  dtyp                number         not null,                  /* data type */
+  length              number,                                 /* data length */
+  precision#          number,                                   /* precision */
+  scale               number,                                       /* scale */
+  properties          number                                   /* properties */
+)
+storage (maxextents unlimited)
+tablespace SYSAUX
+/
+create index modelatt$idx
+  on modelatt$ (mod#)
+storage (maxextents unlimited)
+tablespace SYSAUX
+/
+rem data mining model settings table
+create table modelset$
+(
+  mod#                number         not null,            /* model object id */
+  name                varchar2(30)   not null,               /* setting name */
+  value               varchar2(4000),                       /* setting value */
+  properties          number                                   /* properties */
+)
+storage (maxextents unlimited)
+tablespace SYSAUX
+/
+create index modelset$idx
+  on modelset$ (mod#)
+storage (maxextents unlimited)
+tablespace SYSAUX
+/
+Rem
+Rem Sequence for export/import
+create sequence DM$EXPIMP_ID_SEQ
+/
+grant select on DM$EXPIMP_ID_SEQ to public
+/
+
+

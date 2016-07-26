@@ -1,0 +1,166 @@
+create or replace library SYS.DBMS_PICKLER_LIB wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+2b 61
+aAn+BI9qqDtarCwYQNuFQC2dGnQwg04I9Z7AdBjDuFKbskoopfUzM1KyGP4I9QnnvZ6yy1Iy
+zKV0K+fLUnQI9cmmpst5mfw=
+
+/
+create or replace package dbms_pickler wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+2a4 15c
+2cx8UAQRQDdifROcEcqAnXO7Ic0wgzvxAPZqfC9A2vjqaH2psOJY/yX60y0iV6E+WDZzBOa6
+Fs21B6OyO4YvrilS6xIsu8fm+5XLW6zBxv5km1LPIxASOja2E2ABSfEIyzny6UJhdQ5cJdZy
+vQQs392JZdp98IQijobTstsFOXD/Q6f158NR1GdQYGv6Zor3AmC8u3DFe6AXFSGqGCYG8OSB
+zXCudh6XxVbXmEJg1E+SfVW47KuWiS4qVK3uOYqqa7mAmg+oh1siqk4NbtCXNeBR8SH4en0V
+Gg6y2KduH1/I/CoNhtAzJwS6quuyhbKtvcLELTbvn4Z3I/6yXQsORA==
+
+/
+CREATE OR REPLACE PUBLIC SYNONYM dbms_pickler FOR sys.dbms_pickler
+/
+GRANT EXECUTE ON dbms_pickler TO PUBLIC
+/
+create or replace package body dbms_pickler wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+bb4 390
+er+M1S70C/BUEHeqrGsMXz9EiW0wg1UrmtC3Zy8zWJ3gNLDf7ms8GxvxElRwN9dimZOnTpKi
+UT3bTS0I0rW/Mx9E8v0FXXdxT7RYkCDJvDp7abddSl2OBsVVFblzxMZItTpqnGQsqqb2rMr2
+6VFUbMqw5dnFk9M9lXmnzL1tVjsOJ5Ram0i98eUrnuNYysAFf2sRSr8vrCIWxUTuN8psAhMA
+4KqDEJ29J2azqbzU4Wx0UuZQcmxCj8NntiDm0G1y2akDVGZ7GlIx9SoMuVeNpKuMMXu1oGdQ
+rS1JEHkII+2jO6fzqwFlvv1Ef9dYS+LExMZfVlb/ZeFtJpaTt68DOgGsSMUl3tc+edP6J1z6
+OW8uCVDx3QD3oTVdezYNO/e81vsIiiiklAwQnKho70+rCf3UQyjgJdTOQmzA/ZVJp2x2niJm
+R3BH8IHBuVIhK7HpjBS2Que5haKX06wQgzp71f/a6gJ/shLrLvgwv27b2h70MGrwXqfay9s9
+mtLY8GoqPiJvT8HhOo/LJFLBq0S1HSrbNBgXibhg50khSz9AZmdIMAHTo2JfTiS+dksngypE
+JimqvP1QAj5zZVXOTBhNxpmncogXYdFn5qKEPm4xata1be+FTtNFrJIzhOoufZ583pM51TBC
+beNFg+EXi4WEz7PAHIjgkh0sHHysm0DLZn7UItSLHox+o5CUDx11QuTAdRJ45HMIDy10/9yH
+hgCMWCTNhQV7bBif5ch5Sd7oRGFNAd9BBpGsDvWoiznVgcFoDZnksT94g5p7LQ/earLetiPQ
+1ymunOJThGpcEx/owZmruZXa+JipspZ/jkD/Sg97I7SpDBmsMNahETaGDod5KyCKHHXcv2Xy
+VT1pibSshkjew3xqNpsapISSUR+d+/0M/M8=
+
+/
+begin
+  execute immediate 'revoke execute on dbms_java_test from PUBLIC';
+exception when others
+  then null;
+end;
+/
+create or replace package dbms_java_test wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+2e60 1a1
+B2Rm0P1PcoDMwbdCpBaTSvF2YfEwg83smMusZy/pO3MYPiprac/GJwKB9BG0PadwoH8tFc5z
+q5n9tu0Rz+5jZhN2cBe53p911SBROaM8CkyrILeE07t4KYdg6BYlD0ZBpNcVTvCe4T5CN2Vg
+p8WbQMXApFgn2m46nALCooPRUaXCUBBdPv+9RapY/LAPmeG5chBJ53ebnX8vTQPT6o2mNzkM
+/s8pZw76o6oOPMpQ4Mc/a63KUMl4xzEuL31Lc36qp9RcBAQ5iy3dDqKN8wvbGZR/ibiI8kCb
+EoT003qeC1/HlAuJj/pJ1rXBr4C9QfVelOXxzJSJjxHWwMzinNkC03bJzID8zgJ7UTbBnI51
+4cHmcImPR+yXXjokXBwyu4uqnnvSlbsuLnorDJS6eX7EuDZDbHKs
+
+/
+CREATE OR REPLACE PUBLIC SYNONYM dbms_java_test FOR sys.dbms_java_test
+/
+create or replace package body dbms_java_test wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+63c5 4f5
+BffvCpTdZTFoT3O1HqWf7nN37eUwg81xDK6GfARogp0VBjYJKDrx0mzcSCfyp8hR20NSGLSx
+OA+jvZ+qtUAl4Arx9gs4fQsjZy57tvE65NeiO5AMQZBO9HCMKc6nEDrSHrw6P/674kLOI7Xd
+m5KpLeuTWPrPo8JfH+leDNFO2DqFZDDHqF0x9UdKo1Dr1dUwTAPVhwEXNBjafvswGQh0XT0a
++ugDCcLMh5v8YfoMPhtRCePsQd5+Vtw62MjYbpQCQOM749sYWjvj4pSzA2aSK9vdGASj844x
+qJ9c+tHVMTJsmEuR6qeKJfFMusJtDJ8yC9ZFxtjTwCuN/OtCseP9PuXxH80F8Q/nn87BTtBP
+mvn5IpGKe5wXVhNh7/lgYSwPm+VEoH3spGIz5aqYV5+ol6EM5YDeF77VlsZC1EOg7LtM3q+j
+K0KtKVZhdFDpv9EtbS4dVDKK5BR36PuaM7ub3c26thYrDrTn8o4Wf6wJRPLwDuLhMvAOQeGB
+Xw684YHwDjfhsl8Oa+Gy1+Bg7Oz3iOhtSCuQITH62NreFbeTQiUaSQMzGvSuyYGht09Hkrcr
+pmXqqaDTyL45GpQ3R1zjDcXb1VxXIhabzD1giP3Q0fyLZXL/mcwqzf+3HQCiLJqgrYNhkpLY
+IbSXWlmbwDr3qMhPy+164AfpxklZiQudTmmcnbljY4HVQVcAp4Yurhn3LwdTg84IJ1XccIH1
+37rvgObT5nfbD8OWK8ILY7gUGqgnnLwyzTRUKbzqaPdQsn+iRQV/ojRUTHTYH8tWgOaW21qK
+zZta0uCBfD+E0A+A5iTbqbsL3WQ8lW09gBN+cRNX0zmokiepvCOQvJvgslDwBZrwSkY44zOk
+URCaAxDtVIQhcxzf7fbuUcoPeYCl9M1OvZZv6UsftG3W7VNlFeQ8YHwa7X8UJKuvxo8LNc9H
+jfNdv78Y7s+4vIHvPdBvanw4df3gdeJfygO4FjeVFeDWVNgsYjeCaljEPFhMiDXJQ8yelgec
+IPGc+LN8ILbzS67zj5fnZa6cReeyRtTLRkAssl6+9yqF7DKThpfnZb9PfEIsKaDGKV2AapLL
+RqvmzTKE143zkekoOKEo4C9/ziUE0ow4MR8ltik6GSkpl+fCJdBLdyhCbTQQjDSBjDgAFuCr
+f+0Qf82X58I5dUvnBK9KcJqKcP6MOCZXuVu4JEso/h3i7R9dCKZ/HCip2udoNYpdpEYP6goH
+WqCqT0F/Iv4oPidCm+4kqc5WiA==
+
+/

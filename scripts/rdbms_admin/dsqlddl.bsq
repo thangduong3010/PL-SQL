@@ -1,0 +1,332 @@
+REM   jklein    08/01/05 - creation
+create table link$                             /* remote database link table */
+( owner#        number not null,                        /* owner user number */
+  name          varchar2("M_XDBI") not null,                    /* link name */
+  ctime         date not null,                              /* creation time */
+  host          varchar2("M_CNCT"),    /* optional driver string for connect */
+  userid        varchar2("M_IDEN"),             /* optional user to logon as */
+  password      varchar2("M_IDEN"),                    /* password for logon */
+  flag          number,                        /* to identify type of dblink */
+  authusr      varchar2("M_IDEN"),             /* optional user to logon as */
+  authpwd      varchar2("M_IDEN"),                    /* password for logon */
+  passwordx     raw(128),                                       /* password  */
+  authpwdx      raw(128))                                   /*auth  pasword  */
+/
+create table trusted_list$            /* trusted list for privileged dblinks */
+( dbname        varchar2("M_XDBI") not null,                /* database name */
+  username      varchar2("M_VCSZ") not null)                    /* user name */
+/
+insert into trusted_list$ values ('+*','*')     /* default value - allow all */
+/
+create table com$                                           /* comment table */
+( obj#          number not null,                            /* object number */
+  col#          number,                /* column number (NULL if for object) */
+  comment$      varchar2("M_VCSZ"))            /* user-specified description */
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create index i_link1 on link$(owner#, name)
+/
+create unique index i_com1 on com$(obj#, col#)
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+rem
+rem  Drop User Cascade
+rem
+create table duc$
+( owner           varchar2("M_IDEN") not null,            /* procedure owner */
+  pack            varchar2("M_IDEN") not null,          /* procedure package */
+  proc            varchar2("M_IDEN") not null,             /* procedure name */
+  field1          number default 0,
+  operation#      number not null,                    /* 1=drop user cascade */
+  seq             number not null,            /* for ordering the procedures */
+  com             varchar2(80))       /* comment on what this routine is for */
+/
+create unique index i_duc on duc$ (owner,pack,proc,operation#)
+/
+rem table used to store the dropped objects which are still not purged
+create table recyclebin$
+( 
+  obj#                  number not null,           /* original object number */
+  owner#                number not null,                /* owner user number */
+  original_name         varchar2(32),                /* Original Object Name */
+  operation             number not null,            /* Operation carried out */
+                                                                /* 0 -> DROP */
+                                            /* 1 -> TRUNCATE (not supported) */
+  type#                 number not null,          /* object type (see KQD.H) */
+  ts#                   number,                         /* tablespace number */
+  file#                 number,                /* segment header file number */
+  block#                number,               /* segment header block number */
+  droptime              date,                /* time when object was dropped */
+  dropscn               number,           /* SCN of Tx which caused the drop */
+  partition_name        varchar2(32),       /* Name of the partition dropped */
+                                                           /* NULL otherwise */
+  flags                 number,               /* flags for undrop processing */
+  related               number not null,    /* obj one level up in heirarchy */
+  bo                    number not null,                      /* base object */
+  purgeobj              number not null,   /* obj to purge when purging this */
+  base_ts#              number,            /* Base objects Tablespace number */
+  base_owner#           number,                 /* Base objects owner number */
+  space                 number,       /* number of blocks used by the object */
+  con#                  number,       /* con#, if index is due to constraint */
+  spare1                number,
+  spare2                number,
+  spare3                number
+)
+/
+create index recyclebin$_obj on recyclebin$(obj#)
+/
+create index recyclebin$_ts on recyclebin$(ts#)
+/
+create index recyclebin$_owner on recyclebin$(owner#)
+/
+rem index (re)build online state
+create table ind_online$
+( obj#          number not null,
+  type#         number not null,              /* what kind of index is this? */
+                                                               /* normal : 1 */
+                                                               /* bitmap : 2 */
+                                                              /* cluster : 3 */
+                                                            /* iot - top : 4 */
+                                                         /* iot - nested : 5 */
+                                                            /* secondary : 6 */
+                                                                 /* ansi : 7 */
+                                                                  /* lob : 8 */
+                                             /* cooperative index method : 9 */
+  flags         number not null
+                                      /* index is being online built : 0x100 */
+                                    /* index is being online rebuilt : 0x200 */
+)
+/
+create table context$
+(
+  obj#          number  not null,                       /* object number */
+  schema        varchar2("M_IDEN") not null,              /* schema name */
+  package       varchar2("M_IDEN") not null,             /* package name */
+  flags         number not null             /* for ctx accessed globally */
+)
+/
+
+create unique index i_context on context$(obj#)
+/
+create table sql_version$
+(
+  version#          number not null,                           /* see kpul.h */
+  sql_version       varchar2("M_IDEN")     /* sql version string identifier */
+)
+/
+create unique index i_sql_version$_version# on sql_version$(version#)
+/
+
+insert into sql_version$ values (0, '8.1.5');    
+insert into sql_version$ values (2, '8.1.5');    
+insert into sql_version$ values (5, '8.1.5');
+insert into sql_version$ values (6, '8.1.6')
+/
+rem join index join conditions
+create table jijoin$
+(
+  obj#      number not null,                              /* join index obj# */
+  tab1obj#  number not null,                           /* table 1 obj number */
+  tab1col#  number not null,           /* internal column number for table 1 */
+  tab2obj#  number not null,                           /* table 2 obj number */
+  tab2col#  number not null,           /* internal column number for table 2 */
+  joinop    number not null,           /* Op code as defined in opndef.h (=) */
+  flags     number,                                            /* misc flags */
+  tab1inst# number default 0,     /* instance of table 1 (for multiple refs) */
+  tab2inst# number default 0      /* instance of table 2 (for multiple refs) */
+)
+/
+create index i_jijoin$ on jijoin$(obj#)
+/
+create index i2_jijoin$ on jijoin$(tab1obj#,tab1col#)
+/
+create index i3_jijoin$ on jijoin$(tab2obj#,tab2col#)
+/
+rem join index refresh sql statements
+create table jirefreshsql$
+(
+  iobj#     number not null,                              /* join index obj# */
+  tobj#     number not null,                              /* base table obj# */
+  sqltext   clob       /* sql to refresh iobj# when tobj# is modified by DML */
+)
+/
+create unique index i1_jirefreshsql$ on jirefreshsql$(iobj#, tobj#)
+/
+create index i2_jirefreshsql$ on jirefreshsql$(tobj#)
+/
+create table trigger$                                       /* trigger table */
+( obj#          number not null,                            /* object number */
+  type#         number not null,                            /* trigger type: */
+        /*  0 = BEFORE TABLE, 1 = BEFORE ROW, 2 = AFTER TABLE, 3 = AFTER ROW */
+                                                   /* 4 = INSTEAD OF TRIGGER */
+  update$       number not null,                           /* fire on update */
+  insert$       number not null,                           /* fire on insert */
+  delete$       number not null,                           /* fire on delete */
+  baseobject    number not null,                        /* triggering object */
+  refoldname    varchar2("M_IDEN"),                  /* old referencing name */
+  refnewname    varchar2("M_IDEN"),                  /* new referencing name */
+  definition    varchar2("M_VCSZ"),                    /* trigger definition */
+  whenclause    varchar2("M_VCSZ"),                   /* text of when clause */
+  action#       long,                                      /* action to fire */
+  actionsize    number,                               /* size of action text */
+  enabled       number,                         /* 0 = DISABLED, 1 = ENABLED */
+  property      number not null,          /* trigger properties (bit flags): */
+                                                /* 0x01 = baseobject is view */
+                                                /* 0x02 = Call style trigger */
+                                                /* 0x04 = Java Trigger       */
+                                            /* 0x08 = baseobject is database */
+                                              /* 0x10 = baseobject is schema */
+                                              /* 0x20 = Nested table trigger */
+                                                 /* 0x40 = baseobject is IOT */
+                              /* 0x80 = fire-once-only (fire one place only) */
+  sys_evts      number,                                     /* system events */
+  nttrigcol     number,               /* intcol# on which trigger is defined */
+  nttrigatt     number,                    /* attribute number within column */
+  refprtname    varchar2("M_IDEN"),              /* PARENT referencing name */ 
+  actionlineno  number,                         /* action line number offset */
+  trignameline  number,             /* trigger name line relative to source$ */
+  trignamecol   number,              /* trigger name col relative to source$ */
+  trignamecolofs number,              /* trigger name col offset for renames */
+  actioncolno   number                           /* action col number offset */
+)
+/
+create table triggercol$
+( obj#          number not null,                            /* object number */
+  col#          number not null,                            /* column number */
+  type#         number not null,                /* type of column reference: */
+     /* 6 = OLD IN-ARG, 5 = NEW IN-ARG, 9 = NEW OUT-VAR, 13 = NEW IN/OUT-VAR */
+                                                  /* 0x14 = 20 PARENT IN-ARG */
+  position#     number,                               /* position in trigger */
+  intcol#       number not null)                   /* internal column number */
+/
+create index i_trigger1 on trigger$(baseobject)
+/                                             
+create unique index i_trigger2 on trigger$(obj#)
+/
+create index i_triggercol1 on triggercol$(obj#, col#, type#, position#)
+/
+create index i_triggercol2 on triggercol$(obj#, intcol#, type#, position#)
+/
+REM  The following four tables for 8.1 SDK2 specific.
+REM  They should be removed before 8.1 beta, assuming we use ILMS
+REM services for JAVA trigger invocation. 
+create table triggerjavaf$
+( obj#          number not null,                            /* object number */
+  flags         long raw,                                  /* ub1 flag array */
+  flaglength    number)                          /* length of ub1 flag array */
+/
+create table triggerjavas$
+( obj#          number not null,                            /* object number */
+  signature     long not null,                           /* method signature */
+  siglength     number not null)               /* length of method signature */
+/
+create table triggerjavac$
+( obj#          number not null,                            /* object number */
+  ownername     varchar2("M_IDEN") not null,             /* class owner name */
+  ownerlength   number not null,               /* length of class owner name */
+  classname     long not null,                          /* method class name */
+  classlength   number not null)              /* length of method class name */
+/
+create table triggerjavam$
+( obj#          number not null,                            /* object number */
+  methodname    long not null,                                /* method name */
+  methodlength  number not null,                 /* length of ub1 flag array */
+  cookiesize    number not null)                              /* cookie size */
+/
+create unique index i_triggerjavaf on triggerjavaf$(obj#)
+/
+create unique index i_triggerjavas on triggerjavas$(obj#)
+/
+create unique index i_triggerjavac on triggerjavac$(obj#)
+/
+create unique index i_triggerjavam on triggerjavam$(obj#)
+/
+create table viewtrcol$                      /* triggering view column table */
+( obj#          number not null,             /* object number of base object */
+  intcol#       number not null,                   /* internal column number */
+  attribute#    number not null,          /* attribute# inside col for views */
+  name          varchar2("M_VCSZ") not null)         /* fully-qualified name */
+cluster c_obj#(obj#)
+/
+create unique index i_viewtrcol1 on viewtrcol$(obj#, intcol#,attribute#)
+/
+create global temporary table atemptab$                     /* see atempind$ */
+(
+  id    number
+)
+/
+comment on table ATEMPTAB$ is
+'Temporary table whose definition is used internally.  Never contains data'
+/
+create index atempind$ on atemptab$(id) 
+/             /* indexes backing up workspaces on disk claim to be atempind$ */
+
+create table triggerdep$       /* trigger dependency. i.e., follows,precedes */
+(
+  obj#        number,                                        /* trigger obj# */
+  p_trgowner  varchar2(30),                          /* parent trigger owner */
+  p_trgname   varchar2(30),                           /* parent trigger name */
+  flag        number not null,                    /* 0x01 FOLLOWS dependency */
+                                                 /* 0x02 PRECEDES dependency */
+                                                 /* 0x04 default schema used */
+  spare1      number,
+  spare2      number
+)
+/
+create index triggerdepind$ on triggerdep$(obj#)
+/
+
+REM add table used in online index rebuild without S DML lock
+create table indrebuild$                   /* indexes getting rebuilt online */
+( obj#          number not null,                            /* object number */
+  dataobj#      number,                          /* data layer object number */
+  ts#           number not null,                        /* tablespace number */
+  file#         number not null,               /* segment header file number */
+  block#        number not null,              /* segment header block number */
+  pctfree$      number not null, /* minimum free space percentage in a block */
+  initrans      number not null,            /* initial number of transaction */
+  maxtrans      number not null,            /* maximum number of transaction */
+  compcols      number, /* number of compressed cols, NULL if not compressed */
+  flags         number                                         /* misc flags */
+)
+/
+create unique index i_indrebuild1 on indrebuild$(obj#)
+/
+
+REM archive compression dictionary tables
+create table compression$
+(
+  ts#           number,                                 /* tablespace number */
+  file#         number,                         /* segment header file number */
+  block#        number,                        /* segment header block number */
+  obj#          number not null,                            /* object number */
+  dataobj#      number,                          /* data layer object number */
+  ulevel        number not null,         /* user specified compression level */
+  sublevel      number,                              /* compression sublevel */
+  ilevel        number,                                /* internal algorithm */
+  flags         number,                                        /* misc flags */
+  bestsortcol   number,             /* Best sort column computed by analyzer */
+  tinsize       number,            /* target input size computed by analyzer */
+  ctinsize      number,                         /* current target input size */
+  toutsize      number,            /* target output size passed to cu engine */
+  cmpsize       number,                    /* total compressed size of table */
+  uncmpsize     number,                  /* total uncompressed size of table */
+  mtime         date,                        /* timestamp of compression map */
+  analyzer      blob,                                /* analyzer information */
+  spare1        number,
+  spare2        number,
+  spare3        number,
+  spare4        number
+)
+/
+create unique index i_compression1 on compression$(obj#, ulevel, mtime)
+/
+
+REM transient_iot$ is used to track transient IOTs created during partition
+REM maintenance operations (PMOs) on IOTs (bug #5373923)
+create table transient_iot$
+( obj#            number not null,              /* obj# of the transient IOT */
+  parent_obj#     number,                  /* IOT object targeted by the PMO */
+  parent_ptn_obj# number             /* partition object targeted by the PMO */
+)
+/

@@ -1,0 +1,54 @@
+CREATE OR REPLACE PACKAGE dbms_offline_internal wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+330 168
+Wm7VlB5KDSSa63+5+ZUYtfm6PPEwg+33LvZqfHRAEnmqAkqkiaSfzaH0jVkh99bNoNmhftgC
+5pyvYbVymzIRRX5flMnPfGEZxtBpNwg5XqzBsJy/EAB23MYjZMaSC7UrJEGmc+D7fIqzJrjf
+G157rImsi30drZ1fzNgRxXW2S91vTM/QuUg96OixyH4KeYjdor6xZbjUa0UqzNTCzPXLCj3E
+RmKt3MXXLuFibMLf74kTgbQlS8YW73lInrIrAFvsZ9EST7kxhFvkNd4iIPKSQQKfTH00zQxb
+8ZaeuO1qk5tyxdLdIksaak/qDC5fKf5InIyr2XPGUFpZrkuhJaKhk6u8cGFBEOHvRNuf
+
+/
+CREATE OR REPLACE PACKAGE dbms_offline_utl wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+254 160
+bLH3VAk7ixfkHAuTyq0YaXM40z8wgzvMLdzbfHQBueqRVtNFN4EbxFIM9fTH2z5Rt2O2bkb1
+3abkJNFrHYDVb9jbYZEknUkSKM3LIyEoB8F4QgAcrq6W0JsIP2XdXAFH5HfNXn6zy70qx4ls
+phdZ2I2aK5xRMMYxtBtLdDFCnMbweTSMkGfyfIdICgK+birSfvzxddpazbIaHk5ILK8/eAyc
+4Mh018IE9u1d+H52lGJ6/J2BE0JlD2IGR0ZOWrZKQFBwoylthPnsZFJcOzJ08IDM7RBk9gq6
+DloVNvtJrIjE5n+6NZXHicLeCEnvJSQv+a8HkdnyC7EpTMxyisQfT5O39OQ=
+
+/

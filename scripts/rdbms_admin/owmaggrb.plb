@@ -1,0 +1,30 @@
+create or replace type body wmsys.wm_concat_impl wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+e
+50b 233
+DnVAN3VErwu4YGjPqcEiq7dJrt8wgw1eLdxqfC8BuepoPKIYxaP0a445xr4ap3ZJwpYCwqJN
+ttNEORSnP3qf02OhEwnF2/FtELsZkE9P3pDvRpOgQGR5vkKqBXqqp5YF0OovyTZw4/ePLx8Y
+t4WOkfMfVqEhG19pFjWsoQhGQe7S5xWLmawHoF1YBl/y94slW/DDEUTlWoR3Knnj9Gnfgzni
+pTP5DoVeAok3+M5LTbiy9B4gUkAb6I928FKTw7PgkQsYXAe2atMn/XrWZRxBIanPntXoOvEp
+MVgt6XQclqDRsinxBVZTODcmEZ2aucmrFOVGp3mXnRPXwXixvCig2+yzUjMMgqyj+wc3OTZQ
+4NgnzbVIW4ZwiuYiTCFpiTlbCnsv2mTjHlxbIs9FGUsSYJl93MIEfpMpULuePZCQycIKhl6B
+DLV+nh70w008bwc/TTrqWW9UOgLZVnTKp1Z/8JbRS/oIkN/Gu5+tK8LHYkmpK02q80npkOTk
+h2iGkEwzGTv6CuX6QgqY/7fi9JL9Esd2L5+VzjtvuceBsuYnNbc=
+
+/

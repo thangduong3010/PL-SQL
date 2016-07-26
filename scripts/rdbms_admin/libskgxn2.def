@@ -1,0 +1,23 @@
+{
+global:
+	skgxncin;
+	skgxncdel;
+	skgxntrace;
+	skgxnqtsz;
+	skgxnqat;
+	skgxnever;
+	skgxnqcnum;
+	skgxnqname;
+	skgxnqanum;
+	skgxnqvnds;
+	skgxnqgrp;
+	skgxnpbdata;
+	skgxnreg;
+	skgxndrg;
+	skgxnpstat;
+	skgxnprdata;
+	skgxnsrg;
+	skgxnsdr;
+local:
+	*;
+};

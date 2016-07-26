@@ -1,0 +1,31 @@
+create or replace package wmsys.ltPriv wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+835 260
+7c+EzKdb7btwAI/F62IpxCPSXFgwg5VcLq5qfHRDNA/uuqMmW4+F26gaGW9iLmbGiAZ3gtNJ
+Rs5zGtW6/rOfpMo4XCYle2GaTgwGY6PZbBUFB6qqczaIQmMMaffnYrF/yjfLA4hnI1+RdHSX
+Md0lZRQFWgnVof4xVXnLKNDKoyx/rgzJmjlL4ystn98CJ2byC2iCp//vAddpTm2AUKdS9MOp
+o95ePHJKPK8MAvh26V5q90K+O8JyDbJRhEw6gw5x3bfHKXlr2wJfQDioLt166RRdWp/+qvLu
+WEnt3m250xvyUxO767QRWRk8AG5NmtMiwJ7ZWucM8kYgXiG+A82OB+sfzeGA712k874djstv
+hcIlYZ+8bA7N/xyxeX9vlvqFPZdcjYuCBlhmi04iz96lCvvPLigS/XNbZzvVCF3vitmUWC8U
+oqhGGUpg43Ff1izBsj8MdnGnme7UOy3rDJaKLXvcgSH8Ejw72RkHsv2BQaKFiJvcobHvLAmD
+ncxQSXJPCk540/0iWIfhCypLMmTm+CRJs12kPe40h1TBZlgGJJMb6iozjye6ZnhUX8tupLuS
+z78BzSIaphHZOtcf7yPthQ==
+
+/

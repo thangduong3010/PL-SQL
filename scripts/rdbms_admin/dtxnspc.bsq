@@ -1,0 +1,121 @@
+REM   jklein    08/01/05 - creation
+REM
+rem Create default undo tablespace
+"D_DUTSCR"
+/
+REM
+REM create default temporary tablespace
+REM
+"D_DTTSCR"
+/
+REM
+REM initialize default temporary tablespace
+REM
+"D_DTTSAT"
+/
+REM
+REM create the default permanent tablespace for the database
+REM
+"D_CRTDPTS"
+/
+REM
+REM set the default permanent tablespace for the database
+REM
+"D_ALTDPTS"
+/
+create table pending_trans$             /* pending or "indoubt" transactions */
+( local_tran_id   varchar2("M_LTID") not null, /* print form of kxid (local) */
+  global_tran_fmt integer not null,               /* global tran format code */
+  global_oracle_id  varchar2("M_GTID"),                      /* Oracle k2gti */
+  global_foreign_id raw("M_GTID"),                       /* non-Oracle k2gti */
+  tran_comment    varchar2("M_XCMT"),             /* commit/rollback comment */
+  state           varchar2(16) not null,       /* see k2.h: k2sta (tx state) */
+  status          varchar2(1) not null,                   /* Pending, Damage */
+  heuristic_dflt  varchar2(1),                  /* advice: Commit/Rollback/? */
+  session_vector  raw(4) not null,              /* bit map of pending sess's */
+  reco_vector     raw(4) not null,             /* map of sess's rdy for reco */
+  type#           number,  /* loosely-coupled or tightly-coupled transaction */
+  fail_time       date not null,                            /* time inserted */
+  heuristic_time  date,                        /* time of heuristic decision */
+  reco_time       date not null,               /* last time tried (exp.b.o.) */
+  top_db_user     varchar2("M_IDEN"),        /* top level DB session created */
+  top_os_user     varchar2("M_UNML"),              /* top level OS user name */
+  top_os_host     varchar2("M_HOST"),         /* top level user OS host name */
+  top_os_terminal varchar2("M_TERM"),            /* top level OS terminal id */
+  global_commit#  varchar2(16),               /* global system commit number */
+  spare1          number,
+  spare2          varchar2("M_IDEN"),
+  spare3          number,
+  spare4          varchar2("M_IDEN")
+)
+/
+create unique index i_pending_trans1 on pending_trans$(local_tran_id)
+  /* this index is not for performance, but rather to ensure uniqueness */
+/
+create table pending_sessions$                    /* child of pending_trans$ */
+( local_tran_id   varchar2("M_LTID") not null,              /* 1:n w/ parent */
+  session_id      smallint not null,
+  branch_id       raw("M_GBID") not null,                        /* of local */
+  interface       varchar2(1) not null,          /* C=commit/confirm, P=prep */
+  type#           number,       /* loosely-coupled or tightly-coupled branch */
+  parent_dbid     varchar2("M_IDBI"),              /* null string->top level */
+  parent_db       varchar2("M_XDBI"),      /* global name of parent database */
+  db_userid       integer not null)                 /* creator of DB session */
+/
+create table pending_sub_sessions$             /* child of pending_sessions$ */
+( local_tran_id   varchar2("M_LTID") not null,  /* w/session_id,1:n w/parent */
+  session_id      smallint not null,                             /* of local */
+  sub_session_id  smallint not null, /* session,sub_session is remote branch */
+  interface       varchar2(1) not null,          /* C=hold commit, N=no hold */
+  dbid            varchar2("M_IDBI") not null,                  /* of remote */
+  link_owner      integer not null,                       /* owner of dblink */
+  dblink          varchar2("M_XDBI") not null,
+  branch_id       raw("M_GBID"),                 /* branch id of sub session */
+  spare           raw("M_GBID"))               /* spare field for future use */
+/
+rem
+rem create the scn<->time tracking table that smon will maintain
+rem as a circular queue - notice that we populate the entire
+rem table with at least 144000 entries (enough for 5 days).
+rem
+rem -"thread" is for backward compatibility and is always 0
+rem -"orig_thread" is for upgrade/downgrade
+rem - scn_wrp, scn_bas, and time_dp are for backward compatibility
+rem   and not queried by the ktf layer.
+rem Also create the props$ entry to indicate that the mapping is in GMT.
+rem 
+
+Rem Add to props$ the flashback timestamp time zone information.
+Rem Both flashback timestamp and the timestamp in smon_scn_time table are
+Rem now recorded in GMT.
+insert into props$ (name, value$, comment$)
+  values('Flashback Timestamp TimeZone', 'GMT',
+         'Flashback timestamp created in GMT');
+commit;
+/
+
+
+create cluster smon_scn_to_time_aux (
+  thread number                         /* thread, compatibility */
+) tablespace SYSAUX
+/
+create index smon_scn_to_time_aux_idx on cluster smon_scn_to_time_aux
+/
+create table smon_scn_time (
+  thread number,                         /* thread, compatibility */
+  time_mp number,                        /* time this recent scn represents */
+  time_dp date,                          /* time as date, compatibility */
+  scn_wrp number,                        /* scn.wrp, compatibility */
+  scn_bas number,                        /* scn.bas, compatibility */
+  num_mappings number,
+  tim_scn_map raw(1200),
+  scn number default 0,                  /* scn */
+  orig_thread number default 0           /* for downgrade */
+) cluster smon_scn_to_time_aux (thread)
+/
+create unique index smon_scn_time_tim_idx on smon_scn_time(time_mp) 
+  tablespace SYSAUX
+/
+create unique index smon_scn_time_scn_idx on smon_scn_time(scn)
+  tablespace SYSAUX
+/

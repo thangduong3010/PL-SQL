@@ -1,0 +1,886 @@
+rem 
+rem $Header: rdbms/admin/sql.bsq /main/606 2008/07/14 17:25:59 vliang Exp $ sql.bsq 
+rem  MODIFIED
+rem   huagli     06/09/08 - add ddst.bsq
+rem   dvoss      01/03/07 - add dlmnr.bsq
+rem   rdecker    10/20/06 - create SYSAUX before running dplsql.bsq
+rem   jklein     08/01/05 - diag 11g - split-up into units 
+rem   sdavidso   08/01/05 - add tranform_param type check info 
+rem   mmpandey   06/07/05 - 4390808: increase the cache value in audses$
+rem   mvemulap   05/02/05 - bug fix for 4318925 
+rem   mhho       04/20/05 - change colklc column size in enc$ 
+rem   tfyu       02/28/05 - Bug 4262763
+rem   htran      03/11/05 - remove transportable from fgr$_tablespace_info
+rem   mmcracke   03/14/05 - add ddm.bsq for data mining models
+rem   alakshmi   02/28/05 - error recovery for maintain_ apis
+rem   ddas       01/07/05 - #(4052436) add hint_string to ol$hints
+rem   sourghos   01/06/05 - Fix bug 4043119
+rem   ilyubash   11/05/04 - Add gen column to i_aw_prop$ index 
+rem   elu        01/03/05 - streams apply spilling 
+rem   htran      11/15/04 - comments for spare1 in user$ and streams$_prepare_*
+rem   apadmana   10/05/04 - bug3607838: manage any queue
+rem   clei       04/15/04 - add view merge permission
+rem   weiwang    10/14/04 - set queue flag in base view
+rem   mtakahar   09/03/04 - create mon_mods_all$
+rem   clei       09/01/04 - add comments to encryption property flags
+rem   xuhuali    03/31/04 - audit java 
+rem   kdias      07/15/04 - revisit privs granted to OUTLN user 
+rem   nmanappa   07/20/04 - bug 3690876 - clean privileges 194-199,239,240
+rem   dmwong     07/21/04 - fix connect role to only contain create session 
+rem   skaluska   07/09/04 - split up tsm_hist$ into tsm_src$, tsm_dest$ 
+rem   araghava   07/07/04 - (3748430): make partitioning indexes unique. 
+rem   clei       06/29/04 - add enc$
+rem  ssvemuri    06/25/04 - change notification privilege
+rem   ramkrish   06/16/04 - correct model nmspc and type 
+rem   nshodhan   06/11/04 - use streams$_capture_process.spare3 
+rem   liwong     06/08/04 - Add oldest_transaction_id
+rem   dcassine   05/28/04 - added ua_notification_handler and ua_ruleset
+rem   rvissapr   05/13/04 - bug 3282580 - restrict failed login attempts 
+rem   htran      05/17/04 - change comment for apply$_source_schema.global_flag
+rem   dsemler    05/14/04 - add dtp support 
+rem   dsemler    04/30/04 - remove goodness goal add none 
+rem   dsemler    04/13/04 - add service goal to service$ 
+rem   jciminsk   04/28/04 - merge from RDBMS_MAIN_SOLARIS_040426 
+rem   lchidamb   03/22/04 - add director alert_history table 
+rem   skaluska   03/30/04 - instance SID in tsm_hist$ 
+rem   skaluska   03/16/04 - TSM recovery 
+rem   ckantarj   02/27/04 - add cardinality columns to service$ 
+rem   skaluska   03/05/04 - add roundtrips 
+rem   jstamos    02/25/04 - director indexes 
+rem   jciminsk   12/12/03 - merge from RDBMS_MAIN_SOLARIS_031209 
+rem   lchidamb   08/29/03 - add retry_count, retry_time 
+rem   lchidamb   08/14/03 - add director quiesce operations table 
+rem   lchidamb   08/13/03 - add node/service policy tables 
+rem   lchidamb   07/29/03 - add db director escalation table
+rem   elu        07/25/03 - modify dir$database_attributes
+rem   jstamos    07/29/03 - add director columns 
+rem   weiwang    07/17/03 - reserve a property number in 
+rem                         streams$_propagation_process
+rem   elu        07/08/03 - add grid db priority
+rem   ckantarj   07/03/03 - add TAF characteristics to service$ 
+rem   jstamos    06/30/03 - add director state
+rem   sbodagal   05/13/04 - add chdlevid# to dimjoinkey$
+rem   mbrey      04/08/04 - add rsid to cdc_change_sets 
+rem   mbrey      03/30/04 - add CDC 10gR2 metadata 
+rem   lkaplan    02/22/04 - generic lob assembly 
+rem   rvissapr   04/14/04 - dblink changes 
+rem   rramkiss   04/21/04 - add CREATE EXTERNAL JOB system privilege 
+rem   alakshmi   04/19/04 - system privilege READ_ANY_FILE_GROUP 
+rem   htran      04/14/04 - add global_name and file size info for file groups
+rem   mxiao      03/25/04 - support synonym in materialized view
+rem   sbodagal   04/06/04 - add a column to dimlevel$
+rem   ssy        03/18/04 - tables with adt/lob must come after coltype$
+rem   ssy        03/08/04 - bug3477195: objauth$ is created as soon as possible
+rem   ayoaz      03/02/04 - add index on type$.hashcode
+rem   clei       03/08/04 - remove SECURITY_PROFILE privileges
+rem   rdecker    03/14/02 - add procedureplsql$
+rem   bpwang     03/04/04 - add error_creation_time in apply$_error 
+rem   alakshmi   02/24/04 - manage_file_group privilege 
+rem   htran      02/18/04 - file group repository tables 
+rem   avaliani   02/24/04 - bug 3326388: move inserts after objauth$ creation 
+rem   sbalaram   01/26/04 - add apply$_error_txn
+rem   ramkrish   12/19/03 - reserve type for mining models
+rem   mtakahar   10/22/03 - add storage parameters to stats storage objects
+rem   kmuthukk   10/23/03 - plsql ncomp: delete shared lib on drops 
+rem   vraja      10/20/03 - bug3161569: rename FLASHBACK ANY TRANSACTION to 
+rem                         SELECT ANY TRANSACTION 
+rem   ksurlake   11/05/03 - Move creation of reg$ and loc$ to catqueue
+rem   mtyulene   09/29/03 - change cache_stats_1$ and cache_stats_0$,
+rem   zqiu       10/02/03 - new column in aw_prop$ 
+rem   arithikr   10/02/03 - 3121812 - new drop_segments column to 
+rem   gmulagun   09/11/03 - change type of audit PROCESS# column 
+rem   sbalaram   09/02/03 - add comments for Streams tables
+rem   lchidamb   08/29/03 - add retry_time, retry_count 
+rem   smuthuli   08/07/03 - add inc# to seg_dollar 
+rem   dsemler    08/06/03 - add system service entry 
+rem   lchidamb   08/14/03 - add director quiesce operations table 
+rem   lchidamb   08/13/03 - add node/service policy tables 
+rem   lchidamb   07/29/03 - add db director escalation table
+rem   elu        07/25/03 - modify dir$database_attributes
+rem   jstamos    07/29/03 - add director columns 
+rem   weiwang    07/17/03 - reserve a property number in 
+rem                         streams$_propagation_process
+rem   elu        07/08/03 - add grid db priority
+rem   ckantarj   07/03/03 - add TAF characteristics to service$ 
+rem   jstamos    06/30/03 - add director state
+rem   clei       05/26/03 - add flg to obj$, syn policy not tied to base obj
+rem   mramache   06/23/03 - sql profiles
+rem   liwong     06/18/03 - dml_handlers for virtual objects
+rem   dsemler    06/12/03 - add svc hash and date hash to service$
+rem   liwong     05/30/03 - Support virtual constraints
+rem   lkaplan    05/23/03 - assemble lobs
+rem   krajaman   05/20/03 - make d_owner# a null column in dependency$
+rem   svivian    06/13/03 - add node_name to ol$nodes
+rem   mdevin     05/22/03 - smon_scn_time for RAC-global mappings
+rem   sbalaram   05/21/03 - add tables to support Streams conf. detection off
+rem   tfyu       06/10/03 - comment for view$.flags on MV ref
+rem   krajaman   05/20/03 - make d_owner# a null column in dependency$
+rem   arithikr   05/21/03 - 1486580 - create ind_online$ table
+rem   rvissapr   05/20/03 - bug 2944537 - add exempt identity policy
+rem   elu        05/07/03 - add start_scn to streams$_apply_milestone
+rem   jstamos    04/24/03 - add temp tables for director
+rem   nshodhan   04/18/03 - bug 2691492
+rem   skaluska   04/15/03 - transparent session migration
+rem   mramache   02/04/03 - change sql$ definition
+rem   kyagoub    02/02/03 - Add sql tuning set privileges
+rem   mtyulene   01/03/03 - add cache_stats$ table
+rem   mtakahar   09/10/02 - add stats_target$
+rem   mramache   12/17/02 - adding sql$* tables 
+rem   awitkows   04/14/03 - comment for sum.spare1
+rem   gmulagun   04/06/03 - bug 2822534: rename tran_id to xid
+rem   zqiu       03/10/03 - more columns for aw_obj$
+rem   twtong     03/14/03 - add comment to sumkey
+rem   vraja      02/10/03 - add FLASHBACK ANY TRANSACTION priv
+rem   akalra     02/13/02 - change smon_scn_time
+rem   nshodhan   01/30/03 - bug-2773188 add flag for downstream capture
+rem   alakshmi   01/20/03 - streams$_capture_process.version varchar2(30=>64)
+rem   pabingha   01/17/03 - CDC subscription description length
+rem   clei       01/15/03 - change rls_sc$
+rem   htran      01/13/03 - unique index only on streams_name for
+rem                         streams$_message_consumers
+rem   ayoaz      01/03/03 - add AUTHID_CURRENT_USER bit in indtypes$.property
+rem   twtong     01/10/03 - fix bug-2677089
+rem   lbarton    12/31/02 - modify metascript, metascriptfilter
+rem   mbrey      12/19/02 - add columns to cdc_change_tables
+rem   htran      12/11/02 - increase size of some Streams columns storing
+rem                         procedure names
+rem   raguzman   12/19/02 - add dbid column to fga_log$ and aud$
+rem   zqiu       12/02/02 - add aw_*$ table indice 
+rem   rvissapr   12/15/02 -  make policy text not null
+rem   zqiu       11/20/02 - modify aw_*$ tables
+rem   akalra     11/26/02 - remove indexes on smon_scn_time
+rem   gmulagun   11/20/02 - add lsqlbind clob column
+rem   alakshmi   11/08/02 - add streams$_capture_process.version
+rem   pabingha   11/11/02 - add b.c. field to cdc_subscribers
+rem   gclaborn   11/08/02 - rework metaxslparam$ for new parsing
+rem   ataracha   11/07/02 - Add out-of-line flag in opqtype$
+rem   smuthuli   12/11/02 - Default permanent tablespace
+rem   tfyu       11/22/02 - use of tab$.spare5 for summary dep table info 
+rem   mvemulap   09/20/02 - add table for ncomp dlls
+rem   akalra     10/31/02 - add indexes on smon_scn_time
+rem   mtyulene   10/02/02 - add ind_stats$
+rem   rramkiss   10/23/02 - Add job scheduler system privileges
+rem   liwong     10/23/02 - Add status_change_time
+rem   vmarwah    10/21/02 - lob$ flag comments.
+rem   jgalanes   10/22/02 - Add expimp_tts_ct$ for export/import use
+rem   apadmana   10/18/02 - Add table streams$_message_rules
+rem   apadmana   10/14/02 - Sysaux: Streams
+rem   masubram   10/06/02 - add new online redefinition table
+rem   schakkap   10/03/02 - tab_stats$, fixed_obj$
+rem   zqiu       10/09/02 - add AW_*$ tables to sysaux
+rem   asundqui   10/07/02 - new Resource Manager parameters
+rem   dcassine   10/03/02 - add start & end date to streams$_apply_process
+rem   dcassine   10/01/02 - add start & end date to streams$_capture_process
+rem   vmarwah    10/04/02 - Undrop Tables: add BASE_OBJECT to RecycleBin views
+rem   gkulkarn   10/09/02 - "Use SPARE1 in ccol$ as a flag field"
+rem   apadmana   09/30/02 - Add table streams$_privileged_user
+rem   gkulkarn   09/28/02 - Add New supplemental logging constraint types
+rem   masubram   08/28/02 - add new dictionary tables for online redefinition
+rem   btao       09/20/02 - grant four new privileges to system
+rem   gmulagun   09/16/02 - enhance fga_log$ and aud$ audit trails
+rem   qyu        09/13/02 - add more property flag in type$ 
+rem   kdias      09/13/02 - add advisor priv
+rem   rxgovind   09/10/02 - update dependency$ for finer grained dependencies
+rem   lbarton    09/18/02 - add metapathmap$
+rem   vmarwah    09/04/02 - Undrop Tables: Record BaseObj and Object to purge.
+rem   clei       09/04/02 - add ANALYZE ANY DICTIONARY privilege
+rem   clei       09/04/02 - add comments on rls$
+rem   twtong     09/06/02 - add markerdty to sum$
+rem   elu        08/20/02 - add negative rule sets for streams
+rem   liwong     08/19/02 - Add streams$_extra_attrs
+rem   cku        08/12/02 - lrg 103639 - reserve bit for queues
+rem   gtarora    08/23/02 - add endian flag to lob$
+Rem   mxiao      07/26/02 - add columns to mlog$, cdc_change_tables$
+rem   wnorcott   07/25/02 - CDC named subscriptions
+rem   clei       08/12/02 - add suport on new VPD api
+rem   qyu        08/12/02 - add more lob property flags in lob$ 
+rem   vmarwah    08/08/02 - Undrop Tables: base obj info in RecycleBin$
+rem   rpang      07/22/02 - Debug-info flag for type
+rem   zqiu       07/17/02 - modify aw$, ps$ for 10i
+rem   vmarwah    07/17/02 - Undrop Tables: Reserving Seg$ flag (flushed objs).
+rem   tchorma    07/23/02 - Support WITH COLUMN CONTEXT clause for operators
+rem   dcassine   07/09/02 - add precommit handler
+rem   nshodhan   07/03/02 - streams$_capture_process : downstream capture
+rem   mlfeng     07/02/02 - Adding create sysaux
+rem   zqiu       07/17/02 - modify aw$, ps$ for 10i
+rem   shwang     07/14/02 - bitmap index version in ind$:flags
+rem   vkarra     07/19/02 - tablespace groups
+rem   mxiao      06/16/02 - Change Snapshot to Materialized View
+rem   pabingha   07/12/02 - CDC change source/set new columns
+rem   hsbedi     07/19/02 - adding external_tab$ property.
+rem   dcwang     05/23/02 - move system privileges on rules.
+rem   rvissapr   06/20/02 - add changes to fga
+rem   twtong     05/22/02 - add sumqb$ table
+rem   twtong     07/22/02 - extend sum$ to support rw equiv
+rem   yhu        07/11/02 - enable array insert with domain index
+rem   twtong     06/12/02 - extend snap$ to support col alias
+rem   tkeefe     05/23/02 - Add new credential type in proxy_data$
+rem   tchorma    06/18/02 - Support Alter Operator Add/Drop Binding
+rem   mdilman    05/06/02 - add SFT flag to TS$
+rem   dcwang     05/02/02 - change property for import/export full database.
+rem   twtong     05/09/02 - support MV GR with set opt
+rem   asundqui   05/03/02 - consumer group mapping interface
+rem   sbedarka   04/16/02 - #(2264056) add index on obj# to various part$
+rem   dcwang     03/25/02 - add import/export full database
+rem   vmarwah    03/11/02 - Undrop Tables: Creating RECYCLEBIN$ table.
+rem   sagrawal   03/04/02 - PL/SQL warnings
+rem   lbarton    02/06/02 - new metadata API tables for 10i
+rem   twtong     02/11/02 - add name to dimatt$
+rem   amanikut   01/29/02 - update comments
+rem   araghava   01/18/02 - remove some indexes on partitioned tables
+rem                         since they don't improve performance
+rem   ayoaz      01/09/02 - Add WITHOUT_DML flag bit in indtypes$.property
+rem   jdraaije   01/07/02 - Add dblink to index i_apply_source_obj2
+rem   wesmith    11/19/01 - add additional columns to Streams tables
+rem   wojeil     11/26/01 - adding global temporary table map_object.
+rem   weiwang    11/13/01 - change index i_objtype to unique on two columns
+rem   weiwang    11/05/01 - add rules engine system privileges
+rem   masubram   11/02/01 - add timestamp column to stream$_prepare_ddl
+rem   kmeiyyap   11/02/01 - add streams$_propagation_process.
+rem   jingliu    11/01/01 - add timestamp column to streams$_prepare_ddl
+rem   nshodhan   11/01/01 - Fix apply$_error
+rem   sbalaram   11/01/01 - add columns to milestone
+rem   nshodhan   11/01/01 - Fix apply$_error
+rem   nshodhan   11/01/01 - Fix apply$_error
+rem   masubram   11/01/01 - modify streams$_capture_object
+rem   wesmith    10/31/01 - add global_flag to apply$_source_schema, 
+rem                         streams$_prepare_ddl
+rem   wesmith    10/31/01 - add global_flag to apply$_source_schema, 
+rem                         streams$_prepare_ddl
+rem   wesmith    10/30/01 - streams$_apply_process: add ruleset
+rem   lkaplan    10/29/01 - Change apply$_dest_obj_ops
+rem   wesmith    10/29/01 - streams$_apply_process: add more columns
+rem   masubram   10/28/01 - modify stream$_prepare_ddl
+rem   apadmana   10/26/01 - Move tables from catlrep.sql
+rem   lvbcheng   11/05/01 - action line no offset
+rem   cmlim      10/31/01 - update reftyp comment in refcon$ for unscoped pkrefs
+rem   skabraha   10/24/01 - new properties flag for method$
+rem   ayoaz      10/03/01 - add synobj# to subcoltype$.
+rem   smuralid   10/25/01 - add "compressed" property-value to lob$
+rem   vmarwah    10/18/01 - Extending LOB$ (LOB Retention compatibility).
+rem   jcarey     10/18/01 - remove unnecessary aw$ columns
+rem   jcarey     09/24/01 - more aw$ and ps$.
+rem   esoyleme   09/10/01 - AW$ and PS$.
+rem   vshukla    10/29/01 - hsc: row movement - course correction!.
+rem   clei       10/02/01 - change rls_grp$ and rls_ctx$
+rem   dmwong     10/08/01 - fga.sql_text varchar2->clob.
+rem   wojeil     10/30/01 - modifying mapping dict tables.
+rem   amanikut   09/24/01 - UDC : fix type$.properties
+rem   amanikut   09/11/01 - user-defined constructors
+rem   vshukla    09/26/01 - add comments to explain use of spare2 in partobj$,
+rem                         tabcompart$.
+rem   clei       09/15/01 - change i_rls
+rem   weiwang    09/05/01 - i_objtype should not be a unique index
+rem   wojeil     09/04/01 - 
+rem   ayoaz      05/31/01 - Add synobj# to coltype$.
+rem   twtong     09/06/01 - DDL snapsum integration phase II
+rem   ayoaz      08/09/01 - add synobj# to attr$, res$, coll$, param$
+rem   ayoaz      08/07/01 - Add kotadx
+rem   sbasu      08/14/01 - add highboundlen, hiboundval, bhiboundval to 
+rem                         [tab|ind]subpart$ for R+(L/R) part.
+rem   tfyu       08/22/01 - add bit flag for sumpartlog$
+rem   tfyu       08/09/01 - add rowid type for detailcolfunction
+rem   akalra     08/28/01 - add FLASHBACK ANY TABLE to privilege maps.
+rem   akalra     07/13/01 - use up spare6 in ind$ and tab$
+rem   yuli       08/13/01 - change comments of ts$.dflogging
+rem   dmwong     07/11/01 - move delete on fga_log$ .
+rem   dcwang     07/12/01 - add new privilege: grant any object privilege
+rem   dpotapov   08/09/01 - hsc
+rem   mxiao      06/28/01 - change SUMMARY to MATERIALIZED VIEW
+rem   dmwong     06/18/01 - add delete on fga_log$ to delete_catalog_role.
+rem   shshanka   07/17/01 - Add defsubpart$ and defsubpartlob$ for templates.
+rem   twtong     05/31/01 - add col instance# to sumdep$
+rem   vmarwah    07/10/01 - add processing for LOB RETENTION storage option.
+rem                         using a spare field from LOB$ to hold retention.  
+rem   lbarton    06/11/01 - add index on lob$(lobj#) and lobcomppart$(partobj#)
+rem   wojeil     08/10/01 -
+rem   mlfeng     07/23/01 - Adding File Mapping Info
+rem   narora     04/17/01 - add index on ntab$(ntab#)
+rem   bpanchap   04/11/01 - Adding index on obj# in tabsubpart
+rem   mjstewar   03/21/01 - Add password clause to CREATE DATABASE
+rem   dpotapov   04/03/01 - hsc
+rem   tkeefe     03/06/01 - Simplifying n-tier schema normalization.
+rem   wnorcott   02/14/01 - add type, version fields to cdc_change_tables$.
+rem   nshodhan   02/06/01 - Remove exptime$
+rem   gtarora    02/01/01 - add flag to coltype
+rem   masubram   01/22/01 - add timestamp column to sumpartlog$
+rem   abrumm     02/06/01 - external_tab$: use LOBs for storing access params
+rem   dmwong     12/19/00 - add SELECT ANY DICTIONARY to DBA.
+rem   sagrawal   01/08/01 - flags for procedureinfo
+rem   rmurthy    01/11/01 - remove sysauth_recurse
+rem   dmwong     12/11/00 - fix audit option string.
+rem   gtarora    12/14/00 - comment the flags, index for roottoid and supertoid
+rem   dalpern    11/30/00 - privileges for kga debugger
+rem   clei       11/29/00 - add SELECT ANY DICTIONARY privilege
+rem   rwessman   11/20/00 - Fixed typo
+rem   rwessman   11/17/00 - Backed out tab_ovf$ due to problems in upgrade and
+rem   abgupta    12/11/00 - add flg - idx was created as part of create MV
+rem   bemeng     12/11/00 - change object_stats to object_usage
+rem   bpanchap   12/27/00 - Adding field to sumpartlog
+rem   clei       11/13/00 - add comment for tab$.trigflag
+rem   bpanchap   11/21/00 - Adding a flags column to sumpartlog\$
+rem   cku        08/28/00 - PBMJI: use col$:spare2
+rem   bpanchap   11/07/00 - Adding sequence# to sumdelta$.
+rem   mkrishna   11/13/00 - remove not exported column from col$
+rem   mkrishna   11/10/00 - change opqtype$ comments for XMLTYPE
+rem   varora     11/07/00 - add SQLJ type_misc$ properties
+rem   kquinn     11/17/00 - 1375879: alter operator -> alter any operator
+rem   mmorsi     10/24/00 - Support for ORAData in SQLJ.
+rem   pabingha   09/19/00 - add CDC oid/new timestamps
+rem   mkrishna   11/03/00 - add comment
+rem   skabraha   10/02/00 - Adding a new property to ind$
+rem   lsheng     10/11/00 - add viewcon$ 
+rem   rvissapr   09/08/00 - add session_cpu to aud$
+rem   apadmana   08/15/00 - Add oldest_new to mlog$
+rem   masubram   08/04/00 - modify replication metadata to use CDC
+rem   esedlar    12/22/00 - Add sysrole_recurse$
+rem   amganesh   09/10/00 - .
+rem   smuthuli   07/19/00 - add type for SMU
+rem   jklein     08/19/00 - smon scn tracking to time.
+rem   mthiyaga   09/07/00 - Add dataless field to sumdetail$
+rem   dmwong     08/22/00 - more info in fga_log$.
+rem   wesmith    08/18/00 - Use KOTHCL
+rem   bemeng     08/17/00 - add default temp tablespace name into props$
+rem   mmorsi     08/07/00 - Fix compatibility problem.
+rem   araghava   08/05/00 - Add charsetform to partcol$, subpartcol$.
+rem   amozes     08/04/00 - add logging flag
+rem   wesmith    08/01/00 - Materialized views: change version# to hashcode
+rem   mtyulene   08/01/00 - add aux_stats$ table
+rem   araghava   07/28/00 - Add bhiboundval to tabpart$,
+rem                         tabcompart$, indpart$ and indcompart$.
+rem   dmwong     07/28/00 - add type to rls$
+rem   dmwong     07/28/00 - add column for client id in aud$.
+rem   rwessman   06/29/00 - Added tab_ovf$ to add extra columns to tab$. Adding
+rem   dmwong     06/29/00 - add fga_log for fga specific audit trail.
+rem   lbarton    07/28/00 - datapump: add metastylesheet
+rem   thoang     07/15/00 - Use new macro for type's hashcode 
+rem   nagarwal   07/28/00 - add a property flag to ind$ 
+rem   rguzman    07/24/00 - Add a flags column to sequences
+rem   araghava   06/25/00 - Add charsetid, type#, segcol# to partcol$, 
+rem                         subpartcol$
+rem   mmorsi     06/29/00 - External java method name (sqlj)..
+rem   shihliu    06/27/00 - add resumable privilege
+rem   yhu        07/11/00 - add two bits to ind$ (domain idx on IOT & row-move)
+rem   kosinski   06/02/00 - Persistent parameters
+rem   lsheng     06/28/00 - update comment for cdef$.defer.
+rem   rmurthy    06/19/00 - change objauth.option to flag bits
+rem   awitkows   06/27/00 - extend sumagg with agginfo
+rem   rmurthy    06/29/00 - procedureinfo: add impltype columns for
+rem                         pipelined & aggr functions
+rem   lbarton    06/23/00 - datapump: move dictionary inserts to catmeta.sql
+rem   mkrishna   06/29/00 - add more columns to opqtype$
+rem   vkarra     06/18/00 - update ts$ flags
+rem   thoang     06/20/00 - Add hashcode column to type$ 
+rem   esoyleme   06/20/00 - comment large key flag in ind$
+rem   rmurthy    06/23/00 - add flag in col for typeid columns
+rem   rherwadk   06/19/00 - change switch_group parameters
+rem   vkarra     06/18/00 - update ts$ flags
+rem   lbarton    06/12/00 - datapump facility name change
+rem   svivian    06/12/00 - add spare field to ol$hints
+rem   twtong     06/07/00 - add columns to store instance# for summary metadata
+rem   sbodagal   06/06/00 - Use M_IDEN in place of 30 in outln tables
+rem   mkrishna   06/06/00 - change opqtype$
+rem   kosinski   06/02/00 - Persistent parameters
+rem   lbarton    06/01/00 - add more rows to metaxslparam
+rem   dpotapov   05/31/00 - Change pdml itl property.
+rem   dmwong     05/27/00 - add new system privs into system_privs_map.
+rem   rvenkate   05/26/00 - index i_snap2 added for query of snap$ for sec MVs
+rem   mkrishna   05/23/00 - add and fix opqtype$
+rem   rmurthy    06/06/00 - add short typeid support
+rem   slawande   05/19/00 - Add extended flags for snap$.
+rem   weiwang    05/16/00 - add column status to reg$
+rem   lbarton    05/16/00 - changes to mdAPI tables
+rem   bemeng     05/25/00 - add table object_stats
+rem   mmorsi     05/15/00 - SQLJ changes for name generation and serialized one
+rem   liwong     05/10/00 - Add exptime$
+rem   mkrishna   05/10/00 - add opqtype$
+rem   spsundar   05/09/00 - remove not null constraint from dataobj# in indpart
+rem   sbodagal   05/04/00 - change the size of user_table_name in OL$HINTS
+rem   tfyu       05/03/00 - use spare1 of tabsubpart for scn
+rem   wixu       05/02/00 - wixu_resman_chg
+rem   wesmith    05/02/00 - Revert snap$.rel_query back to a clob
+rem   thoang     05/01/00 - Add kottbx$ table for types
+rem   aime       05/01/00 - temporary change: rel_query datatype to varchar2
+rem   twtong     04/28/00 - add column inline# to sumdep
+rem   ayalaman   04/26/00 - iot overflow statistics
+rem   bpanchap   04/26/00 - Removing partition object number from sumpred
+rem   wesmith    04/24/00 - mlog$ comment fixes
+rem   gtarora    04/21/00 - superobj - remove unique index on supertype
+rem   rmurthy    04/21/00 - type, attr, method - handle local&inherited
+rem   smuthuli   04/20/00 - SMU: Create default undo tablespace
+rem   varora     04/19/00 - add vtable
+rem   dmwong     04/17/00 - add support for fine grained auditing
+rem   wnorcott   04/12/00 - Integrate sync capture with MV logs
+rem   liwong     04/12/00 - Reserve 0x80 bit in trigger$.property
+rem   gtarora    04/11/00 - Column substitutability
+rem   dmwong     04/11/00 - update rls$, rls_ctx$ and rls_grp$ for pfgac
+rem   allee      04/13/00 - update spec repository tables.
+rem   dmwong     04/07/00 - add support for application role
+rem   gclaborn   04/06/00 - Add schema object designator to metaview$
+rem   allee      03/23/00 - dictionary enhancement for spec/implementation 
+rem                         repository
+rem   rguzman    03/23/00 - Comments about Log Groups.
+rem   ayalaman   03/23/00 - iot with physical rowid mapping table
+rem   rmurthy    03/23/00 - inheritance related changes
+rem   tfyu       03/22/00 - change column name in sumkey
+rem   tfyu       03/20/00 - add xpflags in sum system table
+rem   bemeng     03/13/00 - create default temp ts at db creation time
+rem   lbarton    03/17/00 - piots in datapump
+rem   twtong     03/17/00 - add suminline table
+rem   awitkows   03/15/00 - grouping sets
+rem   rwessman   03/14/00 - N-tier enhancements
+rem   dmwong     03/13/00 - create new index for rls$
+rem   nagarwal   03/09/00 - add version# for statistics type 
+rem   gclaborn   03/09/00 - Change mdAPI tables to support multiple models
+rem   lbarton    03/08/00 - remove grant on metaxsl
+rem   wnorcott   03/07/00 - wnorcott_cdc_metadata
+rem   rvissapr   03/03/00 - add flags column to context$ table
+rem   lbarton    03/01/00 - modify tables for dbms_metadata
+rem   nagarwal   03/01/00 - add partobj# in ustats
+rem   narora     02/23/00 - add setnum to unique constraint i_snap_refop1
+rem   narora     02/18/00 - add setnum to snap_refop
+rem   kmuthiah   02/16/00 - add undertext and undertextlength to typed_view$
+rem   kmuthiah   02/16/00 - create indices on superobj$
+rem   jingliu    02/15/00 - Add oldest_oid to mlog$ 
+rem   spsundar   02/14/00 - add indpart_param$ for partn specific params
+rem   ayalaman   02/09/00 - index on urowid column(s) flag
+rem   evoss      02/14/00 - external tables
+rem   rtoohey    02/07/00 - add comment for pdml itl property on tab$
+rem   sbodagal   01/27/00 - introduce a new table outln.ol$nodes
+rem                       - add columns to outln.ol$hints table
+rem   wixu       01/26/00 - change_for_RES_MANGR_extensions
+rem   bpanchap   02/16/00 - Adding sumpred
+rem   amozes     01/27/00 - bitmap join index
+rem   kmuthiah   01/25/00 - add comments to property of view$
+rem   wesmith    01/25/00 - Add tables for replicated objects MV
+rem   tfyu       01/17/00 - add sumpartlog table
+rem   rjenkins   01/20/00 - extended unicode support
+rem   gkulkarn   01/20/00 - Reserve SPARE2 column in OBJ$ for OBJV#
+rem   spsundar   12/08/99 - add comment to ind$ to indicate property bit taken
+rem   spsundar   12/08/99 - add comment to ind$ to indicate property bit taken
+rem   jklein     11/30/99 - row seq #
+rem   twtong     11/30/99 - add rewrite obj privilege
+rem   gclaborn   11/19/99 - Add tables for Metadata API
+rem   twtong     11/17/99 - add ON COMMIT REFRESH obj privilege
+rem   weiwang    11/08/99 - add column presentation and version to reg$
+rem   jklein     11/30/99 - row seq #
+rem   nagarwal   10/29/99 - rename secondary_object
+rem   nagarwal   09/21/99 - make changes for ext indexing enhancements
+rem   amozes     09/24/99 - add col_usage$                                     
+rem   vpesati    08/09/99 - change comment for col property
+rem   kosinski   08/13/99 - Bug 822440: Add PLS_TYPE to *_ARGUMENT$
+rem   kmuthiah   07/29/99 - add superobj$ & inheritance flags to tab$/view$
+rem   vpesati    06/28/99 - modify comment for col property
+rem   rshaikh    06/17/99 - sql version                                        
+rem   nvishnub   04/19/99 - Add index on expdepobj$ for parent object.
+rem   qyu        03/04/99 - add CACHE READS lob mode
+rem   susingh    03/02/99 - Add indexes for improving performance. BUG 574099
+rem   arrajara   03/01/99 - add index on sys.reg_snap$(snapshot_id)
+rem   rshaikh    01/21/99 - add longdbcs to javasnm
+rem   sbodagal   12/03/98 - change privileges of outln
+rem   masubram   11/17/98 - code review comments                               
+rem   weiwang    11/06/98 - add privilege ADMINISTER DATABASE TRIGGER
+rem   masubram   10/13/98 - store filter, equijoin bitvectors in snap_reftime
+rem   mziauddi   09/22/98 - change priv keyword REWRITE ==> QUERY REWRITE
+rem   sbedarka   10/09/98 -  #(725220) set maxvalue cycle for ora_tq_base$ sequ
+rem   avaradar   09/15/98 - modify comment for col$.property  
+rem   sbasu      09/01/98 - make deftiniexts, defextsize, defminexts, 
+rem                         defmaxexts and defextpct columns in PARTOBJ$ 
+rem                         nullable so we can represent absence of specified 
+rem                         default values by storing NULL's 
+rem   kmuthiah   09/21/98 - added 0x00200000 to property flag in col$
+rem   amozes     09/22/98 - reserve flag in hist_head                       
+rem   akruglik   08/24/98 - modify comment for TAB$.FLAGS                      
+rem   syeung     08/18/98 - make [tab|ind]compart$.dataobj# nullable and insert
+rem                         NULL to them 
+rem   nagarwal   08/17/98 - add 204 & 212 to SYSTEM_PRIVILEGE_MAP
+rem   attran     08/11/98 - PIOT:change column dataobj# of tabpart$ to nullable
+rem   amozes     07/24/98 - reserve flag for global index stats                
+rem   bgoyal     08/07/98 - add disabled flag to ind$                          
+rem   whuang     08/19/98 - fake index
+rem   mkrishna   07/09/98 -
+rem   rwessman   06/12/98  - Fixed i_audit so that multiple proxy users can exi
+rem   nagarwal   07/24/98 - remove EXECUTE OPERATOR (204) system privilege
+rem   atsukerm   06/03/98 -  add new property flags for trigger$.
+rem   akalra     06/12/98 - inicongroup -> defschclass. add comments
+rem   hasun      06/05/98  - Fix V8.1 snapshot tables                          
+rem   gclaborn   06/04/98 -  Separate exp tables for actions & objects
+rem   igreenbe   06/03/98  - fix code walkthrough problems                     
+rem   asurpur    06/02/98 -  Add flag to SYSTEM_PRIVILEGE_MAP
+rem   rguzman    05/27/98 -  Add REWRITE & GLOBAL REWRITE
+rem   bgoyal     05/26/98  - make global keyword required while creating a temp
+rem   akalra     05/26/98  - Change tables for resource manager                
+rem   mkrishna   06/23/98 -  add attribute# to attrcol table
+rem   mjungerm   05/19/98 -  modify javsnm$ to hold utf8
+rem   gclaborn   05/19/98 -  Add tables exppkgs$ and expdep$
+rem   sbalaram   05/14/98 -  add flavor_id column to snap$                    
+rem   nagarwal   05/11/98 -  remove objtype from ustats$
+rem   syeung     05/07/98 -  store unspecified [no]logging attributes in 
+rem                          [tab|ind]compart$
+rem   amozes     04/30/98  - add mon_mods$ for auto_gather_stats               
+rem   akruglik   05/06/98 -  add tabfragobj# to lobfrag$ and 
+rem                          tabpartobj# to lobcomppart$
+rem   nagarwal   05/02/98 -  create indexes on operator catalogs
+rem   akruglik   05/01/98 -  add defbufpool to PARTLOB$ and LOBCOMPPART$       
+rem   syeung     04/27/98 -  remove type# from tabcompart$ and indcompart$ and
+rem                          make deflists and defgroups nullable
+rem   bgoyal     04/20/98 -  add property flags to indicate temp. table in ind$
+rem   pejustus   04/17/98 -  plan stability changes
+rem   rguzman    05/15/98 -  Add columns for expressions in sumkey$
+rem   rshaikh    04/15/98 -  replace mlslabel columns
+rem   jwlee      04/15/98 -  Transportable/Pluggable Tablespace
+rem   esoyleme   04/15/98 -  normalize ruleset$
+rem   qyu        04/14/98 -  add flags in coltype$
+rem   rguzman    04/10/98 -  modify sum$ to match with sumdep$ changes.
+rem   akruglik   04/10/98 -  make deflists and defgroups in PARTLOB$ and
+rem                          LOBCOMPART$ nullable so we can represent absense
+rem                          of specified default value by storing NULL there
+rem   akruglik   04/09/98 -  make defts#, definiexts, defextsize, defminexts, 
+rem                          defmaxexts, defextpct in PARTLOB$ and LOBCOMPART$
+rem                          nullable so we can represent absense of specified
+rem                          default value by storing NULL there + rename
+rem                          lobcomppart$.indobj# to indpartobj#
+rem   akruglik   04/08/98 -  decided not to set a bit indicating that
+rem                          a table contains LOB columns in partobj$.flags
+rem                          because in kkpolpd.kkpofpd the information can
+rem                          be gleamed from hd
+rem   clei       04/08/98 -  add table for row level security
+rem   jfeenan    04/08/98 -  Add new dim$ columns and sumdep$
+rem   jingliu    04/07/98 -  add temp_log column to mlog$
+rem   mluong     04/03/98 -  fix missing ;
+rem   bgoyal     04/02/98  - change index stats1 to index on ustat$           
+rem   dmwong     04/02/98 -  add context$ and privileges for app ctx           
+rem   ato        04/01/98 -  add enqueue/dequeue privileges
+rem   esoyleme   04/01/98 -  add obj num to ruleset$
+rem   igreenbe   03/31/98  - add scn to snap_reftime$ for null fast refresh   
+rem   mkrishna   03/31/98  -                                                   
+rem   mkrishna   03/28/98  - add PARENT cols to trigger$                       
+rem   amozes     03/27/98 -  mark reserved flags for composite objects         
+rem   weiwang    03/26/98 -  Add reg$ and loc$ 
+rem   ayalaman   03/26/98 -  define a new flag for sec. index on IOT
+rem   amozes     03/26/98 -  add column epvalue to histgrm$
+rem   rjenkins   03/25/98 -  adding system-generated column name flag to tab$
+rem   jfeenan    03/24/98 -  Create indices for summary and dimension metadata
+rem   bgoyal     03/23/98  - flags in lob$
+rem   esoyleme   03/23/98 -  add ruleset$
+rem   mkrishna   03/19/98  - add nttrigcol to trigger                          
+rem   thoang     03/18/98 -  Add tables for partitioning lobs
+rem   tanguyen   03/11/98  - change EXTEND to EXTENDS                          
+rem   jfeenan    03/10/98 -  add levelid# to dimjoinkey$
+rem   amozes     03/09/98 -  add new columns to hist_head                      
+rem   alsrivas   03/09/98 -  removing temporary columns from INDTYPES$
+rem   smuralid   03/07/98 -  add more flags to coltype$                        
+rem   wesmith    03/03/98 -  Modify snap_colmap$ for server-side RepAPI        
+rem   hasun      03/01/98 -  Remove unecessary columns from snapshot tables
+rem   najain     02/27/98 -  pub_sub support
+rem   skaluska   02/27/98 -  Invoker's rights: new property in type_misc$
+rem   rwessman   02/25/98 -  Added support for n-tier authentication
+rem   kmuthiah   02/25/98 -  add expctoid to refcon$                           
+rem   sbasu      02/21/98 -  support for Range Composite part. local indexes
+rem                          add table indsubpart$ and indcompart$, rename
+rem                          comppart$->tabcompart$
+rem   nagarwal   02/19/98 -  Make optimizer catalog changes
+rem   bhimatsi   02/19/98 -  bitmapped ts - add flags bits to ts$
+rem   nagarwal   02/19/98 -  Modify oparg$
+rem   amozes     02/16/98 -  add flags for user-specified stats
+rem   jfeenan    02/13/98 -  Add new columns to dim$
+rem   rguzman    02/12/98 -  Audit opts: SUMMARY & DIMENSION, 
+rem                          remove ALTER SUMMARY
+rem   bgoyal     02/10/98 -  add flags for temporary tables                    
+rem   qiwang     02/10/98 -  Fix comment for dimjoinkey$
+rem   vkarra     02/10/98 -  single table hash clusters
+rem   kdias      02/05/98 -  add cols to snap$, snap_reftime$
+rem   rguzman    02/05/98 -  Add new Summary Management system privileges.
+rem   atsukerm   02/04/98 -  add corrupt flag to seg$.
+rem   mramache   02/02/98 -  Add triggerjava$ tables
+rem   rjenkins   01/28/98 -  mark functional index columns as NLS dependent
+rem   jfeenan    01/28/98 -  Add dimension tables
+rem   wesmith    01/21/98 -  Add/modify dict tables for server-side RepAPI     
+rem   jfinnert   01/20/98 -  Reserve spare3 in tab$ for summary management
+rem   rjenkins   01/20/98 -  remove 0x02 from icol.spare1
+rem   whuang     01/16/98 -  online index build project
+rem   tanguyen   01/15/98 -  change 'supertypes' to 'supertoid' column in type$
+rem   nlewis     01/15/98 -  remove mlslabels
+rem   hasun      01/15/98 -  Fix comments to mlog$
+rem   akalra     01/13/98 -  Create tables for db scheduler
+rem   hasun      01/07/98 -  Add sql_txt dize column to snap$                 
+rem   syeung     12/31/97 -  code cleanups for partitioning project:
+rem                          rename hybpart$ to comppart$, references to 
+rem                          extensible hash -> hash
+rem   nagarwal   12/30/97 -  Add statstype# in association$
+rem   atsukerm   12/29/97 -  add object# to seg$.
+rem   nagarwal   12/23/97 -  Add create operator to resource role
+rem   jweisz     12/18/97 -  update comment for collection properties          
+rem   akruglik   12/17/97 -  LOB$.PART# will not be used and can be reclaimed 
+rem                          if needed
+rem   jingliu    12/16/97 -  change comment on job$.field1
+rem   rjenkins   12/12/97 -  descending indexes
+rem   nagarwal   12/04/97 -  Adding dict tables for ext optimizer
+rem   rjenkins   12/04/97 -  adding drop column and functional index flags
+rem   khnguyen   11/27/97 -  use spares for lfprecision, fsprecision
+rem   jsriniva   11/17/97 -  add key compression to ind$ flags
+rem   jsriniva   11/15/97 -  iot: key compression
+rem   mjungerm   11/07/97 -  Add Java
+rem                          if needed
+rem   mjungerm   11/07/97 -  Add Java
+rem   jfeenan    11/07/97 -  Add update scn to tab$
+rem   wesmith    11/06/97 -  sumdelta$ shape change                            
+rem   syeung     11/01/97 -  modified comments in partobj.defts# since number 
+rem                          of tablespaces has been moved to spare2 (bytes
+rem                          4-5)
+rem   thoang     10/29/97 -  Reserved spare2 and spare4 in tab$ for drop column
+rem   rmurthy    10/23/97 -  merge from 8.0.4
+rem   jfeenan    10/20/97 -  Add summary metadata
+rem   nagarwal   10/15/97 -  Change column size in opbinding$
+rem   hasun      10/09/97 -  Modify index on sumdelta
+rem   nagarwal   10/07/97 -  Change signature size in opbinding$
+rem   atsukerm   10/02/97 -  bitmapped tablespaces field definitions.
+rem   spsundar   09/18/97 -  comment use of fields for domain idx
+rem   hasun      09/16/97 -  Add new table to support snapshots and sumdelta
+rem   nagarwal   08/26/97 -  Add return type to opbinding$
+rem   alsrivas   08/14/97 -  changing type toid to object number
+rem   hasun      08/11/97 -  Change name of sumdelta_dependency to snap_logdep
+rem   mkrishna   08/05/97 -  add non-updatable flags to col$.property
+rem   alsrivas   07/18/97 -  adding temporary fields for new parameters
+rem   syeung     07/03/97 -  add comment for table/index subpartition types in
+rem   hasun      07/01/97 -  Add sumdelta and sumdelta_dependency
+rem   hasun      06/11/97 -  Add masobj#, masflag to snap_reptime
+rem   akruglik   06/09/97 -  expand comment describing parttype/subparttype
+rem   akruglik   06/09/97 -  describe usage of partobj$.spare2 in more detail
+rem   nagarwal   06/06/97 -  Change OPBINDING.SIGNATURE format
+rem   alsrivas   05/27/97 -  adding create indextype to resource role
+rem   atsukerm   05/19/97 -  change storage parameters of larger tables
+rem   alsrivas   05/19/97 -  makind dictionary changes for indextypes
+rem   nagarwal   05/02/97 -  Adding operator to type# in obj$
+rem   rjenkins   04/24/97 -  functional indexes
+rem   nagarwal   04/24/97 -  Changing signature col in OPBINDING
+rem   alsrivas   04/24/97 -  changing indop$
+rem   alsrivas   04/21/97 -  modifying indtypes$ and adding privileges
+rem   anori      04/18/97 -  fix OIDs for KOT tables
+rem   nagarwal   04/16/97 -  Syntax correction
+rem   nagarwal   04/15/97 -  Adding privileges for operators
+rem   nagarwal   04/11/97 -  Adding tables for operators
+rem   alsrivas   04/09/97 -  adding dictionary tables for extensible indexing
+rem   mmonajje   04/06/97 -  Replace M_HOST with M_CNCT
+rem   syeung     04/05/97 -  add tabsubpart$, tslist$
+rem   mkrishna   03/31/97 -  add type component to argument$ (change made by sa
+rem   nlewis     03/28/97 -  insert row into trusted_list$
+rem   vkarra     03/17/97 -  reserve spare1 in partobj$
+rem   hasun      03/05/97 -  Expand rgroup table for parallel propagation
+rem   jbellemo   02/25/97 -  remove drops
+rem   usundara   01/01/97 -  add PRP flag to properties column in type_misc$
+rem   atsukerm   12/16/96 -  add index on tablespace name to ts$.
+rem   smuralid   11/21/96 -  add flags to tab$.properties
+rem   rshaikh    11/15/96 -  move branch_id and spare to end of pending_sub_ses
+rem   abhide     11/08/96 -  change link$
+rem   ato        11/04/96 -  add AQ flag to property in tab$
+rem   abhide     10/30/96 -  change link$
+rem   schandra   10/23/96 -  OTS: Add branch_id column to pending_sub_sessions
+rem   hasun      10/24/96 -  Alter snapshot DD:
+rem                            slog$ - user#
+rem                            snap$ - mas_roll_seg
+rem   rshaikh    10/20/96 -  swap columns added from b1->b2 to end
+rem   skaluska   10/03/96 -  incomplete types and mutually-referring types
+rem                          add property column to dependency$;
+rem                          (usundara: add properties to type_misc$)
+rem   cxcheng    09/24/96 -  rename KOTTD0$ to KOTTB$ for lint purposes
+rem   hasun      09/18/96 -  Fix merge problems
+rem   vkrishna   09/12/96 -  add comments
+rem   adowning   09/06/96 -  fix merge problem
+rem   jsriniva   08/30/96 -  use trunccnt and remove inclcol from ind
+rem   smuralid   08/28/96 -  packed type tables not supported
+rem   jsriniva   08/26/96 -  add inclcol to ind$ for iots
+rem   hasun      08/22/96 -  Reorder column in index i_snap_colmap1
+rem   asurpur    08/16/96 -  Changing FAILED_LOGINS to FAILED_LOGIN_ATTEMPTS
+rem   cxcheng    08/13/96 -  add create table KOTTD0$
+rem   tcheng     08/12/96 -  fix comment in view$.property
+rem   hasun      08/12/96 -  Add mtime to snap$ and mlog$ for incremental exp
+rem   skaluska   08/09/96 -  Fix comment in clu$
+rem   rxgovind   08/02/96 -  add new directory object privs
+rem   cxcheng    08/02/96 -  real changes
+rem   cxcheng    08/01/96 -  remove INSERT of system type info to type$
+rem   skaluska   07/31/96 -  Remove create library from resource
+rem   rmurthy    07/28/96 -  add refcon$ table
+rem   rshaikh    07/26/96 -  add sys_migrate$ for v7->v8 migration
+rem   hasun      07/26/96 -  Add colrole column to snap_colmap$ table
+rem   bhimatsi   07/25/96 -  add cols to ts$ for pitr
+rem   jwijaya    07/24/96 -  comments for charsetform
+rem   jpearson   07/24/96 -  simplify incremental export
+rem   tcheng     06/30/96 -  fix comments in triggercol$
+rem   cxcheng    06/26/96 -  fix comment for method properties for method$
+rem   hasun      06/14/96 -  Normalize snap into snap_reftime
+rem   tcheng     06/14/96 -  add comments for col$.property
+rem   amganesh   06/13/96 -  adding a defgrp_seq to user
+rem   skaluska   06/06/96 -  Add audit$ in library$
+rem   amganesh   05/31/96 -  add sequence on ugroup
+rem   asurpur    05/30/96 -  Adding grants to exp_full_database/imp_full_databa
+rem   hasun      05/29/96 -  Add lobmaskvec column to snap
+rem   jpearson   06/11/96 -  modify incexp table for objects
+rem   tcheng     05/29/96 -  add flags in view$ - updatability via triggers
+rem   cxcheng    05/29/96 -  add charform column to attribute$, collection$ etc
+rem   asurpur    05/29/96 -  Increasing the cluster key size
+rem   amganesh   05/28/96 -  make i_undo2 nonuniq
+rem   jwijaya    05/23/96 -  remove bad comments
+rem   asurpur    05/23/96 -  Moving user_history$ table from bootstrap to outsi
+rem   hyoshiok   05/22/96 -  add charform in col$
+rem   atsukerm   05/22/96 -  add future fields to space dictionary.
+rem   amganesh   05/21/96 -  index for ugrp# on ugroup
+rem   amganesh   05/21/96 -  creating index on undo.name and ugroup.name
+rem   skaluska   05/20/96 -  Add spares, library$, and changes for system gener
+rem   tanguyen   05/20/96 -  add EXECUTE ANY TYPE privilege
+rem   mmonajje   05/20/96 -  Replace interval col name with interval#
+rem   mmonajje   05/20/96 -  Replace timestamp col name with timestamps#
+rem   bhimatsi   05/18/96 -  add/rename fields in lob$
+rem   cxcheng    05/17/96 - move lob$ table before type$
+rem   rjenkins   05/17/96 -  add valid flag to cdef.defer
+rem   schandra   05/15/96 -  loosely-coupled branches
+rem   schandra   05/15/96 -  loosely-coupled branches
+rem   hasun      05/14/96 -  Add snap_colmap
+rem   nlewis     05/10/96 -  remove spare1 and spare2 from user$
+rem   nlewis     05/09/96 -  PrivDBLinks: add table for Trusted DB list
+rem   cxcheng    05/09/96 -  add comments for nchar bit in attribute$
+rem   cxcheng    05/08/96 -  remove columns in attribute$, result$, parameter$
+rem   smuralid   05/07/96 -  create lob$ before kottd$, kotad$ and kotmd$
+rem   amganesh   05/06/96 -  adding cols to undo$ and pending_trans$
+rem   amganesh   05/06/96 -  adding cols to undo$ and pending_trans$
+rem   jwijaya    05/06/96 -  add LOB namespace and type
+rem   hasun      05/06/96 -  replmerge
+rem   jwijaya    05/01/96 -  add built-in type bit
+rem   jwijaya    04/30/96 -  populate type$ with built-in types
+rem   jwijaya    04/26/96 -  fix a bad merge
+rem   jwijaya    04/25/96 -  fix col# comment
+rem   jwijaya    04/24/96 -  remove unsupported version#
+rem   jwijaya    04/22/96 -  cluster type_misc$
+rem   ksriniva   04/19/96 -  dictionary changes for database scheduling project
+rem   rshaikh    04/18/96 -  add grant directory to stmt_audit_opts_map
+rem   mriley     04/16/96 -  add indmethod# to ind$ for cooperative index metho
+rem   tcheng     04/16/96 -  add index to typed_view$
+rem   jsriniva   04/14/96 -  iot: dictionary clean-up
+rem   cxcheng    04/12/96 -  change KOT data structures
+rem   vkrishna   04/12/96 -  add flags to lob$, name to ntab$
+rem   hasun      04/12/96 -  Normalize snap$ into snap_reftime$ for SQ snaps
+rem   ixhu       04/11/96 -  AQ support: new expact$ columns, noexp$ table
+rem   jwijaya    04/11/96 -  move oid$ up
+rem   asurpur    04/09/96 -  Dictionary Protection Implementation
+rem   rshaikh    04/08/96 -  add directory to stmt_audit_opts_map
+rem   hasun      04/08/96 -  Add snapshot id sequence
+rem   tcheng     04/03/96 -  add typed_view$
+rem   hasun      04/01/96 -  Add masterversion columns to snap
+rem   jwijaya    03/29/96 -  add intcol# to partcol$
+rem   jwijaya    03/25/96 -  index for oid$ column of obj$
+rem   hasun      03/25/96 -  Add filter column and equi-join mask vector
+rem                          columns to snap_refop$
+rem   hasun      03/21/96 -  Modify comments for snap_refop$
+rem   hasun      03/20/96 -  Add TABNUM column to snap_refop$
+rem   smuralid   03/20/96 -  add new property flag in col$ for columns stored
+rem                       -  in lobs
+rem   bhimatsi   03/19/96 -  lob$ - add tsno for segment info
+rem   hasun      03/15/96 -  Add STATUS columns to snap
+rem   rshaikh    03/12/96 -  add type to STMT_AUDIT_OPTION_MAP
+rem   sthakur    03/10/96 -  add kopm$, remove koptds$
+rem   jwijaya    03/07/96 -  global TOID support
+rem   asurpur    03/05/96 -  Logon Re-organization and Password Management
+rem   rxgovind   03/04/96 -  add dir$ table
+rem   ssamu      02/27/96 -  move 7.3 migration flag to tab/tabpart
+rem   bhimatsi   02/27/96 -  minimum feature - add minimum extent to ts$
+rem   lwillis    02/07/96 -  Change histogram cluster
+rem   jwijaya    02/23/96 -  continue global OID work
+rem   hasun      02/20/96 -  Add snap_refop$ to store fast refresh operations
+rem   hasun      02/13/96 -  Add sys.mlog_refcol$ for subquery snapshot
+rem   smuralid   02/12/96 -  add field kernelcols to tab$
+rem   hasun      02/09/96 -  Merge pk_snapshot -> sq_snapshot
+rem   ashgupta   02/09/96 -  Merging  snapshot registration code (proj 2045)
+rem   jwijaya    02/09/96 -  global OID support (obj$.oid$, oid$)
+rem   cxcheng    02/08/96 -  change comment for property in tab$
+rem   cxcheng    02/08/96 -  remove value_adt field in type$
+rem   tcheng     02/08/96 -  rename adtcol$ to coltype$
+rem   ltan       02/08/96 -  PDML: add logging attribute to ts$
+rem   akruglik   02/06/96 -  update comment for partobj$.deflogging
+rem   ssamu      01/25/96 -  write stats flag to disk
+rem   chong      01/25/96 -  fix add type to audit option map
+rem   chong      01/23/96 -  add type to audit option map
+rem   hasun      01/17/96 -  Remove NOT NULL const from TRIG column of mlog$
+rem   jklein     01/11/96 -  freelist space stats for pdml
+rem   hyoshiok   01/10/96 -  change col$ table
+rem   rjenkins   01/09/96 -  finishing deferred constraintsf
+rem   atsukerm   01/03/96 -  allow NULLS for ts# in file$.
+rem   cxcheng    12/26/95 -  change column type of toid in attribute$
+rem   atsukerm   12/15/95 -  tablespace-relative DBAs.
+rem   tcheng     12/10/95 -  change EXTENT TABLE syntax to row type table
+rem   mramache   12/07/95 -  add trigflag to tab$
+rem   hasun      12/01/95 -  Modify snap$ and mlog$ for primary key snapshots
+rem   smuralid   11/30/95 -  add lob object number to LOB$ table
+rem   vkrishna   11/20/95 -  Add flags column to ADTCOL$ table
+rem   anori      11/08/95 -  fix comments for lob table
+rem   anori      11/07/95 -  merge with the BIG branch
+rem   tcheng     11/07/95 -  add property to trigger$
+rem   aho        11/06/95 -  iot : ind$
+rem                          move compressed from flags to property
+rem                          add unusable (dls) to flags
+rem                          add type, threshold
+rem                          rename spare7 to trunccnt
+rem   aho        10/30/95 -  iot : tab$
+rem                          change clu# to bobj#
+rem                          move iot bits from flag to property
+rem   rjenkins   10/30/95 -  deferred constraints
+rem   schandra   10/13/95 -  Migration - separate status & contents in ts
+rem   achaudhr   10/06/95 -  Merge PQ->PTI
+rem   skaluska   10/03/95 -  Move partition bit over to property
+rem   achaudhr   10/02/95 -  PTI: Fixup degree and instances
+rem   echen      09/29/95 -  mergetrans echen_fix_tkxb_diffs
+rem   echen      09/29/95 -  Modify table priviliege.
+rem   ssamu      09/28/95 -  dual object number phase 2
+rem   jsriniva   09/28/95 -  dictionary changes for index only table
+rem   jwijaya    09/21/95 -  add attrcol$
+rem   ssamu      09/20/95 -  dual object number - cleanup
+rem   ssamu      09/18/95 -  dual object numbers
+rem   smuralid   09/14/95 -  LOB support - add tables lob$
+rem   ssamu      09/12/95 -  dual object numbers
+rem   jwijaya    08/28/95 -  add type_misc$
+rem   jwijaya    08/25/95 -  remove USAGE from TABLE_PRIVILEGE_MAP
+rem   skaluska   08/11/95 -  merge PTI with Objects
+rem   varora     06/29/95 -  make intcols/intcol# null/not null
+rem   jwijaya    06/16/95 -  add TYPE USAGE 
+rem   tcheng     06/06/95 -  modify create extent table syntax 
+rem   skotsovo   05/05/95 -  update according to release 1 
+rem   jwijaya    04/28/95 -  fix comments 
+rem   varora     04/28/95 -  rename col#,usercol#,cols,usercols 
+rem   tcheng     03/21/95 -  add col# to adtcol$ and ntab$ 
+rem   varora     01/27/95 -  add table for nested table support 
+rem   skotsovo   01/25/95 -  bring normalized type tables up to date 
+rem   skotsovo   01/23/95 -  move exceptions from method to method_body 
+rem   jwijaya    01/04/95 -  add system privileges for type
+rem   jwijaya    12/29/94 -  making type$ work (temporarily allow 'version'
+rem                          'checks' columns nullable and mark 'checks'
+rem                          and 'default$' not-supported (N/S))
+rem   skrishna   12/06/94 -  create extent table of pre-defined types 
+rem   varora     12/01/94 -  change toid in adtcol$ to type number 
+rem   anori      11/17/94 -  ADT support tables and columns
+rem
+rem !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+rem Whenever new column is created to store internal, user or kernel column
+rem number, be sure to update the structure adtDT in atb.c so that those 
+rem columns will be updated properly during drop column.
+rem !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+rem
+dcore.bsq
+dsqlddl.bsq
+dmanage.bsq
+dplsql.bsq
+dtxnspc.bsq
+dfmap.bsq
+denv.bsq
+drac.bsq
+dsec.bsq
+doptim.bsq
+dobj.bsq
+djava.bsq
+dpart.bsq
+drep.bsq
+daw.bsq
+dsummgt.bsq
+dtools.bsq
+dexttab.bsq
+ddm.bsq
+dlmnr.bsq
+ddst.bsq

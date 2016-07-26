@@ -1,0 +1,29 @@
+REM   jklein    08/30/05 - creation
+Rem
+Rem  External tables meta data: external_tab$, external_location$
+Rem
+create table external_tab$
+( obj#          number not null,                 /* base table object number */
+  default_dir   varchar2("M_IDEN") not null,            /* default directory */
+  type$         varchar2("M_IDEN") not null,           /* access driver type */
+  nr_locations  number             not null,          /* number of locations */
+  reject_limit  number             not null,                 /* reject limit */
+
+  par_type      number not null,    /* access parameter type: blob=1, clob=2 */
+  param_clob    clob,                      /* access parameters in clob form */
+  param_blob    blob,                      /* access parameters in blob form */
+  property      number not null)   /* 0x01 referenced cols, 0x02 all columns */
+/
+create unique index i_external_tab1$ on external_tab$(obj#)
+/
+
+create table external_location$ 
+( 
+  obj#          number not null,                 /* base table object number */
+  position      number not null,                      /* this location index */
+  dir           varchar2("M_IDEN"),             /* location directory object */
+  name          varchar2("M_VCSZ"))                         /* location name */
+/
+
+create unique index i_external_location1$ on external_location$(obj#, position)
+/

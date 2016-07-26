@@ -1,0 +1,27 @@
+CREATE OR REPLACE PACKAGE prvt_smgutil wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+1b8 11b
+n6AqSbZtblJEf8pemASgHkCk1HUwg/DI154VZ3RGAP4+wMOlXT1eRf0FcNfRKeKP3tBmFuOq
+ciBc5TxRdbpAz2pZeuytbzb4akOJSpiBOqAx4dRpwkQMgm8Jj3v2F2+VNp8lEfp4EWavNGba
+NJasmeFvVFHs0zJll4nmwzdovhhp6Dvw6heFYGx8bCqPLCuuYRNqHmXk3cdvd1zgvcPISoLO
+IhhxXmZcsBCbPRrvv4SBJz5AXeRiwcbu+P0PgHlEfRDw2yLsPG1mOeLo1tVzXN7r
+
+/
+show errors;

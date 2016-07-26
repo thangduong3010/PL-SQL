@@ -1,0 +1,67 @@
+create or replace library sys.dbms_profiler_lib wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+2d 65
+vCRRegkOVTe0+j/ogz3uNiktIWkwg04I9Z7AdBjDWqGXYkqWFpeu2UehYhhy+lkJ572esstS
+Msy4dCvny1J0CPVhyaamD6/LKw==
+
+/
+create or replace
+package body sys.dbms_profiler wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+19c9 58f
+3DeYMkhK0EH0h9xHb6ZM7iuFGFkwgz1U2UiG347Now9SF9+npgsvF59cF6aTUXnfb2zIwxuT
+vfpU3taD9CfazckivBpBd9bAQfBJfC+hz5AS/+5DjebGAMeL5+g3v70KHtfR3MT+eMQekZl1
+iDlnCNm1AuulTnoigInuqan9L9SkFah0BIvOdq9kD493uV/TnZOicdHGkYJ8q+whZi39ziLT
+hn83xwdFmQdBSunBuU8lQptTGRSbsOPmL1J14AZQ2QS2Sovjo+Dn6XpRGj3KhkRnH3bMBlaV
+Q9OuJhFbn/oiQl5PlaiyyTD0EVajotpSzzYs6x7STiyYeZLMejpAOubCFZVW8WIHGNHgIslv
+KMZwfQarCnhLopH/Hx1VSYYbPpWmhISimKjv3cL2Y3vTCKWyEYMkp+ieDjkZVtKHLBkuRSPF
+ND/17v24nCK3RRtlkjmFYa6A6O7NaACC2V0Ji44egfu1TnNkgGbR3dI6s2mzDGnTgFirC783
+aAOoXV4hxttN/uAuZ+/GyW+E2+vYUPOTXQuXClAyoSuL3q+3wbh3TzUHA+J2IqukqzpodHGC
+1hdwJ3VzzdVuVN0f4wQnYB2i3mfZvJ88py14A9pxxMtrUq6f14SFKlO4zBY+/4s6G29AZ1au
+kznhkmmPDo5kJhh5NLfgW+MghTyKcP6tK9DkL5zb2VcvhExd6Y5zdmFik/EllazWNUpBXUxb
+gsOL7LTGR79TmBGYeJg7H2m441NB7n1+M0AKB25MhtibJ4ubnmNMAkzukspdGHEff8kB8JDI
+Kl4B+x7E/5i01CMGHEL6i32ZRRLgZRxGXE+MWk16zwJZJjY9zLqyzgB4hu9h4P/pvwcp/rG1
+RZj1fnjyZUngfU12b7y0cOlmOy49nptTTJQcxCae6io+zbQYZm86xkPVkpK8J4BCaNRRJAIt
+o26fbiq6YH7zbccZrTle1+a7lcY4pMweVsPmEJrl0qktntNK5HbD3ivyO4tAy6fZFl/vrL4m
+d6lRaVa8Szd+5bttrLM7/FrHwMDA4CqBL9esJtzMeyNa6ur4NiWBubsygTXfP1OYVbtwnIo4
+qp2do8b4BS7hUVcCLCSgMs2FaGweXfgcnyj9AxzJr9czP+uHZ1YjPZBI0rtP+t83O1Q/XFaw
+K68GSDbqv9XIpQaYB9cywmKYAYkRUPTxRS13mZwtCvRQRMDvSqZtngVqUfxbeCCJKr8Zf9kb
+DQ7yAlXzcWd9PZgjqFcOuNEIDlEporDuTQph3HJBiGC+he3FsLBqvPeMlDWS0gQEmQIrKSlJ
+6eKWKaLtDdLnQLFhAR8LaSc7aOCnCc2j/K0GAd8hEMH+DruBD7X8fQvTdM98Te3IrmJoyEwh
+rvfP0zEblnffvYf7dQEWOtgI9+v5QyRBLQz3
+
+/

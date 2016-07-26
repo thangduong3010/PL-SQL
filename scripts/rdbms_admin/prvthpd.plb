@@ -1,0 +1,45 @@
+CREATE TYPE sys.ku$_dropColList AS VARRAY(1000) OF VARCHAR2(4000);
+/
+GRANT EXECUTE ON sys.ku$_dropColList to PUBLIC;
+CREATE OR REPLACE PACKAGE kupd$data wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+db5 4f1
+xLxr4YsC7R76gQ4OxElYDD+DjrUwgzvqLscFyi/NKpKUdsBLFyVKO1fiXi4oWsoTNjeehfTH
+OGXrupYAoLWdbbxfkYiY67motgIQmEv4GebybgCGYukkP7XkP/hzc7HaFY0xf6zC8j7FXzsh
+XOcehXjm6yf2Jt0+sDY3jXG6G3RVrLucZBH30txZXdMqp2U3Pe7bZGFZb2NRo/g185caUDmZ
+gkq7freiw5H8aeyoGzaj4rdas+GcK+iuIYJNxKZ9Itxm+uOUwK6U2SjqNzwKFIMJCwOkK+yr
+YNIBUGVAgjW+efSNOEChqAzHvY4k3Vhf2p0C4SXq6NdD/ABWhsugakViQMvWp20E/9KjuMcW
+Jj2+DLA3yjVpNFR5esjMjh/fnOXdi3oRDTD1FyWL19OnwcMNk6xY39nGU/+JoUj+2en00f7e
+vrya2OTmfTvdRLIfBiL5NBn1ND1YtAv/56uj46y95uL6rYaOTChttnf2kVr+L/xN9/Mb2xXc
+7wv0Rmc7YNxs0+E3YMi2+iZg5iF+6cDl9y+yEvdfKtOmKmb7b0HIpXpNOO5QwErE//rmtZ4+
+FfschpXJdt2TAJGNRxYmjqU5l0PoNsg9aSqE2lbnUKHD6fI9pMAUYBLYcTiG2s7w6sa7Qpuu
+r2aOoDji37/knfF4sxOVQtPYLxvbe/CBqK9FTcFyjy8y/wrcWXXhAloyfe3za63iUzfDbg/y
+GjH9pIeQpJKGwCLprK+TTvKRSrXn+vEYiORpU/nJBlM6szn1YR0BBZJGvP3xGHnun4thCOeV
+EegBXhopBA1bnpW4BpC0AuIlKY3zdlOsvd8EAXHo1vFyxmzqd8PyoJAogjnS575PkXv2iGqi
+cgRsD2WTN3EBAeIOzCSzOfng/HKHjHNVV5N3KE2T9cfrNBr8rQkHB/CymgkiuuQWufvh6uJr
+p8VsXOuIpXU9uklE0sVDK7znjxzsfVTBs/USlx0Gh+OzQlmVpgetaPtq4nbET5iY+//nlmkd
+0AcVotf/EKtPydK9I0WDvDWeJc2VUk2HrTzETAiJk9ow/d52/NGXWacHC45RkZMJ4WpBHhmh
+LNKwwfw8RelUj7j7KhM61O3B1k7SwGAR4Od0jZpxFBJT7I+2icZsQEd1x+cyp5ADmYHaC+7C
+QS2MbrXhoudHqJcFxgeaUaYO3v+NptGVPKcJA0hwSroQ0bOPtUEeUkjPdk8oQc6uf83dm+Ha
+02k1UMdc8bp4M/EoqqatwC8n
+
+/
+GRANT EXECUTE ON sys.kupd$data TO EXECUTE_CATALOG_ROLE
+/

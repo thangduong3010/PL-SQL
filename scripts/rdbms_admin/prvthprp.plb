@@ -1,0 +1,32 @@
+CREATE OR REPLACE PACKAGE dbms_propagation_internal wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+808 299
++M/JQ80XdmQQloZG8eyL7US3XAowgzuNr9yGfC9A/miwdYZmUpNKulJ12+t3usZIxp9s3Cvz
+EQKgui+l+RWhqDJa5gnKsOXsqotPcoYIq06UbzZ4sbVPFWqGc2q5u7k6uT8suTNyxND4VSRn
+2h20cX4V7NermfUlEVc/vrM8a5/IofDPlBqfwy9quwzOKk9sLGdZyLelWciCa4whhq6pMfbU
+XZoOLRoLYiY4bW6W95b/mlE7CG5etDCboV1poMoeUXJ7v7plb2JlbIHlSXtgYlDVW4PVPVrH
+d8wUgTzYZl9/uoqURAy5TJ1ent7laXk+9cB08v0lKjePWZyHd8nUFuaycwGy2WZRzGvHo4xK
+s8YYbFLzDJZYiiUWs8M9vEcncCbSfhkkYE12UvYYYBd9FJKMO3yNGzW1f51ExQyGwd8NEUmv
+RlHWXliOLjjEEW2FoEQSpsAsBvlk/30NxBTs0X6eIKIkUP/+IYLt8ErwPjnYEhePXoyYfFI6
+gUL8OM5jatDaQVWxc0GKOKd6qy0TankodVh9OZQtCs92wtEGbL3fkwHCI7DsmHe+WfTybuUn
+nTleXA3+ibNb5eqexjOIY2MaczAXJ6bu0PoaTXx3JKNeuLToMsUl4aIrgzwV4hz2SrrP+YZE
+b153ww==
+
+/

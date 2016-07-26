@@ -1,0 +1,905 @@
+
+REM
+REM  MODIFIED
+REM   abrown    04/11/11 - Backport abrown_bug-11737200 from main
+REM   qiwang    04/28/10 - add new integrated spill table
+REM   jkundu    03/30/09 - add logmnr_gt_xid_include
+REM   matfarre  12/09/08 - bug 7596712: add session actions table
+REM   dvoss     11/07/08 - bug 7480265 - sequences should not be cached
+REM   dvoss     10/02/08 - convert integers to numbers
+REM   qiwang    04/02/07 - BUG 5743875: memory spill/privatelcrList
+REM   mtao      03/29/07 - bug 5880925: add version_timestamp to global$
+REM   mtao      03/03/07 - bug 5903103: Rename logical remote logs to foreign
+REM   dvoss     01/03/07 - creation
+REM
+CREATE TABLE system.logmnr_session_evolve$ (
+      branch_level            number,
+      session#                number,
+      db_id                   number,
+      reset_scn               number,
+      reset_timestamp         number,
+      prev_reset_scn          number,
+      prev_reset_timestamp    number,
+      status                  number,
+      spare1                  number,
+      spare2                  number,
+      spare3                  number,
+      spare4                  date,
+      CONSTRAINT LOGMNR_SESSION_EVOLVE$_PK PRIMARY KEY 
+        (SESSION#, DB_ID, RESET_SCN, RESET_TIMESTAMP)
+        USING INDEX TABLESPACE SYSAUX LOGGING)
+  tablespace SYSAUX LOGGING
+/
+CREATE SEQUENCE system.logmnr_evolve_seq$ START WITH 1
+       INCREMENT BY 1 NOMAXVALUE ORDER NOCACHE
+/
+CREATE SEQUENCE system.logmnr_seq$ ORDER NOCACHE
+/
+CREATE SEQUENCE system.logmnr_uids$ START WITH 100
+       INCREMENT BY 1 NOMAXVALUE ORDER NOCACHE
+/
+CREATE TABLE system.logmnr_global$ (
+      high_recid_foreign      number, 
+      high_recid_deleted      number, 
+      local_reset_scn         number,
+      local_reset_timestamp   number,
+      version_timestamp       number,
+      spare1                  number,
+      spare2                  number,
+      spare3                  number,
+      spare4                  varchar2(2000),
+      spare5                  date)
+   tablespace SYSAUX LOGGING
+/
+CREATE GLOBAL TEMPORARY TABLE system.logmnr_gt_tab_include$ (
+	schema_name            varchar2(32),
+        table_name             varchar2(32)
+        ) on commit preserve rows
+/
+CREATE GLOBAL TEMPORARY TABLE system.logmnr_gt_user_include$ (
+                user_name            varchar2(32),
+                user_type            number  /* 0 DB_USER, 1 OS_USER */
+                ) on commit preserve rows
+/
+CREATE GLOBAL TEMPORARY TABLE system.logmnr_gt_xid_include$ (
+		xidusn   number,
+		xidslt   number,
+		xidsqn   number
+                ) on commit preserve rows
+/
+CREATE TABLE SYSTEM.LOGMNR_UID$ (
+                    LOGMNR_UID  NUMBER(22),
+                    SESSION#    NUMBER CONSTRAINT LOGMNR_UID$_PK 
+                      PRIMARY KEY)  TABLESPACE SYSAUX LOGGING
+/
+
+--
+-- For Logminer support of GG mining across a redo gap.
+-- The tables LOGMNRGGC_GTLO and LOGMNRGGC_GTCS are are
+-- identical to their counterparts LOGMNRC_GTLOG and  LOGMNRC_GTCS.
+-- Though it would have been simpler to use designated paritions
+-- of the original tables, this could have led to unacceptable locking
+-- issues when the DDL trigger that maintains these tables fires.
+--
+CREATE TABLE SYSTEM.LOGMNRGGC_GTLO( 
+                  LOGMNR_UID         NUMBER NOT NULL, 
+                  KEYOBJ#            NUMBER NOT NULL,
+                  LVLCNT             NUMBER NOT NULL,  /* level count */
+                  BASEOBJ#           NUMBER NOT NULL,  /* base object number */
+                  BASEOBJV#          NUMBER NOT NULL,  
+                                                      /* base object version */
+                  LVL1OBJ#           NUMBER,  /* level 1 object number */
+                  LVL2OBJ#           NUMBER,  /* level 2 object number */
+                  LVL0TYPE#          NUMBER NOT NULL,
+                                              /* level 0 (base obj) type # */
+                  LVL1TYPE#          NUMBER,  /* level 1 type # */
+                  LVL2TYPE#          NUMBER,  /* level 2 type # */
+                  OWNER#             NUMBER,  /* owner number */
+                  OWNERNAME          VARCHAR2(30) NOT NULL,
+                  LVL0NAME           VARCHAR2(30) NOT NULL,
+                                              /* name of level 0 (base obj)  */
+                  LVL1NAME           VARCHAR2(30), /* name of level 1 object */
+                  LVL2NAME           VARCHAR2(30), /* name of level 2 object */
+                  INTCOLS            NUMBER NOT NULL,
+                              /* for table object, number of all types cols  */
+                  COLS               NUMBER,
+                           /* for table object, number of user visable cols  */
+                  KERNELCOLS         NUMBER,
+                        /* for table object, number of non zero secol# cols  */
+                  TAB_FLAGS          NUMBER,   /* TAB$.FLAGS        */
+                  TRIGFLAG           NUMBER,   /* TAB$.TRIGFLAG     */
+                  ASSOC#             NUMBER,   /* IOT/OF Associated object */
+                  OBJ_FLAGS          NUMBER,   /* OBJ$.FLAGS        */
+                  TS#                NUMBER, /* table space number */
+                  TSNAME             VARCHAR2(30), /* table space name   */
+                  PROPERTY           NUMBER,
+                  /* Replication Dictionary Specific Columns  */
+                  START_SCN          NUMBER NOT NULL,
+                                            /* SCN at which existence begins */
+                  DROP_SCN         NUMBER,  /* SCN at which existence ends   */
+                  XIDUSN             NUMBER,
+                                        /* src txn which created this object */
+                  XIDSLT             NUMBER,
+                  XIDSQN             NUMBER,
+                  FLAGS              NUMBER,
+                  LOGMNR_SPARE1             NUMBER,
+                  LOGMNR_SPARE2             NUMBER,
+                  LOGMNR_SPARE3             VARCHAR2(1000),
+                  LOGMNR_SPARE4             DATE,
+                  LOGMNR_SPARE5             NUMBER,
+                  LOGMNR_SPARE6             NUMBER,
+                  LOGMNR_SPARE7             NUMBER,
+                  LOGMNR_SPARE8             NUMBER,
+                  LOGMNR_SPARE9             NUMBER,
+                /* New in V11  */
+                  PARTTYPE                  NUMBER,
+                  SUBPARTTYPE               NUMBER,
+                  UNSUPPORTEDCOLS           NUMBER,
+                  COMPLEXTYPECOLS           NUMBER,
+                  NTPARENTOBJNUM            NUMBER,
+                  NTPARENTOBJVERSION        NUMBER,
+                  NTPARENTINTCOLNUM         NUMBER,
+                  LOGMNRTLOFLAGS            NUMBER,
+                  LOGMNRMCV                 VARCHAR2(30),
+                    CONSTRAINT LOGMNRGGC_GTLO_PK
+                    PRIMARY KEY(LOGMNR_UID, KEYOBJ#, BASEOBJV#)
+                  ) TABLESPACE SYSTEM LOGGING
+/
+CREATE INDEX SYSTEM.LOGMNRGGC_I2GTLO 
+    ON SYSTEM.LOGMNRGGC_GTLO (logmnr_uid, baseobj#, baseobjv#) 
+    TABLESPACE SYSTEM LOGGING
+/
+CREATE INDEX SYSTEM.LOGMNRGGC_I3GTLO 
+    ON SYSTEM.LOGMNRGGC_GTLO (logmnr_uid, drop_scn) 
+    TABLESPACE SYSTEM LOGGING
+/
+
+CREATE TABLE SYSTEM.LOGMNRGGC_GTCS(
+                   LOGMNR_UID                NUMBER NOT NULL,
+                   OBJ#                      NUMBER NOT NULL,
+                                              /* table (base) object number  */
+                   OBJV#                     NUMBER NOT NULL,
+                                              /* table object version        */
+                   SEGCOL#                   NUMBER NOT NULL,
+                                              /* segcol# of column           */
+                   INTCOL#                   NUMBER NOT NULL,
+                                              /* intcol# of column           */
+                   COLNAME                   VARCHAR2(30) NOT NULL, 
+                                              /* name of column              */
+                   TYPE#                     NUMBER NOT NULL, /* column type */
+                   LENGTH                    NUMBER, /* data length */
+                   PRECISION                 NUMBER, /* data precision */
+                   SCALE                     NUMBER, /* data scale */
+                   INTERVAL_LEADING_PRECISION  NUMBER,
+                                       /* Interval Leading Precision, if any */
+                   INTERVAL_TRAILING_PRECISION NUMBER,
+                                      /* Interval trailing precision, if any */
+                   PROPERTY                  NUMBER,
+                   TOID                      RAW(16),
+                   CHARSETID                 NUMBER,
+                   CHARSETFORM               NUMBER,
+                   TYPENAME                  VARCHAR2(30),
+                   FQCOLNAME                 VARCHAR2(4000),
+                                              /* fully-qualified column name */
+                   NUMINTCOLS                NUMBER, /* Number of Int Cols  */
+                   NUMATTRS                  NUMBER,
+                   ADTORDER                  NUMBER,
+                   LOGMNR_SPARE1                    NUMBER,
+                   LOGMNR_SPARE2                    NUMBER,
+                   LOGMNR_SPARE3                    VARCHAR2(1000),
+                   LOGMNR_SPARE4                    DATE,
+                   LOGMNR_SPARE5             NUMBER,
+                   LOGMNR_SPARE6             NUMBER,
+                   LOGMNR_SPARE7             NUMBER,
+                   LOGMNR_SPARE8             NUMBER,
+                   LOGMNR_SPARE9             NUMBER,
+                /* New for V11.  */
+                   COL#                      NUMBER,
+                   XTYPESCHEMANAME           VARCHAR2(30),
+                   XTYPENAME                 VARCHAR2(4000),
+                   XFQCOLNAME                VARCHAR2(4000),
+                   XTOPINTCOL                NUMBER,
+                   XREFFEDTABLEOBJN          NUMBER,
+                   XREFFEDTABLEOBJV          NUMBER,
+                   XCOLTYPEFLAGS             NUMBER,
+                   XOPQTYPETYPE              NUMBER,
+                   XOPQTYPEFLAGS             NUMBER,
+                   XOPQLOBINTCOL             NUMBER,
+                   XOPQOBJINTCOL             NUMBER,
+                   XXMLINTCOL                NUMBER,
+                   EAOWNER#                  NUMBER,
+                   EAMKEYID                  VARCHAR2(64),
+                   EAENCALG                  NUMBER,
+                   EAINTALG                  NUMBER,
+                   EACOLKLC                  RAW(2000),
+                   EAKLCLEN                  NUMBER,
+                   EAFLAGS                   NUMBER,
+                     constraint logmnrggc_gtcs_pk
+                     primary key(logmnr_uid, obj#, objv#,intcol#)
+                  )  TABLESPACE SYSTEM LOGGING
+/
+CREATE INDEX SYSTEM.LOGMNRGGC_I2GTCS
+    ON SYSTEM.LOGMNRGGC_GTCS (logmnr_uid, obj#, objv#, segcol#, intcol#)
+    TABLESPACE SYSTEM LOGGING
+/
+
+
+CREATE TABLE SYS.LOGMNR_BUILDLOG (
+                    INITIAL_XID VARCHAR2(22) CONSTRAINT LOGMNR_BUILDLOG_PK
+                      PRIMARY KEY,
+                    BUILD_DATE VARCHAR2(20),
+                    DB_TXN_SCNBAS NUMBER,
+                    DB_TXN_SCNWRP NUMBER,
+                    CURRENT_BUILD_STATE NUMBER,
+                    COMPLETION_STATUS NUMBER,
+                    MARKED_LOG_FILE_LOW_SCN NUMBER)
+                    TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYSTEM.LOGMNRC_DBNAME_UID_MAP(
+                      GLOBAL_NAME        VARCHAR2(128) NOT NULL,
+                        CONSTRAINT LOGMNRC_DBNAME_UID_MAP_PK
+                        PRIMARY KEY(GLOBAL_NAME),
+                      LOGMNR_UID         NUMBER,
+                      FLAGS              NUMBER ) 
+                      TABLESPACE SYSAUX LOGGING
+/
+CREATE TABLE SYSTEM.LOGMNR_LOG$ (
+              session#        number,
+              thread#         number,
+              sequence#       number,
+              first_change#   number,
+              next_change#    number,
+              first_time      date,
+              next_time       date,
+              file_name       varchar2(513),
+              status          number,
+              info            varchar2(32),
+              timestamp       date,
+              dict_begin      varchar2(3),
+              dict_end        varchar2(3),
+              status_info     varchar2(32),
+              db_id                  number,
+              resetlogs_change#      number,
+              reset_timestamp        number,
+              prev_resetlogs_change# number,
+              prev_reset_timestamp   number,
+              blocks                 number,
+              block_size             number,
+              flags                  number,
+              contents               number,
+              recid                  number,
+              recstamp               number,
+              mark_delete_timestamp  number,
+              spare1                 number,
+              spare2                 number,
+              spare3                 number,
+              spare4                 number,
+              spare5                 number,
+              CONSTRAINT LOGMNR_LOG$_PK PRIMARY KEY 
+                (SESSION#, THREAD#, SEQUENCE#, FIRST_CHANGE#,
+                 DB_ID, RESETLOGS_CHANGE#, RESET_TIMESTAMP)
+                USING INDEX TABLESPACE SYSAUX LOGGING)
+           TABLESPACE SYSAUX LOGGING
+/
+CREATE INDEX system.logmnr_log$_flags ON 
+        system.logmnr_log$(flags) 
+        TABLESPACE SYSAUX LOGGING
+/
+CREATE INDEX system.logmnr_log$_first_change# ON 
+        system.logmnr_log$(first_change#) 
+        TABLESPACE SYSAUX LOGGING
+/
+CREATE INDEX system.logmnr_log$_recid ON 
+        system.logmnr_log$(recid) 
+        TABLESPACE SYSAUX LOGGING
+/
+CREATE TABLE SYSTEM.logmnr_processed_log$ (
+              session#        number,
+              thread#         number,
+              sequence#       number,
+              first_change#   number,
+              next_change#    number,
+              first_time      date,
+              next_time       date,
+              file_name       varchar2(513),
+              status          number,
+              info            varchar2(32),
+              timestamp       date,
+              CONSTRAINT LOGMNR_PROCESSED_LOG$_PK PRIMARY KEY
+                (SESSION#, THREAD#)
+                USING INDEX TABLESPACE SYSAUX LOGGING)
+            TABLESPACE SYSAUX LOGGING
+/
+CREATE TABLE SYSTEM.logmnr_spill$ (
+                session#     number,
+                xidusn       number,
+                xidslt       number,
+                xidsqn       number,
+                chunk        number,
+                startidx     number,
+                endidx       number,
+                flag         number,  
+                sequence#    number,
+                spill_data   blob,
+                spare1     number,
+                spare2     number,
+                CONSTRAINT LOGMNR_SPILL$_PK PRIMARY KEY
+                 (session#, xidusn, xidslt, xidsqn, chunk, 
+                  startidx, endidx, flag, sequence#)
+                  USING INDEX TABLESPACE SYSAUX LOGGING)
+            LOB (spill_data)
+              STORE AS (TABLESPACE SYSAUX CACHE LOGGING PCTVERSION 0
+                        CHUNK 16k STORAGE (INITIAL 16K NEXT 16K))
+            TABLESPACE SYSAUX LOGGING
+/
+CREATE TABLE SYSTEM.logmnr_age_spill$ (
+           session#     number,
+           xidusn       number,
+           xidslt       number,
+           xidsqn       number,
+           chunk        number, 
+           sequence#    number,
+           offset       number,  
+           spill_data   blob,
+           spare1     number,
+           spare2     number,
+           CONSTRAINT LOGMNR_AGE_SPILL$_PK PRIMARY KEY
+             (session#, xidusn, xidslt, xidsqn, chunk, sequence#)
+             USING INDEX TABLESPACE SYSAUX LOGGING)
+       LOB (spill_data) STORE AS (TABLESPACE SYSAUX CACHE PCTVERSION 0
+                                  CHUNK 16k STORAGE (INITIAL 16K NEXT 16K))
+       TABLESPACE SYSAUX LOGGING
+/
+CREATE TABLE SYSTEM.logmnr_restart_ckpt_txinfo$ (
+             session#     number,
+             xidusn       number,
+             xidslt       number,
+             xidsqn       number,
+             session_num  number,
+             serial_num   number,
+             flag         number,
+             start_scn    number,
+             effective_scn number,
+             offset       number,  
+             tx_data      blob,
+             CONSTRAINT LOGMNR_RESTART_CKPT_TXINFO$_PK PRIMARY KEY 
+                (session#, xidusn, xidslt, xidsqn,
+                 session_num, serial_num, effective_scn)
+                USING INDEX TABLESPACE SYSAUX LOGGING)
+         LOB (tx_data) STORE AS (TABLESPACE SYSAUX CACHE PCTVERSION 0
+                                 CHUNK 16k STORAGE (INITIAL 16K NEXT 16K))
+         TABLESPACE SYSAUX LOGGING
+/
+CREATE TABLE SYSTEM.LOGMNR_ERROR$ (
+              session#        number,
+              time_of_error   date,
+              code            number,
+              message         varchar2(4000),
+              spare1          number,
+              spare2          number,
+              spare3          number,
+              spare4          varchar2(4000),
+              spare5          varchar2(4000))
+           TABLESPACE SYSAUX LOGGING
+/
+CREATE TABLE SYSTEM.LOGMNR_RESTART_CKPT$ (
+              session#     number,
+              valid        number,
+              ckpt_scn     number,
+              xidusn       number,
+              xidslt       number,
+              xidsqn       number,
+              session_num  number,
+              serial_num   number,
+              ckpt_info    blob,
+              flag         number,
+              offset       number,  
+              client_data  blob,
+              spare1       number,
+              spare2       number,
+     CONSTRAINT LOGMNR_RESTART_CKPT$_PK PRIMARY KEY 
+        (session#, ckpt_scn, xidusn, xidslt, xidsqn, session_num, serial_num))
+   LOB (ckpt_info, client_data)
+       STORE AS (TABLESPACE SYSAUX CACHE PCTVERSION 0
+                 CHUNK 16k STORAGE (INITIAL 16K NEXT 16K))
+   TABLESPACE SYSAUX LOGGING
+/
+CREATE TABLE SYSTEM.logmnr_integrated_spill$ (
+                session#		number,
+                xidusn		        number,
+                xidslt  		number,
+                xidsqn  		number,
+                chunk   		number,
+                flag                    number,
+                ctime                   date,
+                mtime                   date,
+                spill_data		blob,
+                spare1  		number,
+                spare2  		number,
+                spare3                  number, 
+                spare4                  date,
+                spare5                  date,
+        CONSTRAINT LOGMNR_INTEG_SPILL$_PK PRIMARY KEY 
+            (session#, xidusn, xidslt, xidsqn, chunk, flag)
+	    USING INDEX TABLESPACE SYSAUX LOGGING)
+        LOB (spill_data) STORE AS (TABLESPACE SYSAUX CACHE PCTVERSION 0
+	    CHUNK 32k STORAGE (INITIAL 4M NEXT 2M))
+        TABLESPACE SYSAUX LOGGING
+/
+CREATE TABLE SYSTEM.LOGMNR_FILTER$ (
+                session#                number,
+                filter_type             varchar2(30),
+                attr1                   number,
+                attr2                   number,
+                attr3                   number,
+                attr4                   number,
+                attr5                   number,
+                attr6                   number,
+                filter_scn              number,
+                spare1                  number,
+                spare2                  number,
+                spare3                  date)
+            TABLESPACE SYSAUX LOGGING
+/
+CREATE TABLE SYSTEM.LOGMNR_SESSION_ACTIONS$ (
+                /* Non Initial Attributes  */
+                FlagsRunTime     number default 0, /* FLAGSM_SET_KRVUSA */
+                DropSCN          number,
+                ModifyTime       timestamp,
+                DispatchTime     timestamp,
+                DropTime         timestamp,
+                LCRCount         number default 0,
+                /* Initial Attibutes        */
+                ActionName       varchar2(30) NOT NULL,
+                LogmnrSession#   number NOT NULL,
+                ProcessRole#     number NOT NULL,
+                ActionType#      number NOT NULL,
+                FlagsDefineTime  number,
+                CreateTime       timestamp,
+                XIDusn           number,
+                XIDslt           number,
+                XIDsqn           number,
+                Thread#          number,
+                StartSCN         number,
+                StartSubSCN      number,
+                EndSCN           number,
+                EndSubSCN        number,
+                RBAsqn           number,
+                RBAblk           number,
+                RBAbyte          number,
+                Session#         number,
+                Obj#             number,
+                attr1            number,
+                attr2            number,
+                attr3            number,
+                spare1           number,
+                spare2           number,
+                spare3           timestamp,
+                spare4           varchar2(2000),
+              CONSTRAINT LOGMNR_SESSION_ACTION$_PK
+                PRIMARY KEY (LogmnrSession#, ActionName)
+                USING INDEX TABLESPACE SYSAUX LOGGING enable)
+            TABLESPACE SYSAUX LOGGING
+/
+CREATE TABLE SYSTEM.LOGMNR_PARAMETER$ (
+                session#        number not null,
+                name            varchar2(30) not null,
+                value           varchar2(2000),
+                type            number,
+                scn             number,
+                spare1          number,
+                spare2          number,
+                spare3          varchar2(2000))
+            TABLESPACE SYSTEM LOGGING
+/
+CREATE INDEX SYSTEM.LOGMNR_PARAMETER_INDX ON 
+                SYSTEM.LOGMNR_PARAMETER$(SESSION#, name) 
+            TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYSTEM.LOGMNR_SESSION$ (
+          session#                number,
+          client#                 number,
+          session_name            varchar2(128) not null,
+          db_id                   number,
+          resetlogs_change#       number,
+          session_attr            number,
+          session_attr_verbose    varchar2(400),
+          start_scn               number,
+          end_scn                 number,
+          spill_scn               number,
+          spill_time              date,
+          oldest_scn              number,
+          resume_scn              number,
+          global_db_name          varchar2(128) default null,
+          reset_timestamp         number,
+          branch_scn              number,
+          version                 varchar2(64),
+          redo_compat             varchar2(20),
+          spare1                  number,
+          spare2                  number,
+          spare3                  number,
+          spare4                  number,
+          spare5                  number,
+          spare6                  date,
+          spare7                  varchar2(1000),
+          spare8                  varchar2(1000),
+     constraint logmnr_session_pk primary key (session#)
+          using index tablespace SYSTEM logging,
+     constraint logmnr_session_uk1 unique (session_name)
+          using index tablespace SYSTEM logging enable validate)
+   tablespace SYSTEM logging
+/
+CREATE TABLE SYS.LOGMNRG_SEED$ (
+      SEED_VERSION NUMBER(22),
+      GATHER_VERSION NUMBER(22),
+      SCHEMANAME VARCHAR2(30),
+      OBJ# NUMBER,
+      OBJV# NUMBER(22),
+      TABLE_NAME VARCHAR2(30),
+      COL_NAME VARCHAR2(30),
+      COL# NUMBER,
+      INTCOL# NUMBER,
+      SEGCOL# NUMBER,
+      TYPE# NUMBER,
+      LENGTH NUMBER,
+      PRECISION# NUMBER,
+      SCALE NUMBER,
+      NULL$ NUMBER NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_DICTIONARY$ (
+      DB_NAME VARCHAR2(9),
+      DB_ID NUMBER(20),
+      DB_CREATED VARCHAR2(20),
+      DB_DICT_CREATED VARCHAR2(20),
+      DB_DICT_SCN NUMBER(22),
+      DB_THREAD_MAP RAW(8),
+      DB_TXN_SCNBAS NUMBER(22),
+      DB_TXN_SCNWRP NUMBER(22),
+      DB_RESETLOGS_CHANGE# NUMBER(22),
+      DB_RESETLOGS_TIME VARCHAR2(20),
+      DB_VERSION_TIME VARCHAR2(20),
+      DB_REDO_TYPE_ID VARCHAR2(8),
+      DB_REDO_RELEASE VARCHAR2(60),
+      DB_CHARACTER_SET VARCHAR2(30),
+      DB_VERSION VARCHAR2(64),
+      DB_STATUS VARCHAR2(64),
+      DB_GLOBAL_NAME VARCHAR(128),
+      DB_DICT_MAXOBJECTS NUMBER(22),
+      DB_DICT_OBJECTCOUNT NUMBER(22) NOT NULL  ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_OBJ$ (
+      OBJV# NUMBER(22),
+      OWNER# NUMBER(22),
+      NAME VARCHAR2(30),
+      NAMESPACE NUMBER(22),
+      SUBNAME VARCHAR2(30),
+      TYPE# NUMBER(22),
+      OID$  RAW(16),
+      REMOTEOWNER VARCHAR2(30),
+      LINKNAME VARCHAR(128),
+      FLAGS NUMBER(22),
+      SPARE3 NUMBER(22),
+      STIME DATE,
+      OBJ# NUMBER(22) NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_TAB$ (
+      TS# NUMBER(22),
+      COLS NUMBER(22),
+      PROPERTY NUMBER(22),
+      INTCOLS NUMBER(22),
+      KERNELCOLS NUMBER(22),
+      BOBJ# NUMBER(22),
+      TRIGFLAG NUMBER(22),
+      FLAGS NUMBER(22),
+      OBJ# NUMBER(22) NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_COL$ (
+      COL# NUMBER(22),
+      SEGCOL# NUMBER(22),
+      NAME VARCHAR2(30),
+      TYPE# NUMBER(22),
+      LENGTH NUMBER(22),
+      PRECISION# NUMBER(22),
+      SCALE NUMBER(22),
+      NULL$ NUMBER(22),
+      INTCOL# NUMBER(22),
+      PROPERTY NUMBER(22),
+      CHARSETID NUMBER(22),
+      CHARSETFORM NUMBER(22),
+      SPARE1 NUMBER(22),
+      SPARE2 NUMBER(22),
+      OBJ# NUMBER(22) NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_ATTRCOL$ (
+      INTCOL#   number,
+      NAME      varchar2(4000),
+      OBJ#      number NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_TS$ (
+      TS# NUMBER(22),
+      NAME VARCHAR2(30),
+      OWNER# NUMBER(22),
+      BLOCKSIZE NUMBER(22) NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_IND$ (
+     BO#     NUMBER(22),
+     COLS     NUMBER(22),
+     TYPE#    NUMBER(22),
+     FLAGS    NUMBER,
+     PROPERTY NUMBER,
+     OBJ#     NUMBER(22) NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_USER$ (
+      USER# NUMBER(22),
+      NAME VARCHAR2(30) NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_TABPART$ (
+      OBJ# NUMBER(22),
+      TS# NUMBER(22),
+      PART# NUMBER,
+      BO# NUMBER(22) NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_TABSUBPART$ (
+      OBJ# NUMBER(22),
+      DATAOBJ# NUMBER(22),
+      POBJ# NUMBER(22),
+      SUBPART# NUMBER(22),
+      TS# NUMBER(22) NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_TABCOMPART$ (
+      OBJ# NUMBER(22),
+      BO# NUMBER(22),
+      PART# NUMBER(22) NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_TYPE$ (
+      version# number,
+      version varchar2(30),
+      tvoid raw(16),
+      typecode number,
+      properties number,
+      attributes number,
+      methods number,
+      hiddenMethods number,
+      supertypes number,
+      subtypes number,
+      externtype number,
+      externname varchar2(4000),
+      helperclassname varchar2(4000),
+      local_attrs number,
+      local_methods number,
+      typeid raw(16),
+      roottoid raw(16),
+      spare1 number,
+      spare2 number,
+      spare3 number,
+      supertoid raw(16),
+      hashcode raw(17),
+      toid raw(16) not null ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_COLTYPE$ (
+      col# number,
+      intcol# number,
+      toid raw(16),
+      version# number,
+      packed number,
+      intcols number,
+      intcol#s raw(2000),
+      flags number,
+      typidcol# number,
+      synobj# number,
+      obj# number not null ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_ATTRIBUTE$ (
+      version#      number,
+      name          varchar2(30),
+      attribute#    number,
+      attr_toid     raw(16),
+      attr_version# number,
+      synobj#       number,
+      properties    number,
+      charsetid     number,
+      charsetform   number,
+      length        number,
+      precision#    number,
+      scale         number,
+      externname    varchar2(4000),
+      xflags        number,
+      spare1        number,
+      spare2        number,
+      spare3        number,
+      spare4        number,
+      spare5        number,
+      setter        number,
+      getter        number,
+      toid          raw(16) not null ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_LOB$ (
+      OBJ#          NUMBER,
+      INTCOL#       NUMBER,
+      COL#          NUMBER,
+      LOBJ#         NUMBER,
+      CHUNK         NUMBER NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_CDEF$ (
+      CON#          NUMBER,
+      COLS          NUMBER,
+      TYPE#         NUMBER,
+      ROBJ#         NUMBER, 
+      RCON#         NUMBER, 
+      ENABLED       NUMBER,
+      DEFER         NUMBER,
+      OBJ#          NUMBER NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_CCOL$ (
+      CON#          NUMBER,
+      OBJ#          NUMBER,
+      COL#          NUMBER,
+      POS#          NUMBER,
+      INTCOL#       NUMBER NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_ICOL$ (
+      OBJ#          NUMBER,
+      BO#           NUMBER,
+      COL#          NUMBER,
+      POS#          NUMBER,
+      SEGCOL#       NUMBER,
+      INTCOL#       NUMBER NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_LOBFRAG$ (
+      FRAGOBJ#      NUMBER,
+      PARENTOBJ#    NUMBER,
+      TABFRAGOBJ#   NUMBER,
+      INDFRAGOBJ#   NUMBER,
+      FRAG#         NUMBER NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_INDPART$ (
+      OBJ# NUMBER,
+      BO#  NUMBER,
+      PART# NUMBER,
+      TS#  NUMBER NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_INDSUBPART$ (
+      OBJ# NUMBER(22),
+      DATAOBJ# NUMBER(22),
+      POBJ# NUMBER(22),
+      SUBPART# NUMBER(22),
+      TS# NUMBER(22) NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_INDCOMPART$ (
+      OBJ#     NUMBER,
+      DATAOBJ# NUMBER,
+      BO#      NUMBER,
+      PART#    NUMBER NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_LOGMNR_BUILDLOG (
+       BUILD_DATE VARCHAR2(20),
+       DB_TXN_SCNBAS NUMBER,
+       DB_TXN_SCNWRP NUMBER,
+       CURRENT_BUILD_STATE NUMBER,
+       COMPLETION_STATUS NUMBER,
+       MARKED_LOG_FILE_LOW_SCN NUMBER,
+       INITIAL_XID VARCHAR2(22) NOT NULL ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_NTAB$ (
+       col# number,
+       intcol# number,
+       ntab# number,
+       name varchar2(4000),
+       obj# number not null ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_OPQTYPE$ (
+       intcol# number not null,
+       type number,
+       flags number,
+       lobcol number,
+       objcol number,
+       extracol number,
+       schemaoid raw(16),
+       elemnum number,
+       schemaurl varchar2(4000),
+       obj# number not null ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_SUBCOLTYPE$ (
+       intcol# number not null,
+       toid raw(16) not null,
+       version# number not null,
+       intcols number,
+       intcol#s raw(2000),
+       flags number,
+       synobj# number,
+       obj# number not null ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_KOPM$ (
+       length number,
+       metadata raw(255),
+       name varchar2(30) not null ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_PROPS$ (
+       value$ varchar2(4000),
+       comment$ varchar2(4000),
+       name varchar2(30) not null ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_ENC$ (
+       obj# number,
+       owner# number,
+       encalg number,
+       intalg number,
+       colklc raw(2000),
+       klclen number,
+       flag number,
+       mkeyid varchar2(64) not null ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_REFCON$ (
+       col#     number,
+       intcol#  number,
+       reftyp   number,
+       stabid   raw(16),
+       expctoid raw(16),
+       obj#     number not null ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE TABLE SYS.LOGMNRG_PARTOBJ$ (
+      parttype    number,
+       partcnt     number,
+       partkeycols number,
+       flags       number,
+       defts#      number,
+       defpctfree  number,
+       defpctused  number,
+       defpctthres number,
+       definitrans number,
+       defmaxtrans number,
+       deftiniexts number,
+       defextsize  number,
+       defminexts  number,
+       defmaxexts  number,
+       defextpct   number,
+       deflists    number,
+       defgroups   number,
+       deflogging  number,
+       spare1      number,
+       spare2      number,
+       spare3      number,
+       definclcol  number,
+       parameters  varchar2(1000),
+       obj#        number not null ) 
+   TABLESPACE SYSTEM LOGGING
+/
+CREATE GLOBAL TEMPORARY TABLE system.logmnrt_mddl$ (
+                  source_obj#     NUMBER,
+                  source_rowid    ROWID,
+                  dest_rowid      ROWID NOT NULL,
+                    CONSTRAINT logmnrt_mddl$_pk
+                      PRIMARY KEY(source_obj#, source_rowid)
+                  ) on commit delete rows
+/

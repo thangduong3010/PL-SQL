@@ -1,0 +1,461 @@
+REM   bpwang    02/23/06 - Warning about streams usage of opqtype$
+REM   jklein    08/01/05 - creation
+create table dir$                                  /* directory object table */
+( obj#          number not null,                            /* object number */
+  audit$        varchar2("S_OPFL") not null,             /* auditing options */
+  os_path       varchar2("M_VCSZ"))                        /* OS path string */
+/
+create unique index i_dir1 on dir$(obj#)
+/
+
+rem NOTE 
+rem Logminer/Streams uses contents of this table. 
+rem Please do not reuse any flags without verifying the impact of your 
+rem changes on inter-op.  
+create table attrcol$                          /* ADT attribute column table */
+( obj#          number not null,             /* object number of base object */
+  intcol#       number not null,                   /* internal column number */
+  name          varchar2("M_VCSZ") not null)         /* fully-qualified name */
+cluster c_obj#(obj#)
+/
+create unique index i_attrcol1 on attrcol$(obj#, intcol#)
+/
+create table id_gens$                                 /* ID generators table */
+( total         number not null)            /* total number of ID generators */
+/
+create table oid$                    /* OID mapping table for schema objects */
+(
+  user#         number not null,   /* user this mapping is for (user$.user#) */
+  oid$          raw(16) not null,        /* OID for typed table/view or type */
+  obj#          number not null)         /* target object number (obj$.obj#) */
+                                                       /* key: (user#, oid$) */
+/
+create unique index i_oid1 on oid$(user#, oid$)
+/
+create table type_misc$              /* type miscellaneous information table */
+( obj#          number not null,                       /* type object number */
+  audit$        varchar2("S_OPFL") not null,             /* auditing options */
+  properties    number not null)                               /* properties */
+                        /* 0x01 = (flag PRP) potential REF-dependency parent */
+                        /* 0x02 = invoker's rights                           */
+                        /* 0x04 = Repeeatable                                */
+                        /* 0x08 = TO8 Trusted                                */
+                        /* 0x10 = SQLJ type                                  */
+                        /* 0x20 = SQLJ type with helper class                */
+                        /* 0x40 = Natively compiled                          */
+                        /* 0x80 = Shrink-wrapped type                        */
+                        /* 0x100 = Compiled with debug info                  */
+cluster c_obj#(obj#)
+/
+create cluster c_toid_version#
+( toid          raw(16),                                             /* TOID */
+  version#      number)                           /* internal version number */
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create index i_toid_version# on cluster c_toid_version#
+/
+rem NOTE 
+rem Logminer/Streams uses contents of this table. 
+rem Please do not reuse any flags without verifying the impact of your 
+rem changes on inter-op.  
+create table type$                                             /* type table */
+( toid          raw(16) not null,                                    /* TOID */
+  version#      number not null,                  /* internal version number */
+  version       varchar2("M_IDEN") not null,   /* user-supplied version name */
+  tvoid         raw(16) not null,                      /* type version's OID */
+  typecode      number not null,                                 /* typecode */
+  properties    number not null,                       /* type's properties: */
+  /* 0x00000001 =       1 = contains at least one (embedded) ADT attribute */
+  /* 0x00000002 =       2 = contains at least one REF attribute */
+  /* 0x00000004 =       4 = contains at least one "complex" attribute:
+                        multiset, table, array, LOB, file, etc. */
+  /* 0x00000008 =       8 = is NOT FINAL type */
+  /* 0x00000010 =      16 = is a predefined system/builtin type(unalterable) */
+  /* 0x00000080 =     128 = contains at least one multiset attribute */
+  /* 0x00000100 =     256 = is incomplete */
+  /* 0x00000200 =     512 = contains at least one LOB attribute */
+  /* 0x00000400 =    1024 = contains at least one file attribute */
+  /* 0x00000800 =    2048 = is a system-generated type */
+  /* 0x00001000 =    4096 = contains opaque types */
+  /* 0x00002000 =    8192 = is a SUBTYPE */
+  /* 0x00004000 =   16384 = is invoker rights type */
+  /* 0x00008000 =   32768 = contains varray attribute */
+  /* 0x00010000 =   65536 = is not instantiable */
+  /* 0x00020000 =  131072 = is java type */
+  /* 0x00040000 =  262144 = old type version */
+  /* 0x00080000 =  524288 = contain TSLTZ attr/element */
+  /* 0x00100000 = 1048576 = has embedded non final type */
+  /* 0x00200000 = 2097152 = has embedded subtype */
+  /* 0x00400000 = 4194304 = has user-defined constructor */
+  /* 0x00800000 = 8388608 = type is cursor duration */
+
+  attributes    number,                              /* number of attributes */
+  methods       number,                                 /* number of methods */
+  hiddenMethods number,                                 /* number of methods */
+  supertypes    number,                                          /* reserved */
+  subtypes      number,                                          /* reserved */
+  externtype    number,                                     /* external type */
+                                                    /* 1 = SQLData SQLJ type */
+                                                /* 2 = CustomDatum SQLJ type */
+                                               /* 3 = serializable SQLJ type */
+                                      /* 4 = internal serializable SQLJ type */
+                                                    /* 5 = ORAData SQLJ type */
+  externname      varchar2("M_VCSZ"),    /* java class implementing the type */
+  helperclassname varchar2("M_VCSZ"),       /* Generated helper class (SQLJ) */
+  local_attrs   number,                        /* Number of local attributes */
+  local_methods number,                           /* Number of local methods */
+  typeid        raw(16), /* short typeid value (for non final and sub types) */
+  roottoid      raw(16),          /* TOID of root type (null if not subtype) */
+  spare1        number,                                          /* reserved */
+  spare2        number,                                          /* reserved */
+  spare3        number,                                          /* reserved */
+  supertoid     raw(16),                                    /* supertype OID */
+  hashcode      raw("KOTHCL"))                                  /* hashcode */
+cluster c_toid_version#(toid, version#)
+                           /* keys: (toid, version# or version) or (tdo_oid) */
+/
+create unique index i_type1 on type$(toid, version)
+/
+create unique index i_type2 on type$(tvoid)
+/
+create index i_type3 on type$(roottoid)
+/
+create index i_type4 on type$(supertoid)
+/
+create index i_type5 on type$(hashcode)
+/
+create table typehierarchy$
+( toid         raw(16) not null,                    /* TOID of the root type */
+  next_typeid  raw(16) not null,                    /* next available typeid */
+  spare1       number,                                           /* reserved */
+  spare2       number)                                           /* reserved */
+/
+create unique index i_typehierarchy1 on typehierarchy$(toid)
+/
+create table collection$                            /* collection type table */
+( toid          raw(16) not null,                                    /* TOID */
+  version#      number not null,             /* internal type version number */
+  coll_toid     raw(16) not null,   /* collection TOID (TABLE, VARRAY, etc.) */
+  coll_version# number not null,/* collection type's internal version number */
+  elem_toid     raw(16) not null,                          /* element's TOID */
+  elem_version# number not null, /* element's type's internal version number */
+  synobj#       number,                              /* obj# of type synonym */
+  properties    number not null,                    /* element's properties: */
+  /* 0x4000 =   16384 = is a PONTER element */
+  /* 0x8000 =   32768 = is a REF element */
+  /* 0x10000 =  65536  = no NULL is stored with each element */
+  /* 0x20000 =  131072 = number/float elements stored in min. fixed size */
+  /* 0x40000 =  262144 = number/float elements stored in varying size    */
+  charsetid     number,                                  /* character set id */
+  charsetform   number,                                /* character set form */
+  /* 1 = implicit: for CHAR, VARCHAR2, CLOB w/o a specified set */
+  /* 2 = nchar: for NCHAR, NCHAR VARYING, NCLOB */
+  /* 3 = explicit: for CHAR, etc. with "CHARACTER SET ..." clause */
+  /* 4 = flexible: for PL/SQL "flexible" parameters */
+  length        number,                  /* fixed character string length or */
+                                  /* maximum varying character string length */
+  precision     number,        /* fixed- or floating-point numeric precision */
+  scale         number,                         /* fixed-point numeric scale */
+  upper_bound   number,     /* fixed array size or varying array upper bound */
+  spare1        number,                      /* fractional seconds precision */
+  spare2        number,                  /* interval leading field precision */
+  spare3        number)
+cluster c_toid_version#(toid, version#)
+/
+
+create index collind on collection$(coll_toid)
+/
+create index collelemind on collection$(elem_toid)
+/
+rem NOTE 
+rem Logminer/Streams uses contents of this table. 
+rem Please do not reuse any flags without verifying the impact of your 
+rem changes on inter-op.  
+create table attribute$                                   /* attribute table */
+( toid          raw(16) not null,                                    /* TOID */
+  version#      number not null,             /* internal type version number */
+  name          varchar2("M_IDEN") not null,               /* attribute name */
+  attribute#    number not null,              /* attribute identifier number */
+  attr_toid     raw(16) not null,                        /* attribute's TOID */
+  attr_version# number not null,
+                               /* attribute's type's internal version number */
+  synobj#       number,                              /* obj# of type synonym */
+  properties    number not null,                  /* attribute's properties: */
+  /* 0x4000 =   16384 = is a PONTER attribute */
+  /* 0x8000 =   32768 = is a REF attribute */
+  charsetid     number,                                  /* character set id */
+  charsetform   number,                                /* character set form */
+  /* 1 = implicit: for CHAR, VARCHAR2, CLOB w/o a specified set */
+  /* 2 = nchar: for NCHAR, NCHAR VARYING, NCLOB */
+  /* 3 = explicit: for CHAR, etc. with "CHARACTER SET ..." clause */
+  /* 4 = flexible: for PL/SQL "flexible" parameters */
+  length        number,                  /* fixed character string length or */
+                                  /* maximum varying character string length */
+  precision#    number,        /* fixed- or floating-point numeric precision */
+  scale         number,                         /* fixed-point numeric scale */
+  externname    varchar2("M_VCSZ"),    /* field in java class for SQLJ types */
+  xflags         number,                          /* flags not stored in TDO */
+  /* 0x01 - inherited attribute */
+  spare1        number,                      /* fractional seconds precision */
+  spare2        number,                  /* interval leading field precision */
+  spare3        number,                                          /* reserved */
+  spare4        number,                                          /* reserved */
+  spare5        number,                                          /* reserved */
+  setter        number,                        /* Setter function no. (SQLJ) */
+  getter        number                         /* Getter function no. (SQLJ) */
+)
+cluster c_toid_version#(toid, version#)
+                               /* keys: (toid, version#, name or attribute#) */
+/
+create unique index i_attribute1 on attribute$(toid, version#, name)
+/
+create unique index i_attribute2 on attribute$(toid, version#, attribute#)
+/
+create table method$                               /* method signature table */
+( toid          raw(16) not null,                                    /* TOID */
+  version#      number not null,             /* internal type version number */
+  method#       number not null,                /* method number or position */
+  name          varchar2("M_IDEN") not null,                  /* method name */
+  properties    number not null,                     /* method's properties: */
+  /* 0x00001 =      1 = PRIVATE method */
+  /* 0x00002 =      2 = PUBLIC method (default) */
+  /* 0x00004 =      4 = INLINE method */
+  /* 0x00008 =      8 = VIRTUAL method => NOT FINAL */
+  /* 0x00010 =     16 = CONSTANT method */
+  /* 0x00020 =     32 = contructor method */
+  /* 0x00040 =     64 = destructor method */
+  /* 0x00080 =    128 = operator method */
+  /* 0x00100 =    256 = selfish method */
+  /* 0x00200 =    512 = MAP method */
+  /* 0x00800 =   2048 = ORDER method */
+  /* 0x01000 =   4096 = Read No Data State method (default) */
+  /* 0x02000 =   8192 = Write No Data State method */
+  /* 0x04000 =  16384 = Read No Process State method */
+  /* 0x08000 =  32768 = Write No Process State method */
+  /* 0x10000 =  65536 = Not Instantiable method */
+  /* 0x20000 = 131072 = Overriding method */
+  /* 0x40000 = 262144 = Returns SELF as result */
+  parameters#   number not null,                     /* number of parameters */
+  results       number not null,                        /* number of results */
+  xflags        number,                           /* Flags not stored in TDO */
+  /* 0x01 - Inherited method */
+  spare1        number,                                          /* reserved */
+  spare2        number,                                          /* reserved */
+  spare3        number,                                          /* reserved */
+  externVarName varchar2("M_VCSZ")        /* external variable name for SQLJ */
+  ) 
+cluster c_toid_version#(toid, version#)
+                                          /* keys: (toid, version#, method#) */
+/
+create unique index i_method1 on method$(toid, version#, method#)
+/
+REM 
+REM !!! parameter$ is now obsolete. Use argument$ !!!
+REM 
+create table parameter$                            /* method parameter table */
+( toid          raw(16) not null,                                    /* TOID */
+  version#      number not null,             /* internal type version number */
+  method#       number not null,                /* method number or position */
+  name          varchar2("M_IDEN") not null,               /* parameter name */
+  parameter#    number not null,             /* parameter number or position */
+  param_toid    raw(16) not null,                 /* parameter's type's TOID */
+  param_version# number not null,
+                               /* parameter's type's internal version number */
+  synobj#       number,                              /* obj# of type synonym */
+  properties    number not null,                  /* parameter's properties: */
+  /* 0x0100 =     256 = IN parameter (pass by value, default) */
+  /* 0x0200 =     512 = OUT parameter */
+  /* 0x0400 =    1024 = pass by reference parameter */
+  /* 0x0800 =    2048 = required parameter (default) */
+  /* 0x4000 =   16384 = is a PONTER parameter */
+  /* 0x8000 =   32768 = is a REF parameter */
+  charsetid     number,                                  /* character set id */
+  charsetform   number,                                /* character set form */
+  /* 1 = implicit: for CHAR, VARCHAR2, CLOB w/o a specified set */
+  /* 2 = nchar: for NCHAR, NCHAR VARYING, NCLOB */
+  /* 3 = explicit: for CHAR, etc. with "CHARACTER SET ..." clause */
+  /* 4 = flexible: for PL/SQL "flexible" parameters */
+  default$      varchar2("M_VCSZ"),                         /* default value */
+  spare1        number,
+  spare2        number,
+  spare3        number)
+cluster c_toid_version#(toid, version#)
+                      /* keys: (toid, version#, method#, name or parameter#) */
+/
+create unique index i_parameter1 on
+  parameter$(toid, version#, method#, name)
+/
+create unique index i_parameter2 on
+  parameter$(toid, version#, method#, parameter#)
+/
+create index paramind on parameter$(param_toid)
+/ 
+
+create table result$                                  /* method result table */
+( toid          raw(16) not null,                                    /* TOID */
+  version#      number not null,             /* internal type version number */
+  method#       number not null,                /* method number or position */
+  result#       number not null,                /* result number or position */
+  result_toid   raw(16) not null,                           /* result's TOID */
+  result_version# number not null,
+                                  /* result's type's internal version number */
+  synobj#       number,                              /* obj# of type synonym */
+  properties    number not null,                     /* result's properties: */
+  /* 0x4000 =   16384 = is a PONTER result */ 
+  /* 0x8000 =   32768 = is a REF result */
+  /* Following length, precision, scale, upper_bound, char_set_id are NOT USED
+     in V8.0, but maybe supported in the future. */
+  charsetid     number,                                  /* character set id */
+  charsetform   number,                                /* character set form */
+  /* 1 = implicit: for CHAR, VARCHAR2, CLOB w/o a specified set */
+  /* 2 = nchar: for NCHAR, NCHAR VARYING, NCLOB */
+  /* 3 = explicit: for CHAR, etc. with "CHARACTER SET ..." clause */
+  /* 4 = flexible: for PL/SQL "flexible" parameters */
+  spare1        number,
+  spare2        number,
+  spare3        number)
+cluster c_toid_version#(toid, version#)
+                                 /* keys: (toid, version#, method#, result#) */
+/
+create unique index i_result1 on
+  result$(toid, version#, method#, result#)
+/
+
+create index resultind on result$(result_toid)
+/   
+
+create table kottd$ of kottd                           /* primary type table */
+  oid '00000000000000000000000000010001'
+/
+create table kottb$ of kottb                         /* secondary type table */
+  oid '00000000000000000000000000010002'
+/
+create table kotad$ of kotad                    /* attribute/parameter table */
+  oid '00000000000000000000000000010003'
+/
+create table kotmd$ of kotmd                       /* method signature table */
+  oid '00000000000000000000000000010004'
+/
+create table kottbx$ of kottbx                      /* additional type table */
+  oid '00000000000000000000000000010042'
+/
+create table kotadx$ of kotadx                 /* additional attr info table */
+  oid '00000000000000000000000000010043'
+/
+create table kopm$                                         /* metadata table */
+( 
+  name          varchar2("M_IDEN") not null,                /* metadata name */
+  length        number not null,                          /* metadata length */
+  metadata      raw(255))                                        /* metadata */
+/
+create unique index i_kopm1 on kopm$ (name)
+/
+create table vtable$                                               /* vtable */
+(
+  obj#          number not null,               /* object number of type spec */
+  vindex        number not null,                             /* vtable index */
+  itypetoid     raw(16),                         /* implementation type toid */
+  itypeowner    varchar2("M_IDEN"),   /* owner name component of implem type */
+  itypename     varchar2("M_IDEN"),                      /* implem type name */
+  imethod#      number not null,           /* method# in implementation type */
+  iflags        number)                              /* implementation flags */
+/
+rem create unique index i_vtable1 on vtable$(obj#, vindex)
+/
+create table opbinding$
+( obj#          number not null,                     /* obj# of the operator */
+  bind#         number not null,                                 /* binding# */
+  functionname  varchar2(92),                 /* function name in form A.B.C */
+  returnschema  varchar2("M_IDEN"),      /* schema of return type (for ADTs) */
+  returntype    varchar2("M_IDEN"),              /* return type of binding   */
+  impschema     varchar2("M_IDEN"),       /* indextype implementation schema */
+  imptype       varchar2("M_IDEN"),         /* indextype implementation type */
+  property      number not null,                            /* property flag */
+                                                /* 0x01 = WITH INDEX CONTEXT */
+                                             /* 0x02 = RETURN ANCILLARY DATA */
+                                                      /* 0x04 = ANCILLARY TO */
+                                               /* 0x08 = WITHOUT COLUMN DATA */
+                                               /* 0x10 = WITH COLUMN CONTEXT */
+  spare1        varchar2("M_IDEN"),
+  spare2        varchar2("M_IDEN"),
+  spare3        number
+)
+/
+create unique index opbind1 on opbinding$(obj#,bind#)
+/
+create table opancillary$
+( obj#      number not null,          /* object number of ancillary operator */
+  bind#     number not null,            /* bind number of ancillary operator */
+  primop#   number not null,            /* object number of primary operator */
+  primbind# number not null               /* bind number of primary operator */
+)
+/
+create index opanc1 on opancillary$(obj#,bind#)
+/
+create table oparg$
+( obj#          number not null,                     /* obj# of the operator */
+  bind#         number not null,                                 /* binding# */
+  position      number not null,                    /* position of arguments */
+  type          varchar2(61)                     /* datatype of the argument */
+)
+/
+create index oparg1 on oparg$(obj#)
+/
+create table operator$
+( obj#          number not null,                            /* object number */
+  numbind       number not null,                       /* number of bindings */
+  nextbindnum   number not null,             /* Next bind no. to be assigned */
+  property      number not null                             /* property flag */
+)
+/
+create unique index oper1 on operator$(obj#)
+/
+create table indtypes$
+( obj#                  number not null,                  /* indextype obj# */
+  implobj#              number not null,  /* implementation type object num */
+  property              number not null,                        /* property */
+                                              /* 0x0001 WITHOUT_COLUMN_DATA */
+                                                   /* 0x0002 WITH_ARRAY_DML */ 
+                                              /* 0x0004 WITH_REBUILD_ONLINE */
+                                                     /* 0x0008 HAS_ORDER_BY */
+                                       /* 0x0010 WITH LOCAL_RANGE_PARTITION */
+                                        /* 0x0020 WITH LOCAL_HASH_PARTITION */ 
+                                                      /* 0x0040 WITHOUT_DML */ 
+                                              /* 0x0080 AUTHID_CURRENT_USER */
+                                                /* 0x100 WITH_ROWID_MAPPING */
+                                                /* 0x200 WITH_COMPOSITE_IDX */
+                                                   /* 0x400 WITH_SYSMNG_IDX */
+  interface_version#    number           /* versi# of interface implemented */
+)
+/
+create table indop$
+( obj#          number not null,                         /* indextype object */
+  oper#         number not null,          /* obj# for operator schema object */
+  bind#         number not null,                         /* operator binding */
+  property      number not null,                           /* property flags */
+                                 /* 0x01 = INEXACT match ... look for filter */
+  filt_nam      varchar2("M_IDEN"),           /* name of the filter function */
+  filt_sch      varchar2("M_IDEN"),         /* schema of the filter function */
+  filt_typ      varchar2("M_IDEN") /* type or package of the filter function */ 
+)
+/
+create table indarraytype$
+( obj#                  number not null,                   /* indextype obj# */
+  type                  number not null,      /* data type of indexed column */
+                                           /* for ADT column, type# = DTYADT */
+  basetypeobj#          number,        /* object number of user-defined type */
+  arraytypeobj#         number not null,      /* object number of array type */
+  spare1                number,
+  spare2                number
+)
+/
+create table secobj$ 
+(
+ obj#     number  not null,                       /* object number of index */
+ secobj#  number  not null,           /* object number for secondary object */
+ spare1   number,                     /* specify different secondary object */
+                                               /* 0 => created by indextype */
+                                         /* 1 => created by statistics type */
+ spare2   number
+)
+/

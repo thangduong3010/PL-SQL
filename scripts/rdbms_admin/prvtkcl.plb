@@ -1,0 +1,37 @@
+CREATE OR REPLACE PACKAGE BODY dbms_cacheutil wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+1799 3ed
+JSAETFKNpsqLpzItmlNRk9xWJQ8wg9d1TCDrfI5AvrlkV78uGk3mCxNQ5ait+qH2i7Svn9+f
+lK9n4b3iqZj5MG71uk5zKW1gO4kbrUqaxrutYRPIj0qKL8/zIhXEZJ21ka4PQT/Ptf7+wZbK
+Jz3AFAk2BOjT7tFwMdzTJO/Moq090MtNcNB/N+QOdrn0dDOihzDVfdpGtQhD9c9p5hro7J6H
+vawTuo8+Cx2v6WQ+KAjHHIqZr8ileivZjlV50fGKX8uXKpfjNufcjyqBRQXiH/Wp8VoVVBbX
+i1Hsvfao4pXd3EWYyCo3AsM+r7ktVUxegerdLijR7gpE0GDnpeURb4U50J+JVXbaR3ik1Oan
+pxGjhjEg/zmujACZlR0oNp2AJv1WwcFOwqBAOnwMwIst2H8pDJs8WJEpVmW+Fv/RB3MCuOnX
+iSmGSsDrrDpQTdIb5RjUNbv3H5YR/09rLApfFgEESEovZdzg9SUUNSl2ZFPiW6RzCkbrVzh1
+Jq7YaEb7PbaasHMU5EL118eFjkGw8e7OsVJ/O1/IbgpDa4hptzk6oenNYQV3mRfkiANzrFg/
+oL7GupgaqmtspxPhOedfA85CPsLg0vMrJCZIeJjXPYOKPZUGMpWlGOAjAiDxk379/dQ3NRxc
+BKQ+UmH8VmxgtoQAAKs2OdPbJWXPr9NoFZsSCVFZDLYTgT2nWHA2jd4pwEHFO2zXRqCI7JME
+XEXSUOUn2Fpa5wlY2lDMhXxQcDOoFgBpU233HlFOGfoQlbujcu8+4GnQxZkQ8VhXXJi1S4Dr
+808nFYTBY1Xj95CbjwaSc0OYCtkK9h8i3bqxomWo8e+h9/wUPf1O1wRDfdhPgOvZA7H1DQ0g
+0WjhV/ZXdiM6q7MT5ikpJe6m9ihg6afuWW3Yn2Hj9bFkahP2mm+Guv1hMy0Q1HAg2u0ReHkB
+ggAnlgANVzy1x1f4Y/XW5oAAeoQ4pydwmTcjvX5FtTDvco14tfu+rfhL
+
+/
+show errors

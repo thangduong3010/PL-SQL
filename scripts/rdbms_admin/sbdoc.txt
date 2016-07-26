@@ -1,0 +1,43 @@
+Standby Statspack Readme
+
+sbcreate.sql      - Install standby statspack
+    sbcusr.sql    - Called from sbcreate.sql to create the schema
+    sbctab.sql    - Called from sbcreate.sql to create tables holding snapshots
+    sbaddins.sql  - Called from sbcreate.sql to add a standby database instance                     to the configuration. 
+
+sbaddins.sql      - Add a standby database instance to the configuration
+    sbcpkg.sql    - Called from sbaddins.sql to create the instance specific 
+                    statspack package
+
+sblisins.sql      - List instances in the standby configuration
+
+sbreport.sql      - Create a report
+    sbrepcon.sql  - Called from sbreport.sql to get the report configuration
+    sbrepins.sql  - Called from sbreport.sql to create the actual report
+
+sbpurge.sql       - Purge a set of snapshots
+
+sbdelins.sql      - Delete an instance from the standby configuration
+
+sbdrop.sql        - Drop the user and tables of the standby statspack
+    sbdtab.sql    - Called from sbdrop.sql to drop tables
+    sbdusr.sql    - Called from sbdrop.sql to drop user
+                                                                               
+~                                                                               
+
+====================================================================
+STANDBY STATSPACK UPGRADE NOTE (11.1.0.7 & 11.2.0.1 Customers)
+
+In order to upgrade to 11.2.0.2, one must must drop and
+recreate the standby statspack.
+
+To support multiple standby database configurations,
+11.2.0.2 standby statspack uses a new *primary key* (db_unique_name, instance_name).
+This new feature requires customers who upgrade to drop and
+recreate the stdbyperf schema.
+
+Exception: Customers who have applied the BLR patch, ie, their stats$ tables
+already *patched* and *switched* to the new *primary key* do not need
+to recreate the standby statspack schema.
+
+==============================================

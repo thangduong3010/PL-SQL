@@ -1,0 +1,35 @@
+  create or replace package body dbms_fine_grain_dep wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+850 343
+g0VVNPpvwi9jTn+MTG1VeRqTgZ0wg5Vc2UgFfC+KMQ8tAJPyecQ/oAdTrVqb8qhmt+G+wvy2
+s2be94TWUXOqDgyTrrph917191N2/8C/QMNvoig1rC/l1xwcquT5F6oinXoxD6qdJJ20xrAk
+ykcRIeGpV5zzvWyo3FboU+mh1JlEzXzhpI4iERpxnOuORsj0dF6oUobnDs+RvA3uQVBnGhpr
+Z9NG5jkjIAIUWWlqzaRdiaPoE2MWtkVk084eGFFpIwu/NZ5w298MLZjAh9ZlXA5hw00MyvSa
+hWXaal5e7yO3o5SP5bMEPVKUxjn6EJALy3/zwuZtU17CfHpaXmlFtjTWrmf+VJaPwVDbeyzy
+SA9x0OXqR44BLGWVoPE+yYLK15swhwwAAr4oLDhDHRryAXlA5TkZUoTAHQoymU1tT1zFBbLs
+he5V+ZbuV610j4e1PU3PErE5ay1gjgTCGn6aehkvd11rqEy+EQmx+fuLt9HsvfOePGtE2I/2
+gEmw8wd8AXEmZpmGrkDT6KzjEK9OZsj5jdFLNTToKzOsqpE5xCpsoYV22lkQXtLnusG/OyJu
+670kbgN4uEjHxhrfg8A/XbBAp8w3aCFELoNVzqX5dykQLL6OEAzRH1bWma46xwBLSMrDnpNO
+skfaIK0+sG09NeuHaoOvslY8eR7uZuub3fUzd19sG/v0pEqxnDCLD+IIuMgzMSrscurezqNg
+C412FMViP3PFBMGbNeUGdFv9dz5/IcE/mY9IK2SLM65wSTksfL8PCrMIwBezuffu5RloBsbq
+Q9XN+WCQ2scx0g56uCD+I/4s75pqlQ==
+
+/
+show errors;

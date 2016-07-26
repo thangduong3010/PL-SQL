@@ -1,0 +1,5506 @@
+--
+-- Copyright (c) 2006, 2013, Oracle and/or its affiliates. 
+-- All rights reserved. 
+--
+--    NAME
+--      catmacc.sql
+--
+--    DESCRIPTION
+--       Creates the Data Vault tables and constraints for DVSYS schema
+--
+--    NOTES
+--    This script is run by dvsys during install in catmac
+--    It is also run by SYS with the DV_PATCH_ADMIN role from catmacpatch
+--    All object names should qualified.
+--
+--    MODIFIED   (MM/DD/YY)
+--    apfwkr      07/17/12 - Backport apfwkr_blr_backport_13962309_11.2.0.3.0
+--                           from st_rdbms_11.2.0
+--    apfwkr      07/02/12 - Backport jibyun_bug-7118790 from main
+--    sanbhara    06/14/12 - Bug 13781732 - adding dba_dv_patch_admin_audit
+--                           view
+--    youyang     06/16/11 - Backport youyang_bug-12395489 from main
+--    jheng       01/24/11 - Backport jheng_bug-7137958 from main
+--    jheng       01/20/11 - Backport jheng_bug-8501924 from main
+--    youyang     07/26/10 - Backport youyang_bug-9671705 from main
+--    ruparame    03/30/09 - Bug 8393717 Change the datapump rule set name to
+--                           Allow Oracle Data Pump Operation
+--    youyang     03/27/09 - Bug 8385541: to qualify session_roles
+--    jheng       02/17/09 - create DV Job table to store metadata
+--    jsamuel     02/17/09 - bug 8248684 - fix insert into dvsys.config
+--    jsamuel     02/03/09 - qualify view names for Data Pump schemas
+--    srtata      12/29/08 - static rulesets
+--    jsamuel     10/27/08 - remove error messages with anonymous blocks
+--    clei        09/03/08 - Bug 6435192: add config$
+--    ruparame    08/18/08 - Bug 7319691: Create DV_MONITOR role
+--    pknaggs     07/07/08 - bug 6938028: add Factor and Role support for DVPS.
+--    pknaggs     04/11/08 - bug 6938028: Database Vault Protected Schema.
+--    jibyun      11/16/07 - To fix Bug 6497886
+--    jibyun      07/30/07 - To fix Bug 6068504: add row cache for rule set
+--    prramakr    07/11/07 - fix for bugs, 6110305, 6110298
+--    jiyang      11/27/06 - update views for true multilingual support
+--    cchui       06/30/06 - add views to see grantees of DV roles 
+--    sgaetjen    05/17/06 - increase length of factor description 
+--    jciminsk    05/02/06 - cleanup embedded file boilerplate 
+--    jciminsk    05/02/06 - created admin/catmacc.sql 
+--    ayalaman    04/06/06 - temporary table for command context 
+--    sgaetjen    01/10/06 - add space for multibyte 
+--    sgaetjen    01/03/06 - add UK on factor.name 
+--    sgaetjen    11/14/05 - add unique constraints to language specific names 
+--    sgaetjen    11/08/05 - unit test fixes 
+--    sgaetjen    11/03/05 - add MAC OLS policy error label, add NLS tables
+--    sgaetjen    08/11/05 - sgaetjen_dvschema
+--    sgaetjen    07/28/05 - dos2unix
+--    sgaetjen    07/25/05 - ADE check in
+--    raustin     11/30/04 - Created
+
+-- DV enforcement status, at this point DV cannot be enforced.
+-- The status will be updated to 1 when DV installation is completed.
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS.CONFIG$ (STATUS NUMBER unique)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+DECLARE
+NUM NUMBER;
+
+BEGIN
+SELECT COUNT(*) INTO NUM FROM DVSYS.CONFIG$;
+IF NUM = 0 THEN 
+EXECUTE IMMEDIATE 'INSERT INTO DVSYS.CONFIG$ (STATUS) VALUES (0)';
+ END IF;
+  EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00001) THEN NULL; --ignore unique constraint violation
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."DOCUMENT$"
+(
+"ID#" NUMBER NOT NULL,
+"NAME" VARCHAR2 (255) NOT NULL,
+"DOC_TYPE" NUMBER NOT NULL,
+"DOC_REVISION" VARCHAR2 (30) NOT NULL,
+"ENABLED" NUMBER NOT NULL,
+"XML_DATA" CLOB NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."MAC_POLICY$"
+(
+"ID#" NUMBER NOT NULL,
+"POLICY_ID#" NUMBER NOT NULL,
+"ALGORITHM_CODE_ID#" NUMBER NOT NULL,
+"ERROR_LABEL" VARCHAR2 (4000),
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."CODE$"
+(
+"ID#" NUMBER NOT NULL,
+"CODE_GROUP" VARCHAR2 (30) NOT NULL,
+"CODE" VARCHAR2 (30) NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."CODE_T$"
+(
+"ID#" NUMBER NOT NULL,
+"VALUE" VARCHAR2 (4000),
+"DESCRIPTION" VARCHAR2 (1024),
+"LANGUAGE" VARCHAR2 (3) NOT NULL
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."MAC_POLICY_FACTOR$"
+(
+"ID#" NUMBER NOT NULL,
+"FACTOR_ID#" NUMBER NOT NULL,
+"MAC_POLICY_ID#" NUMBER NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."FACTOR$"
+(
+"ID#" NUMBER NOT NULL,
+"NAME" VARCHAR2 (30) NOT NULL,
+"FACTOR_TYPE_ID#" NUMBER NOT NULL,
+"ASSIGN_RULE_SET_ID#" NUMBER,
+"GET_EXPR" VARCHAR2 (1024),
+"VALIDATE_EXPR" VARCHAR2 (1024),
+"IDENTIFIED_BY" NUMBER NOT NULL,
+"NAMESPACE" VARCHAR2(30),
+"NAMESPACE_ATTRIBUTE" VARCHAR2(30),
+"LABELED_BY" NUMBER NOT NULL,
+"EVAL_OPTIONS" NUMBER NOT NULL,
+"AUDIT_OPTIONS" NUMBER NOT NULL,
+"FAIL_OPTIONS" NUMBER NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."FACTOR_T$"
+(
+"ID#" NUMBER NOT NULL,
+"DESCRIPTION" VARCHAR2 (4000),
+"LANGUAGE" VARCHAR2 (3) NOT NULL
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."FACTOR_SCOPE$"
+(
+"ID#" NUMBER NOT NULL,
+"FACTOR_ID#" NUMBER NOT NULL,
+"GRANTEE" VARCHAR2 (30) NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."FACTOR_TYPE$"
+(
+"ID#" NUMBER NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."FACTOR_TYPE_T$"
+(
+"ID#" NUMBER NOT NULL,
+"NAME" VARCHAR2 (90) NOT NULL,
+"DESCRIPTION" VARCHAR2 (1024),
+"LANGUAGE" VARCHAR2 (3) NOT NULL
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."COMMAND_RULE$"
+(
+"ID#" NUMBER NOT NULL,
+"CODE_ID#" NUMBER NOT NULL,
+"RULE_SET_ID#" NUMBER NOT NULL,
+"OBJECT_OWNER" VARCHAR2 (30) NOT NULL,
+"OBJECT_NAME" VARCHAR2 (128) NOT NULL,
+"ENABLED" VARCHAR2 (1) NOT NULL,
+"PRIVILEGE_SCOPE" NUMBER,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."FACTOR_LINK$"
+(
+"ID#" NUMBER NOT NULL,
+"PARENT_FACTOR_ID#" NUMBER NOT NULL,
+"CHILD_FACTOR_ID#" NUMBER NOT NULL,
+"LABEL_IND" VARCHAR2 (1) NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."ROLE$"
+(
+"ID#" NUMBER NOT NULL,
+"ROLE" VARCHAR2 (30) NOT NULL,
+"RULE_SET_ID#" NUMBER NOT NULL,
+"ENABLED" VARCHAR2 (1) NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."IDENTITY$"
+(
+"ID#" NUMBER NOT NULL,
+"FACTOR_ID#" NUMBER NOT NULL,
+"VALUE" VARCHAR2 (1024) NOT NULL,
+"TRUST_LEVEL" NUMBER,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."IDENTITY_MAP$"
+(
+"ID#" NUMBER NOT NULL,
+"IDENTITY_ID#" NUMBER NOT NULL,
+"FACTOR_LINK_ID#" NUMBER,
+"OPERATION_CODE_ID#" NUMBER NOT NULL,
+"OPERAND1" VARCHAR2 (1024),
+"OPERAND2" VARCHAR2 (1024),
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."RULE$"
+(
+"ID#" NUMBER NOT NULL,
+"RULE_EXPR" VARCHAR2 (1024) NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."RULE_T$"
+(
+"ID#" NUMBER NOT NULL,
+"NAME" VARCHAR2 (90) NOT NULL,
+"LANGUAGE" VARCHAR2(3) NOT NULL
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."POLICY_LABEL$"
+(
+"ID#" NUMBER NOT NULL,
+"IDENTITY_ID#" NUMBER NOT NULL,
+"POLICY_ID#" NUMBER NOT NULL,
+"LABEL_ID#" NUMBER NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."RULE_SET_RULE$"
+(
+"ID#" NUMBER NOT NULL,
+"RULE_SET_ID#" NUMBER NOT NULL,
+"RULE_ID#" NUMBER NOT NULL,
+"RULE_ORDER" NUMBER NOT NULL,
+"ENABLED" VARCHAR2 (1),
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."RULE_SET$"
+(
+"ID#" NUMBER NOT NULL,
+"ENABLED" VARCHAR2 (1) NOT NULL,
+"EVAL_OPTIONS" NUMBER NOT NULL,
+"AUDIT_OPTIONS" NUMBER NOT NULL,
+"FAIL_OPTIONS" NUMBER NOT NULL,
+"FAIL_CODE" VARCHAR2 (10),
+"HANDLER_OPTIONS" NUMBER NOT NULL,
+"HANDLER" VARCHAR2 (1024),
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."RULE_SET_T$"
+(
+"ID#" NUMBER NOT NULL,
+"NAME" VARCHAR2 (90) NOT NULL,
+"DESCRIPTION" VARCHAR2 (1024),
+"FAIL_MESSAGE" VARCHAR2 (80),
+"LANGUAGE" VARCHAR2(3) NOT NULL
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."REALM_OBJECT$"
+(
+"ID#" NUMBER NOT NULL,
+"REALM_ID#" NUMBER NOT NULL,
+"OWNER" VARCHAR2 (30) NOT NULL,
+"OBJECT_NAME" VARCHAR2 (128) NOT NULL,
+"OBJECT_TYPE" VARCHAR2 (19) NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."REALM_AUTH$"
+(
+"ID#" NUMBER NOT NULL,
+"REALM_ID#" NUMBER NOT NULL,
+"GRANTEE" VARCHAR2 (30) NOT NULL,
+"AUTH_RULE_SET_ID#" NUMBER,
+"AUTH_OPTIONS" NUMBER,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."REALM_COMMAND_RULE$"
+(
+"ID#" NUMBER NOT NULL,
+"REALM_ID#" NUMBER NOT NULL,
+"CODE_ID#" NUMBER NOT NULL,
+"RULE_SET_ID#" NUMBER NOT NULL,
+"OBJECT_OWNER" VARCHAR2 (30) NOT NULL,
+"OBJECT_NAME" VARCHAR2 (128) NOT NULL,
+"GRANTEE" VARCHAR2 (30) NOT NULL,
+"ENABLED" VARCHAR2 (1) NOT NULL,
+"PRIVILEGE_SCOPE" NUMBER,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."REALM$"
+(
+"ID#" NUMBER NOT NULL,
+"ENABLED" VARCHAR2 (1) NOT NULL,
+"AUDIT_OPTIONS" NUMBER NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."REALM_T$"
+(
+"ID#" NUMBER NOT NULL,
+"NAME" VARCHAR2 (90) NOT NULL,
+"DESCRIPTION" VARCHAR2 (1024),
+"LANGUAGE" VARCHAR2(3) NOT NULL
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."MONITOR_RULE$"
+(
+"ID#" NUMBER NOT NULL,
+"MONITOR_RULE_SET_ID#" NUMBER NOT NULL,
+"RESTART_FREQ" NUMBER NOT NULL,
+"ENABLED" VARCHAR2 (1) NOT NULL,
+"VERSION" NUMBER,
+"CREATED_BY" VARCHAR2 (30),
+"CREATE_DATE" DATE,
+"UPDATED_BY" VARCHAR2 (30),
+"UPDATE_DATE" DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."MONITOR_RULE_T$"
+(
+"ID#" NUMBER NOT NULL,
+"NAME" VARCHAR2 (90) NOT NULL,
+"DESCRIPTION" VARCHAR2 (1024),
+"LANGUAGE" VARCHAR2(3) NOT NULL
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS.AUDIT_TRAIL$
+(
+ID# NUMBER,
+OS_USERNAME VARCHAR2 (255),
+USERNAME VARCHAR2 (30),
+USERHOST VARCHAR2 (128),
+TERMINAL VARCHAR2 (255),
+TIMESTAMP DATE,
+OWNER VARCHAR2 (30),
+OBJ_NAME VARCHAR2 (128),
+ACTION NUMBER NOT NULL,
+ACTION_NAME VARCHAR2 (128),
+ACTION_OBJECT_ID NUMBER,
+ACTION_OBJECT_NAME VARCHAR2 (128),
+ACTION_COMMAND VARCHAR2 (4000),
+AUDIT_OPTION VARCHAR2 (4000),
+RULE_SET_ID NUMBER,
+RULE_SET_NAME VARCHAR2 (90),
+RULE_ID NUMBER,
+RULE_NAME VARCHAR2 (90),
+FACTOR_CONTEXT VARCHAR2 (4000),
+COMMENT_TEXT VARCHAR2 (4000),
+SESSIONID NUMBER NOT NULL,
+ENTRYID NUMBER NOT NULL,
+STATEMENTID NUMBER NOT NULL,
+RETURNCODE NUMBER NOT NULL,
+EXTENDED_TIMESTAMP TIMESTAMP(6) WITH TIME ZONE,
+PROXY_SESSIONID NUMBER,
+GLOBAL_UID VARCHAR2 (32),
+INSTANCE_NUMBER NUMBER,
+OS_PROCESS VARCHAR2 (16),
+CREATED_BY VARCHAR2 (30),
+CREATE_DATE DATE,
+UPDATED_BY VARCHAR2 (30),
+UPDATE_DATE DATE
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+-- table to store the DV authorization metadata
+-- This table is created as a dummy table on 11.2 to store the DV Job 
+-- authorization user information. It might be useful for upgrading in
+-- future, when rule set evalution method used in DV/Job txn  and datapunmp txn
+-- is replaced by row cache table.
+BEGIN
+EXECUTE IMMEDIATE 'CREATE TABLE DVSYS."DV_AUTH$"
+(
+"GRANT_TYPE"  VARCHAR2 (19) NOT NULL,
+"GRANTEE" VARCHAR2 (30) NOT NULL,
+"OBJECT_OWNER" VARCHAR2 (30),
+"OBJECT_NAME" VARCHAR2 (128),
+"OBJECT_TYPE" VARCHAR2 (19)
+)'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+-- Insert ORADEBUG row to DV_AUTH$ so that ORADEBUG is enabled by default.
+BEGIN
+EXECUTE IMMEDIATE 'INSERT INTO DVSYS.DV_AUTH$ (GRANT_TYPE, GRANTEE)
+                     SELECT ''ORADEBUG'', ''%'' FROM DUAL
+                     WHERE NOT EXISTS (SELECT 1 FROM DVSYS.DV_AUTH$
+                                       WHERE GRANT_TYPE = ''ORADEBUG'')';
+END;
+/
+
+-- command context current used for drop user cascade context 
+BEGIN
+EXECUTE IMMEDIATE 'CREATE GLOBAL TEMPORARY TABLE DVSYS.DV$CMDCONTEXT
+ (cmdtype VARCHAR2(30),
+  status VARCHAR(10))
+on commit preserve rows';
+
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."AUDIT_TRAIL$"
+ADD CONSTRAINT "AUDIT_TRAIL$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."DOCUMENT$"
+ADD CONSTRAINT "DOCUMENT$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error 
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."DOCUMENT$"
+ADD CONSTRAINT "DOCUMENT$_UK1" UNIQUE
+(
+"NAME"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."MAC_POLICY$"
+ADD CONSTRAINT "MAC_POLICY$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."CODE$"
+ADD CONSTRAINT "CODE$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."MAC_POLICY_FACTOR$"
+ADD CONSTRAINT "MAC_POLICY_FACTOR$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR$"
+ADD CONSTRAINT "FACTOR$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR$"
+ADD CONSTRAINT "FACTOR$_UK1" UNIQUE
+(
+"NAME"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR_T$"
+ADD CONSTRAINT "FACTOR_T$_UK1" UNIQUE
+(
+"ID#"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR_TYPE$"
+ADD CONSTRAINT "FACTOR_TYPE$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR_TYPE_T$"
+ADD CONSTRAINT "FACTOR_TYPE_T$_UK1" UNIQUE
+(
+"ID#"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR_TYPE_T$"
+ADD CONSTRAINT "FACTOR_TYPE_T$_UK2" UNIQUE
+(
+"NAME"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."COMMAND_RULE$"
+ADD CONSTRAINT "COMMAND_RULE$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR_LINK$"
+ADD CONSTRAINT "FACTOR_LINK$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR_SCOPE$"
+ADD CONSTRAINT "FACTOR_SCOPE$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR_LINK$"
+ADD CONSTRAINT "FACTOR_LINK$_UK1" UNIQUE
+(
+"PARENT_FACTOR_ID#",
+"CHILD_FACTOR_ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."ROLE$"
+ADD CONSTRAINT "ROLE$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."ROLE$"
+ADD CONSTRAINT "ROLE$_UK1" UNIQUE
+(
+"ROLE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."IDENTITY$"
+ADD CONSTRAINT "IDENTITY$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."IDENTITY$"
+ADD CONSTRAINT "IDENTITY$_UK1" UNIQUE
+(
+"FACTOR_ID#",
+"VALUE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."IDENTITY_MAP$"
+ADD CONSTRAINT "IDENTITY_MAP$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."RULE$"
+ADD CONSTRAINT "RULE$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."RULE_T$"
+ADD CONSTRAINT "RULE_T$_UK1" UNIQUE
+(
+"ID#"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."RULE_T$"
+ADD CONSTRAINT "RULE_T$_UK2" UNIQUE
+(
+"NAME"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."POLICY_LABEL$"
+ADD CONSTRAINT "IDENTITY_LABEL$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."POLICY_LABEL$"
+ADD CONSTRAINT "POLICY_LABEL$_UK1" UNIQUE
+(
+"IDENTITY_ID#",
+"POLICY_ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."RULE_SET_RULE$"
+ADD CONSTRAINT "RULE_SET_RULE$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."RULE_SET_RULE$"
+ADD CONSTRAINT "RULE_SET_RULE$_UK1" UNIQUE
+(
+"RULE_SET_ID#",
+"RULE_ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."RULE_SET$"
+ADD CONSTRAINT "RULE_SET$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."RULE_SET_T$"
+ADD CONSTRAINT "RULE_SET_T$_UK1" UNIQUE
+(
+"ID#"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."RULE_SET_T$"
+ADD CONSTRAINT "RULE_SET_T$_UK2" UNIQUE
+(
+"NAME"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_OBJECT$"
+ADD CONSTRAINT "REALM_OBJECT$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_AUTH$"
+ADD CONSTRAINT "REALM_AUTH$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_COMMAND_RULE$"
+ADD CONSTRAINT "REALM_COMMAND_RULE$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM$"
+ADD CONSTRAINT "REALM$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_T$"
+ADD CONSTRAINT "REALM_T$_UK1" UNIQUE
+(
+"ID#"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_T$"
+ADD CONSTRAINT "REALM_T$_UK2" UNIQUE
+(
+"NAME"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."MAC_POLICY$"
+ADD CONSTRAINT "MAC_POLICY$_FK1" FOREIGN KEY
+(
+"ALGORITHM_CODE_ID#"
+)
+REFERENCES DVSYS."CODE$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."MAC_POLICY_FACTOR$"
+ADD CONSTRAINT "MAC_POLICY_FACTOR$_FK" FOREIGN KEY
+(
+"FACTOR_ID#"
+)
+REFERENCES DVSYS."FACTOR$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."MAC_POLICY_FACTOR$"
+ADD CONSTRAINT "MAC_POLICY_FACTOR$_FK1" FOREIGN KEY
+(
+"MAC_POLICY_ID#"
+)
+REFERENCES DVSYS."MAC_POLICY$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR$"
+ADD CONSTRAINT "FACTOR$_FK" FOREIGN KEY
+(
+"FACTOR_TYPE_ID#"
+)
+REFERENCES DVSYS."FACTOR_TYPE$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR$"
+ADD CONSTRAINT "FACTOR$_FK1" FOREIGN KEY
+(
+"ASSIGN_RULE_SET_ID#"
+)
+REFERENCES DVSYS."RULE_SET$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."COMMAND_RULE$"
+ADD CONSTRAINT "COMMAND_RULE$_FK" FOREIGN KEY
+(
+"RULE_SET_ID#"
+)
+REFERENCES DVSYS."RULE_SET$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."COMMAND_RULE$"
+ADD CONSTRAINT "COMMAND_RULE$_FK1" FOREIGN KEY
+(
+"CODE_ID#"
+)
+REFERENCES DVSYS."CODE$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR_LINK$"
+ADD CONSTRAINT "FACTOR_LINK$_FK" FOREIGN KEY
+(
+"PARENT_FACTOR_ID#"
+)
+REFERENCES DVSYS."FACTOR$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR_LINK$"
+ADD CONSTRAINT "FACTOR_LINK$_FK1" FOREIGN KEY
+(
+"CHILD_FACTOR_ID#"
+)
+REFERENCES DVSYS."FACTOR$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."ROLE$"
+ADD CONSTRAINT "ROLE$_FK" FOREIGN KEY
+(
+"RULE_SET_ID#"
+)
+REFERENCES DVSYS."RULE_SET$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."IDENTITY$"
+ADD CONSTRAINT "IDENTITY$_FK" FOREIGN KEY
+(
+"FACTOR_ID#"
+)
+REFERENCES DVSYS."FACTOR$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."IDENTITY_MAP$"
+ADD CONSTRAINT "IDENTITY_MAP$_FK" FOREIGN KEY
+(
+"IDENTITY_ID#"
+)
+REFERENCES DVSYS."IDENTITY$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."IDENTITY_MAP$"
+ADD CONSTRAINT "IDENTITY_MAP$_FK1" FOREIGN KEY
+(
+"FACTOR_LINK_ID#"
+)
+REFERENCES DVSYS."FACTOR_LINK$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."IDENTITY_MAP$"
+ADD CONSTRAINT "IDENTITY_MAP$_FK2" FOREIGN KEY
+(
+"OPERATION_CODE_ID#"
+)
+REFERENCES DVSYS."CODE$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."POLICY_LABEL$"
+ADD CONSTRAINT "IDENTITY_LABEL$_FK" FOREIGN KEY
+(
+"IDENTITY_ID#"
+)
+REFERENCES DVSYS."IDENTITY$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."RULE_SET_RULE$"
+ADD CONSTRAINT "RULE_SET_RULE$_FK" FOREIGN KEY
+(
+"RULE_SET_ID#"
+)
+REFERENCES DVSYS."RULE_SET$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."RULE_SET_RULE$"
+ADD CONSTRAINT "RULE_SET_RULE$_FK1" FOREIGN KEY
+(
+"RULE_ID#"
+)
+REFERENCES DVSYS."RULE$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_OBJECT$"
+ADD CONSTRAINT "REALM_OBJECT$_FK" FOREIGN KEY
+(
+"REALM_ID#"
+)
+REFERENCES DVSYS."REALM$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_AUTH$"
+ADD CONSTRAINT "REALM_AUTH$_FK" FOREIGN KEY
+(
+"REALM_ID#"
+)
+REFERENCES DVSYS."REALM$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_AUTH$"
+ADD CONSTRAINT "REALM_AUTH$_FK1" FOREIGN KEY
+(
+"AUTH_RULE_SET_ID#"
+)
+REFERENCES DVSYS."RULE_SET$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."MAC_POLICY$"
+ADD CONSTRAINT "MAC_POLICY$_UK1" UNIQUE
+(
+POLICY_ID#
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."CODE$"
+ADD CONSTRAINT "CODE$_UK1" UNIQUE
+(
+CODE_GROUP
+, CODE
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."MAC_POLICY_FACTOR$"
+ADD CONSTRAINT "MAC_POLICY_FACTOR$_UK1" UNIQUE
+(
+FACTOR_ID#
+,MAC_POLICY_ID#
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."COMMAND_RULE$"
+ADD CONSTRAINT "COMMAND_RULE$_UK1" UNIQUE
+(
+CODE_ID#
+,OBJECT_OWNER
+,OBJECT_NAME
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_OBJECT$"
+ADD CONSTRAINT "REALM_OBJECT$_UK1" UNIQUE
+(
+REALM_ID#
+, OWNER
+, OBJECT_NAME
+, OBJECT_TYPE
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_AUTH$"
+ADD CONSTRAINT "REALM_AUTH$_UK1" UNIQUE
+(
+REALM_ID#
+, GRANTEE
+, AUTH_OPTIONS
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."MONITOR_RULE$"
+ADD CONSTRAINT "MONITOR_RULE$_PK1" PRIMARY KEY
+(
+"ID#"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."MONITOR_RULE$"
+ADD CONSTRAINT "MONITOR_RULE$_FK1" FOREIGN KEY
+(
+"MONITOR_RULE_SET_ID#"
+)
+REFERENCES DVSYS."RULE_SET$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR_SCOPE$"
+ADD CONSTRAINT "FACTOR_SCOPE$_FK" FOREIGN KEY
+(
+"FACTOR_ID#"
+)
+REFERENCES DVSYS."FACTOR$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_COMMAND_RULE$"
+ADD CONSTRAINT "REALM_COMMAND_RULE$_FK" FOREIGN KEY
+(
+"RULE_SET_ID#"
+)
+REFERENCES DVSYS."RULE_SET$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_COMMAND_RULE$"
+ADD CONSTRAINT "REALM_COMMAND_RULE$_FK1" FOREIGN KEY
+(
+"CODE_ID#"
+)
+REFERENCES DVSYS."CODE$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."REALM_COMMAND_RULE$"
+ADD CONSTRAINT "REALM_COMMAND_RULE$_FK2" FOREIGN KEY
+(
+"REALM_ID#"
+)
+REFERENCES DVSYS."REALM$"
+(
+"ID#"
+) ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."MONITOR_RULE_T$"
+ADD CONSTRAINT "MONITOR_RULE_T$_UK1" UNIQUE
+(
+"ID#"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."MONITOR_RULE_T$"
+ADD CONSTRAINT "MONITOR_RULE_T$_UK2" UNIQUE
+(
+"NAME"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."CODE_T$"
+ADD CONSTRAINT "CODE_T$_UK1" UNIQUE
+(
+"ID#"
+, "LANGUAGE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'ALTER TABLE DVSYS."FACTOR_SCOPE$"
+ADD CONSTRAINT "FACTOR_SCOPE$_UK1" UNIQUE
+(
+"FACTOR_ID#"
+, "GRANTEE"
+)
+ ENABLE'
+;
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -02260, -02261, -02275) THEN NULL;
+       --ignore primary key errors and referential constraint error
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.COMMAND_RULE$_FK_IDX        ON DVSYS.COMMAND_RULE$       (RULE_SET_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.COMMAND_RULE$_FK1_IDX       ON DVSYS.COMMAND_RULE$       (CODE_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.FACTOR$_FK_IDX              ON DVSYS.FACTOR$             (FACTOR_TYPE_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.FACTOR$_FK1_IDX             ON DVSYS.FACTOR$             (ASSIGN_RULE_SET_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.FACTOR_LINK$_FK_IDX         ON DVSYS.FACTOR_LINK$        (PARENT_FACTOR_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.FACTOR_LINK$_FK1_IDX        ON DVSYS. FACTOR_LINK$       (CHILD_FACTOR_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.IDENTITY$_FK_IDX            ON DVSYS.IDENTITY$           (FACTOR_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.IDENTITY_LABEL$_FK_IDX      ON DVSYS.POLICY_LABEL$       (IDENTITY_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.IDENTITY_MAP$_FK_IDX        ON DVSYS.IDENTITY_MAP$       (IDENTITY_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.IDENTITY_MAP$_FK1_IDX       ON DVSYS.IDENTITY_MAP$       (FACTOR_LINK_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.IDENTITY_MAP$_FK2_IDX       ON DVSYS.IDENTITY_MAP$       (OPERATION_CODE_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.IDENTITY_MAP$_UK_IDX ON DVSYS.IDENTITY_MAP$(IDENTITY_ID#, FACTOR_LINK_ID#, OPERATION_CODE_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.MAC_POLICY$_FK_IDX          ON DVSYS.MAC_POLICY$         (ALGORITHM_CODE_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.MAC_POLICY_FACTOR$_FK_IDX   ON DVSYS.MAC_POLICY_FACTOR$  (FACTOR_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.MAC_POLICY_FACTOR$_FK1_IDX  ON DVSYS.MAC_POLICY_FACTOR$  (MAC_POLICY_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.MONITOR_RULE$_FK1_IDX       ON DVSYS.MONITOR_RULE$       (MONITOR_RULE_SET_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.REALM_AUTH$_FK_IDX          ON DVSYS.REALM_AUTH$         (REALM_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.REALM_AUTH$_FK1_IDX         ON DVSYS.REALM_AUTH$         (AUTH_RULE_SET_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.REALM_OBJECT$_FK_IDX        ON DVSYS.REALM_OBJECT$       (REALM_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.ROLE$_FK_IDX                ON DVSYS.ROLE$               (RULE_SET_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.RULE_SET_RULE$_FK_IDX       ON DVSYS.RULE_SET_RULE$      (RULE_SET_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.RULE_SET_RULE$_FK1_IDX      ON DVSYS.RULE_SET_RULE$      (RULE_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.REALM_COMMAND_RULE$_FK_IDX  ON DVSYS.REALM_COMMAND_RULE$ (RULE_SET_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.REALM_COMMAND_RULE$_FK1_IDX ON DVSYS.REALM_COMMAND_RULE$ (CODE_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.REALM_COMMAND_RULE$_FK2_IDX ON DVSYS.REALM_COMMAND_RULE$ (REALM_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE INDEX DVSYS.FACTOR_SCOPE$_FK_IDX        ON DVSYS.FACTOR_SCOPE$       (FACTOR_ID#)';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates sequences for the DVSYS schema.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."AUDIT_TRAIL$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."FACTOR_LINK$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."COMMAND_RULE$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."CODE$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."MAC_POLICY_FACTOR$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."REALM_OBJECT$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."RULE$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."MAC_POLICY$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."POLICY_LABEL$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."ROLE$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."FACTOR$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."IDENTITY$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."RULE_SET$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."RULE_SET_RULE$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."IDENTITY_MAP$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."FACTOR_TYPE$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."REALM_AUTH$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."REALM$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."DOCUMENT$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."MONITOR_RULE$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."REALM_COMMAND_RULE$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+BEGIN
+EXECUTE IMMEDIATE 'CREATE SEQUENCE DVSYS."FACTOR_SCOPE$_SEQ" START WITH 5000 INCREMENT BY 1 NOCACHE NOCYCLE ORDER';
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -00955) THEN NULL; --object has already been created
+     ELSE RAISE;
+     END IF;
+END;
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      MACSEC Supporting Objects
+Rem
+Rem
+Rem
+Rem
+Rem
+
+--- Create the libraries for trusted implementations
+CREATE OR REPLACE CONTEXT mac$factor USING DVSYS.dbms_macsec;
+-- CREATE OR REPLACE CONTEXT mac$realm USING DVSYS.dbms_macsec;
+
+CREATE OR REPLACE LIBRARY DVSYS.KZV$UTL_LIBT TRUSTED IS STATIC
+/
+CREATE OR REPLACE LIBRARY DVSYS.KZV$FAC_LIBT TRUSTED IS STATIC
+/
+CREATE OR REPLACE LIBRARY DVSYS.KZV$RUL_LIBT TRUSTED AS STATIC
+/
+CREATE OR REPLACE LIBRARY DVSYS.KZV$ADM_LIBT TRUSTED AS STATIC
+/
+CREATE OR REPLACE LIBRARY DVSYS.KZV$RSRC_LIBT TRUSTED AS STATIC
+/
+
+/**
+ * Create the one and only evaluation context based on this metadata.
+ * The name of this evaluation context will be used by all rule classes
+ * created for the Datavault application
+ */
+
+DECLARE
+  rmdvt sys.re$variable_type_list;
+BEGIN
+  rmdvt := sys.re$variable_type_list(
+            sys.re$variable_type('dv$dummy','number',null,null));
+  dbms_rule_adm.create_evaluation_context('DV$RULE_EVALCTX', null, rmdvt);
+   EXCEPTION
+   WHEN OTHERS THEN
+     IF SQLCODE IN ( -24145) THEN NULL; --evaluation context already created
+     ELSE RAISE;
+     END IF;
+END;
+/
+
+commit;
+Rem
+Rem
+Rem
+Rem    Create a function which will return the correct language that should 
+Rem    be used by all the language dependent DV views created below
+Rem
+Rem
+CREATE OR REPLACE FUNCTION dvsys.dvlang(lid IN NUMBER, langtab_no IN NUMBER)
+RETURN VARCHAR2
+AS
+  l_lcnt NUMBER default 0;
+  l_lang VARCHAR2(3);
+  l_tab  VARCHAR2(30);
+  l_stmt VARCHAR2(256);
+  l_cursor    int;
+  l_status    int;
+BEGIN
+  l_lang := LOWER(SYS_CONTEXT('USERENV','LANG'));
+  l_tab :=
+    CASE langtab_no
+      WHEN 1 THEN 'CODE_T$'
+      WHEN 2 THEN 'FACTOR_T$'
+      WHEN 3 THEN 'FACTOR_TYPE_T$'
+      WHEN 4 THEN 'RULE_T$'
+      WHEN 5 THEN 'RULE_SET_T$'
+      WHEN 6 THEN 'REALM_T$'
+      WHEN 7 THEN 'MONITOR_RULE_T$'
+    END;
+
+  l_stmt := 'SELECT COUNT(*) FROM ' || l_tab || ' WHERE id# = :id AND language = :lang';
+  l_cursor := sys.dbms_sql.open_cursor;
+  sys.dbms_sql.parse( l_cursor, l_stmt, dbms_sql.native );
+  sys.dbms_sql.bind_variable( l_cursor, ':id', lid );
+  sys.dbms_sql.bind_variable( l_cursor, ':lang', l_lang );
+  sys.dbms_sql.define_column( l_cursor, 1, l_lcnt );
+  l_status := sys.dbms_sql.execute( l_cursor );
+  if ( sys.dbms_sql.fetch_rows(l_cursor) > 0 )
+    then
+        sys.dbms_sql.column_value( l_cursor, 1, l_lcnt );
+  end if;
+  sys.dbms_sql.close_cursor(l_cursor);
+
+  if (l_lcnt = 0) then
+    return 'us';
+  else
+    return l_lang;
+  end if;
+END;
+/
+show errors;
+
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table CODE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$code
+(
+      ID#
+    , CODE_GROUP
+    , CODE
+    , VALUE
+    , LANGUAGE
+    , DESCRIPTION
+    , VERSION
+    , CREATED_BY
+    , CREATE_DATE
+    , UPDATED_BY
+    , UPDATE_DATE
+)
+AS SELECT
+      m.ID#
+    , m.CODE_GROUP
+    , m.CODE
+    , d.VALUE
+    , d.LANGUAGE
+    , d.DESCRIPTION
+    , m.VERSION
+    , m.CREATED_BY
+    , m.CREATE_DATE
+    , m.UPDATED_BY
+    , m.UPDATE_DATE
+FROM dvsys.code$ m, dvsys.code_t$ d
+WHERE m.id# = d.id#
+      AND d.language = DVSYS.dvlang(m.id#, 1)
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table FACTOR_TYPE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$factor_type
+(
+      ID#
+    , NAME
+    , DESCRIPTION
+    , VERSION
+    , CREATED_BY
+    , CREATE_DATE
+    , UPDATED_BY
+    , UPDATE_DATE
+)
+AS SELECT
+      m.ID#
+    , d.NAME
+    , d.DESCRIPTION
+    , m.VERSION
+    , m.CREATED_BY
+    , m.CREATE_DATE
+    , m.UPDATED_BY
+    , m.UPDATE_DATE
+FROM dvsys.factor_type$ m, dvsys.factor_type_t$ d
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 3) 
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table RULE_SET$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$rule_set
+(
+      id#
+    , name
+    , description
+    , enabled
+    , eval_options
+    , eval_options_meaning
+    , audit_options
+    , fail_options
+    , fail_options_meaning
+    , fail_message
+    , fail_code
+    , handler_options
+    , handler
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+    , is_static
+)
+AS SELECT
+      m.id#
+    , d.name
+    , d.description
+    , m.enabled
+    , m.eval_options - DECODE(bitand(m.eval_options, 128) , 128, 128, 0)
+    , deval.value
+    , m.audit_options
+    , m.fail_options
+    , dfail.value
+    , d.fail_message
+    , m.fail_code
+    , m.handler_options
+    , m.handler
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+    , DECODE(bitand(m.eval_options, 128) , 128, 'TRUE', 'FALSE')
+FROM dvsys.rule_set$ m
+    , dvsys.rule_set_t$ d
+    , dvsys.dv$code deval
+    , dvsys.dv$code dfail
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 5)
+    AND deval.code = TO_CHAR(m.eval_options -
+                             DECODE(bitand(m.eval_options,128) , 128, 128, 0))
+    AND deval.code_group = 'RULESET_EVALUATE'
+    AND dfail.code  = TO_CHAR(m.fail_options)
+    AND dfail.code_group = 'RULESET_FAIL'
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table RULE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$rule
+(
+      id#
+    , name
+    , rule_expr
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , d.name
+    , m.rule_expr
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.rule$ m, dvsys.rule_t$ d
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 4) 
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table RULE_SET_RULE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$rule_set_rule
+(
+      id#
+    , rule_set_id#
+    , rule_set_name
+    , rule_id#
+    , rule_name
+    , rule_expr
+    , enabled
+    , rule_order
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.rule_set_id#
+    , d1.name
+    , m.rule_id#
+    , d2.name
+    , d2.rule_expr
+    , m.enabled
+    , m.rule_order
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.rule_set_rule$ m
+     ,dvsys.dv$rule_set d1
+     ,dvsys.dv$rule d2
+WHERE
+    d1.id# = m.rule_set_id#
+    and d2.id# = m.rule_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table COMMAND_RULE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$command_rule
+(
+      id#
+    , code_id#
+    , command
+    , rule_set_id#
+    , rule_set_name
+    , object_owner
+    , object_name
+    , enabled
+    , privilege_scope
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.code_id#
+    , d2.code
+    , m.rule_set_id#
+    , d1.name
+    , m.object_owner
+    , m.object_name
+    , m.enabled
+    , m.privilege_scope
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.command_rule$ m
+    ,dvsys.dv$rule_set d1
+    ,dvsys.dv$code d2
+WHERE
+    d1.id# = m.rule_set_id#
+    AND d2.id# = m.code_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table DOCUMENT$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$document
+(
+      ID#
+    , NAME
+    , DOC_TYPE
+    , DOC_REVISION
+    , ENABLED
+    , XML_DATA
+    , VERSION
+    , CREATED_BY
+    , CREATE_DATE
+    , UPDATED_BY
+    , UPDATE_DATE
+)
+AS SELECT
+      ID#
+    , NAME
+    , DOC_TYPE
+    , DOC_REVISION
+    , ENABLED
+    , XML_DATA
+    , VERSION
+    , CREATED_BY
+    , CREATE_DATE
+    , UPDATED_BY
+    , UPDATE_DATE
+FROM dvsys.document$
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table FACTOR$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$factor
+(
+      id#
+    , name
+    , description
+    , factor_type_id#
+    , factor_type_name
+    , assign_rule_set_id#
+    , assign_rule_set_name
+    , get_expr
+    , validate_expr
+    , identified_by
+    , identified_by_meaning
+    , namespace
+    , namespace_attribute
+    , labeled_by
+    , labeled_by_meaning
+    , eval_options
+    , eval_options_meaning
+    , audit_options
+    , fail_options
+    , fail_options_meaning
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.name
+    , d.description
+    , m.factor_type_id#
+    , dft.name
+    , m.assign_rule_set_id#
+    , drs.name
+    , m.get_expr
+    , m.validate_expr
+    , m.identified_by
+    , did.value
+    , m.namespace
+    , m.namespace_attribute
+    , m.labeled_by
+    , dlabel.value
+    , m.eval_options
+    , deval.value
+    , m.audit_options
+    , m.fail_options
+    , dfail.value
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.factor$ m
+    , dvsys.factor_t$ d
+    , dvsys.dv$factor_type dft
+    , dvsys.dv$rule_set drs
+    , dvsys.dv$code did
+    , dvsys.dv$code dlabel
+    , dvsys.dv$code deval
+    , dvsys.dv$code dfail
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 2)
+    AND dft.id# = m.factor_type_id#
+    AND did.code    = TO_CHAR(m.identified_by)  and did.code_group = 'FACTOR_IDENTIFY'
+    AND dlabel.code = TO_CHAR(m.labeled_by)  and dlabel.code_group = 'FACTOR_LABEL'
+    AND deval.code  = TO_CHAR(m.eval_options) and deval.code_group = 'FACTOR_EVALUATE'
+    AND dfail.code  = TO_CHAR(m.fail_options) and dfail.code_group = 'FACTOR_FAIL'
+    AND drs.id#  (+)= m.assign_rule_set_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table FACTOR_LINK$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$factor_link
+(
+      id#
+    , parent_factor_id#
+    , parent_factor_name
+    , child_factor_id#
+    , child_factor_name
+    , label_ind
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.parent_factor_id#
+    , d1.name
+    , m.child_factor_id#
+    , d2.name
+    , m.label_ind
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.factor_link$ m
+    , dvsys.dv$factor d1
+    , dvsys.dv$factor d2
+WHERE
+     d1.id# = m.parent_factor_id#
+    AND d2.id# = m.child_factor_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table IDENTITY$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$identity
+(
+      id#
+    , factor_id#
+    , factor_name
+    , value
+    , trust_level
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.factor_id#
+    , d1.name
+    , m.value
+    , m.trust_level
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.identity$ m,
+   dvsys.dv$factor d1
+WHERE
+    d1.id# = m.factor_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table IDENTITY_MAP$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$identity_map
+(
+      id#
+    , identity_id#
+    , identity_value
+    , factor_id#
+    , factor_name
+    , factor_link_id#
+    , operation_code_id#
+    , operation_code
+    , operation_value
+    , operand1
+    , operand2
+    , parent_factor_name
+    , child_factor_name
+    , label_ind
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.identity_id#
+    , d1.value
+    , d6.id#
+    , d6.name
+    , m.factor_link_id#
+    , m.operation_code_id#
+    , d2.code
+    , d2.value
+    , m.operand1
+    , m.operand2
+    , d4.name
+    , d5.name
+    , d3.label_ind
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.identity_map$ m
+    , dvsys.identity$ d1
+    , dvsys.dv$code d2
+    , dvsys.factor_link$ d3
+    , dvsys.dv$factor d4
+    , dvsys.dv$factor d5
+    , dvsys.dv$factor d6
+WHERE
+    d1.id# = m.identity_id#
+    AND d2.id# = m.operation_code_id#
+    AND d3.id# (+)= m.factor_link_id#
+    AND d4.id# (+)= d3.parent_factor_id#
+    AND d5.id# (+)= d3.child_factor_id#
+    AND d6.id# = d1.factor_id#
+
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table MAC_POLICY$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$mac_policy
+(
+      id#
+    , policy_id#
+    , policy_name
+    , algorithm_code_id#
+    , algorithm_code
+    , algorithm_meaning
+    , error_label
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.policy_id#
+    , d1.pol_name
+    , m.algorithm_code_id#
+    , d2.code
+    , d2.value
+    , m.error_label
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.mac_policy$ m
+    , lbacsys.lbac$pol d1
+    , dvsys.dv$code d2
+WHERE
+        d1.pol# = m.policy_id#
+    AND d2.id# = m.algorithm_code_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table MAC_POLICY_FACTOR$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$mac_policy_factor
+(
+      id#
+    , factor_id#
+    , factor_name
+    , mac_policy_id#
+    , policy_id#
+    , mac_policy_name
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.factor_id#
+    , d1.name
+    , d3.id#
+    , d3.policy_id#
+    , d2.pol_name
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.mac_policy_factor$ m
+    , dvsys.dv$factor d1
+    , lbacsys.lbac$pol d2
+    , dvsys.mac_policy$ d3
+WHERE
+    d1.id# = m.factor_id#
+    AND d3.id# = m.mac_policy_id#
+    AND d2.pol# = policy_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the view lbacsys.lbac$pol.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$ols_policy
+(
+     policy_id
+    , policy_name
+)
+AS SELECT
+     d1.pol#
+    , d1.pol_name
+FROM
+    lbacsys.lbac$pol d1
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the view lbacsys.lbac$lab$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$ols_policy_label
+(
+      policy_id
+    , policy_name
+    , label_id
+    , label
+)
+AS SELECT
+      d2.pol#
+    , d2.pol_name
+    , d3.tag#
+    , d3.slabel -- or labeltochar(d3.lab#)
+FROM
+     lbacsys.lbac$pol d2
+    , lbacsys.lbac$lab d3
+WHERE
+    d2.pol# = d3.pol#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table POLICY_LABEL$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$policy_label
+(
+      id#
+    , identity_id#
+    , identity_value
+    , factor_id#
+    , factor_name
+    , policy_id#
+    , policy_name
+    , label_id#
+    , label
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.identity_id#
+    , d1.value
+    , d4.id#
+    , d4.name
+    , m.policy_id#
+    , d2.pol_name
+    , m.label_id#
+    , d3.slabel -- or labeltochar(d3.lab#)
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM
+    policy_label$ m
+    , identity$ d1
+    , lbacsys.lbac$pol d2
+    , lbacsys.lbac$lab d3
+    , factor$ d4
+WHERE
+    d1.id# = m.identity_id#
+    AND d2.pol# = m.policy_id#
+    AND d3.tag# = m.label_id#
+    AND d4.id# = d1.factor_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table REALM$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$realm
+(
+      id#
+    , name
+    , description
+    , audit_options
+    , enabled
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , d.name
+    , d.description
+    , m.audit_options
+    , m.enabled
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.realm$ m, dvsys.realm_t$ d
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 6) 
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table REALM_AUTH$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$realm_auth
+(
+      id#
+    , realm_id#
+    , realm_name
+    , grantee
+    , auth_rule_set_id#
+    , auth_rule_set_name
+    , auth_options
+    , auth_options_meaning
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.realm_id#
+    , d1.name
+    , m.grantee
+    , m.auth_rule_set_id#
+    , d2.name
+    , m.auth_options
+    , c.value
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.realm_auth$ m
+    , dvsys.dv$realm d1
+    , dvsys.dv$rule_set d2
+    , dvsys.dv$code c
+WHERE
+    d1.id# = m.realm_id#
+    AND d2.id# (+)= m.auth_rule_set_id#
+    AND c.code_group (+) = 'REALM_OPTION'
+    AND c.code (+) = TO_CHAR(m.auth_options)
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table REALM_OBJECT$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$realm_object
+(
+      id#
+    , realm_id#
+    , realm_name
+    , owner
+    , object_name
+    , object_type
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.realm_id#
+    , d.name
+    , m.owner
+    , m.object_name
+    , m.object_type
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.realm_object$ m, dvsys.dv$realm d
+WHERE
+    d.id# = m.realm_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$realm_command_rule
+(
+      id#
+    , realm_id#
+    , realm_name
+    , code_id#
+    , command
+    , rule_set_id#
+    , rule_set_name
+    , object_owner
+    , object_name
+    , grantee
+    , privilege_scope
+    , enabled
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , d3.id#
+    , d3.name
+    , m.code_id#
+    , d2.code
+    , m.rule_set_id#
+    , d1.name
+    , m.object_owner
+    , m.object_name
+    , m.grantee
+    , m.privilege_scope
+    , m.enabled
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.realm_command_rule$ m
+    ,dvsys.dv$rule_set d1
+    ,dvsys.dv$code d2
+    ,dvsys.dv$realm d3
+WHERE
+    d1.id# = m.rule_set_id#
+    AND d2.id# = m.code_id#
+    AND d3.id# = m.realm_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table ROLE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$role
+(
+      id#
+    , role
+    , rule_set_id#
+    , rule_name
+    , enabled
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , m.role
+    , m.rule_set_id#
+    , d.name
+    , m.enabled
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.role$ m, dvsys.dv$rule_set d
+WHERE m.rule_set_id# = d.id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table ROLE$.
+Rem
+Rem
+
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$sys_grantee
+(
+      grantee_name
+    , grantee_type
+)
+AS
+SELECT
+      u.username
+    , 'USER'
+FROM sys.dba_users u
+UNION
+SELECT
+      r.role
+    , 'ROLE'
+FROM
+    sys.dba_roles r
+/
+
+create or replace view DVSYS.DV_OWNER_GRANTEES
+(GRANTEE, PATH_OF_CONNECT_ROLE_GRANT, ADMIN_OPT)
+as
+select grantee, connect_path, admin_option
+from (select grantee,
+             'DV_OWNER'||SYS_CONNECT_BY_PATH(grantee, '/') connect_path,
+             granted_role, admin_option
+      from   sys.dba_role_privs
+      where decode((select type# from sys.user$ where name = grantee),
+               0, 'ROLE',
+               1, 'USER') = 'USER'
+      connect by nocycle granted_role = prior grantee
+      start with granted_role = upper('DV_OWNER'));
+/
+
+create or replace view DVSYS.DV_ADMIN_GRANTEES
+(GRANTEE, PATH_OF_CONNECT_ROLE_GRANT, ADMIN_OPT)
+as
+select grantee, connect_path, admin_option
+from (select grantee,
+             'DV_ADMIN'||SYS_CONNECT_BY_PATH(grantee, '/') connect_path,
+             granted_role, admin_option
+      from   sys.dba_role_privs
+      where decode((select type# from sys.user$ where name = grantee),
+               0, 'ROLE',
+               1, 'USER') = 'USER'
+      connect by nocycle granted_role = prior grantee
+      start with granted_role = upper('DV_ADMIN'));
+/
+
+create or replace view DVSYS.DV_SECANALYST_GRANTEES
+(GRANTEE, PATH_OF_CONNECT_ROLE_GRANT, ADMIN_OPT)
+as
+select grantee, connect_path, admin_option
+from (select grantee,
+             'DV_SECANALYST'||SYS_CONNECT_BY_PATH(grantee, '/') connect_path,
+             granted_role, admin_option
+      from   sys.dba_role_privs
+      where decode((select type# from sys.user$ where name = grantee),
+               0, 'ROLE',
+               1, 'USER') = 'USER'
+      connect by nocycle granted_role = prior grantee
+      start with granted_role = upper('DV_SECANALYST'));
+/
+
+create or replace view DVSYS.DV_MONITOR_GRANTEES
+(GRANTEE, PATH_OF_CONNECT_ROLE_GRANT, ADMIN_OPT)
+as
+select grantee, connect_path, admin_option
+from (select grantee,
+             'DV_MONITOR'||SYS_CONNECT_BY_PATH(grantee, '/') connect_path,
+             granted_role, admin_option
+      from   sys.dba_role_privs
+      where decode((select type# from sys.user$ where name = grantee),
+               0, 'ROLE',
+               1, 'USER') = 'USER'
+      connect by nocycle granted_role = prior grantee
+      start with granted_role = upper('DV_MONITOR'));
+/
+
+create or replace view DVSYS.DV_AUDIT_CLEANUP_GRANTEES
+(GRANTEE, PATH_OF_CONNECT_ROLE_GRANT, ADMIN_OPT)
+as
+select grantee, connect_path, admin_option
+from (select grantee,
+             'DV_AUDIT_CLEANUP'||SYS_CONNECT_BY_PATH(grantee, '/') connect_path,
+             granted_role, admin_option
+      from   sys.dba_role_privs
+      where decode((select type# from sys.user$ where name = grantee),
+               0, 'ROLE',
+               1, 'USER') = 'USER'
+      connect by nocycle granted_role = prior grantee
+      start with granted_role = upper('DV_AUDIT_CLEANUP'));
+/
+
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a view for object .
+Rem
+Rem
+
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$sys_object
+(
+OBJECT_ID
+,OWNER
+,OBJECT_NAME
+,SUBOBJECT_NAME
+,DATA_OBJECT_ID
+,OBJECT_TYPE
+,CREATED
+,LAST_DDL_TIME
+,TIMESTAMP
+,STATUS
+,TEMPORARY
+,GENERATED
+,SECONDARY
+)
+AS SELECT
+OBJECT_ID
+,OWNER
+,OBJECT_NAME
+,SUBOBJECT_NAME
+,DATA_OBJECT_ID
+,OBJECT_TYPE
+,CREATED
+,LAST_DDL_TIME
+,TIMESTAMP
+,STATUS
+,TEMPORARY
+,GENERATED
+,SECONDARY
+FROM sys.dba_objects
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a view for object owners.
+Rem
+Rem
+
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$sys_object_owner
+(
+      username
+)
+AS
+SELECT
+      u.username
+FROM sys.dba_users u
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys for the table factor_scope$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$factor_scope
+(
+      id#
+    , name
+    , grantee
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , d.name
+    , m.grantee
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.factor_scope$ m, dvsys.dv$factor d
+WHERE
+    m.factor_id# = d.id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a meaning-based view with primary and foreign keys
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dv$monitor_rule
+(
+      id#
+    , name
+    , description
+    , monitor_rule_set_id#
+    , monitor_rule_set_name
+    , restart_freq
+    , enabled
+    , version
+    , created_by
+    , create_date
+    , updated_by
+    , update_date
+)
+AS SELECT
+      m.id#
+    , d.name
+    , d.description
+    , m.monitor_rule_set_id#
+    , drs.name
+    , m.restart_freq
+    , m.enabled
+    , m.version
+    , m.created_by
+    , m.create_date
+    , m.updated_by
+    , m.update_date
+FROM dvsys.monitor_rule$ m
+    , dvsys.monitor_rule_t$ d
+    , dvsys.dv$rule_set drs
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 7) 
+    AND drs.id#  = m.monitor_rule_set_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table CODE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_code
+(
+     CODE_GROUP
+    , CODE
+    , VALUE
+    , LANGUAGE
+    , DESCRIPTION
+)
+AS SELECT
+      m.CODE_GROUP
+    , m.CODE
+    , d.VALUE
+    , d.LANGUAGE
+    , d.DESCRIPTION
+FROM dvsys.code$ m, dvsys.code_t$ d
+WHERE m.id# = d.id#
+      AND d.language = DVSYS.dvlang(m.id#, 1) 
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table COMMAND_RULE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_command_rule
+(
+      command
+    , rule_set_name
+    , object_owner
+    , object_name
+    , enabled
+    , privilege_scope
+)
+AS SELECT
+      d2.code
+    , d1.name
+    , m.object_owner
+    , m.object_name
+    , m.enabled
+    , m.privilege_scope
+FROM dvsys.command_rule$ m
+    ,dvsys.dv$rule_set d1
+    ,dvsys.dv$code d2
+WHERE
+    d1.id# = m.rule_set_id#
+    AND d2.id# = m.code_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table DOCUMENT$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_document
+(
+      NAME
+    , DOC_TYPE
+    , DOC_REVISION
+    , ENABLED
+    , XML_DATA
+)
+AS SELECT
+      NAME
+    , DOC_TYPE
+    , DOC_REVISION
+    , ENABLED
+    , XML_DATA
+FROM dvsys.document$
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table FACTOR$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_factor
+(
+      name
+    , description
+    , factor_type_name
+    , assign_rule_set_name
+    , get_expr
+    , validate_expr
+    , identified_by
+    , identified_by_meaning
+    , namespace
+    , namespace_attribute
+    , labeled_by
+    , labeled_by_meaning
+    , eval_options
+    , eval_options_meaning
+    , audit_options
+    , fail_options
+    , fail_options_meaning
+)
+AS SELECT
+      m.name
+    , d.description
+    , dft.name
+    , drs.name
+    , m.get_expr
+    , m.validate_expr
+    , m.identified_by
+    , did.value
+    , m.namespace
+    , m.namespace_attribute
+    , m.labeled_by
+    , dlabel.value
+    , m.eval_options
+    , deval.value
+    , m.audit_options
+    , m.fail_options
+    , dfail.value
+FROM dvsys.factor$ m
+    , dvsys.factor_t$ d
+    , dvsys.dv$factor_type dft
+    , dvsys.dv$rule_set drs
+    , dvsys.dv$code did
+    , dvsys.dv$code dlabel
+    , dvsys.dv$code deval
+    , dvsys.dv$code dfail
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 2) 
+    AND dft.id# = m.factor_type_id#
+    AND did.code    = TO_CHAR(m.identified_by)  and did.code_group = 'FACTOR_IDENTIFY'
+    AND dlabel.code = TO_CHAR(m.labeled_by)  and dlabel.code_group = 'FACTOR_LABEL'
+    AND deval.code  = TO_CHAR(m.eval_options) and deval.code_group = 'FACTOR_EVALUATE'
+    AND dfail.code  = TO_CHAR(m.fail_options) and dfail.code_group = 'FACTOR_FAIL'
+    AND drs.id#  (+)= m.assign_rule_set_id#
+/
+
+
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table FACTOR_LINK$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_factor_link
+(
+      parent_factor_name
+    , child_factor_name
+    , label_ind
+)
+AS SELECT
+      d1.name
+    , d2.name
+    , m.label_ind
+FROM dvsys.factor_link$ m
+    , dvsys.dv$factor d1
+    , dvsys.dv$factor d2
+WHERE
+     d1.id# = m.parent_factor_id#
+    AND d2.id# = m.child_factor_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table REALM_COMMAND_RULE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_realm_command_rule
+(
+      realm_name
+    , command
+    , rule_set_name
+    , object_owner
+    , object_name
+    , grantee
+    , privilege_scope
+    , enabled
+)
+AS SELECT
+     d3.name
+    , d2.code
+    , d1.name
+    , m.object_owner
+    , m.object_name
+    , m.grantee
+    , m.privilege_scope
+    , m.enabled
+FROM dvsys.realm_command_rule$ m
+    ,dvsys.dv$rule_set d1
+    ,dvsys.dv$code d2
+    ,dvsys.dv$realm d3
+WHERE
+    d1.id# = m.rule_set_id#
+    AND d2.id# = m.code_id#
+    AND d3.id# = m.realm_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table FACTOR_TYPE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_factor_type
+(
+      NAME
+    , DESCRIPTION
+)
+AS SELECT
+      d.NAME
+    , d.DESCRIPTION
+FROM dvsys.factor_type$ m, dvsys.factor_type_t$ d
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 3)
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table IDENTITY$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_identity
+(
+      factor_name
+    , value
+    , trust_level
+)
+AS SELECT
+      d1.name
+    , m.value
+    , m.trust_level
+FROM dvsys.identity$ m, dvsys.dv$factor d1
+WHERE
+    d1.id# = m.factor_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table IDENTITY_MAP$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_identity_map
+(
+      factor_name
+    , identity_value
+    , operation_code
+    , operation_value
+    , operand1
+    , operand2
+    , parent_factor_name
+    , child_factor_name
+    , label_ind
+)
+AS SELECT
+      d6.name
+    , d1.value
+    , d2.code
+    , d2.value
+    , m.operand1
+    , m.operand2
+    , d4.name
+    , d5.name
+    , d3.label_ind
+FROM dvsys.identity_map$ m
+    , dvsys.identity$ d1
+    , dvsys.dv$code d2
+    , dvsys.factor_link$ d3
+    , dvsys.dv$factor d4
+    , dvsys.dv$factor d5
+    , dvsys.dv$factor d6
+WHERE
+    d1.id# = m.identity_id#
+    AND d2.id# = m.operation_code_id#
+    AND d3.id# (+)= m.factor_link_id#
+    AND d4.id# (+)= d3.parent_factor_id#
+    AND d5.id# (+)= d3.child_factor_id#
+    AND d6.id# = d1.factor_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table MAC_POLICY$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_mac_policy
+(
+      policy_name
+    , algorithm_code
+    , algorithm_meaning
+    , error_label
+)
+AS SELECT
+      d1.pol_name
+    , d2.code
+    , d2.value
+    , m.error_label
+FROM dvsys.mac_policy$ m
+    , lbacsys.lbac$pol d1
+    , dvsys.dv$code d2
+WHERE
+        d1.pol# = m.policy_id#
+    AND d2.id# = m.algorithm_code_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table MAC_POLICY_FACTOR$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_mac_policy_factor
+(
+      factor_name
+    , mac_policy_name
+)
+AS SELECT
+      d1.name
+    , d2.pol_name
+FROM dvsys.mac_policy_factor$ m
+    , dvsys.dv$factor d1
+    , lbacsys.lbac$pol d2
+    , dvsys.mac_policy$ d3
+WHERE
+    d1.id# = m.factor_id#
+    AND d3.id# = m.mac_policy_id#
+    AND d2.pol# = policy_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table POLICY_LABEL$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_policy_label
+(
+     identity_value
+    , factor_name
+    , policy_name
+    , label
+)
+AS SELECT
+      d1.value
+    , d4.name
+    , d2.pol_name
+    , d3.slabel -- or labeltochar(d3.lab#)
+FROM
+    policy_label$ m
+    , identity$ d1
+    , lbacsys.lbac$pol d2
+    , lbacsys.lbac$lab d3
+    , factor$ d4
+WHERE
+    d1.id# = m.identity_id#
+    AND d2.pol# = m.policy_id#
+    AND d3.tag# = m.label_id#
+    AND d4.id# = d1.factor_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table REALM$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_realm
+(
+      name
+    , description
+    , audit_options
+    , enabled
+)
+AS SELECT
+      d.name
+    , d.description
+    , m.audit_options
+    , m.enabled
+FROM dvsys.realm$ m, dvsys.realm_t$ d
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 6)
+/
+
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table REALM_AUTH$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_realm_auth
+(
+      realm_name
+    , grantee
+    , auth_rule_set_name
+    , auth_options
+)
+AS SELECT
+      d1.name
+    , m.grantee
+    , d2.name
+    , c.value
+FROM dvsys.realm_auth$ m
+    , dvsys.dv$realm d1
+    , dvsys.dv$rule_set d2
+    , dvsys.dv$code c
+WHERE
+    d1.id# = m.realm_id#
+    AND d2.id# (+)= m.auth_rule_set_id#
+    AND c.code_group (+) = 'REALM_OPTION'
+    AND c.code (+) = TO_CHAR(m.auth_options)
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table REALM_OBJECT$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_realm_object
+(
+      realm_name
+    , owner
+    , object_name
+    , object_type
+)
+AS SELECT
+     d.name
+    , m.owner
+    , m.object_name
+    , m.object_type
+FROM dvsys.realm_object$ m, dvsys.dv$realm d
+WHERE
+    d.id# = m.realm_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table ROLE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_role
+(
+      role
+    , rule_name
+    , enabled
+)
+AS SELECT
+      m.role
+    , d.name
+    , m.enabled
+FROM dvsys.role$ m, dvsys.dv$rule_set d
+WHERE m.rule_set_id# = d.id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table RULE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_rule
+(
+      name
+    , rule_expr
+)
+AS SELECT
+      d.name
+    , m.rule_expr
+FROM dvsys.rule$ m, dvsys.rule_t$ d
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 4)
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table RULE_SET_RULE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_rule_set_rule
+(
+      rule_set_name
+    , rule_name
+    , rule_expr
+    , enabled
+    , rule_order
+)
+AS SELECT
+      d1.name
+    , d2.name
+    , d2.rule_expr
+    , m.enabled
+    , m.rule_order
+FROM dvsys.rule_set_rule$ m
+     ,dvsys.dv$rule_set d1
+     ,dvsys.dv$rule d2
+WHERE
+    d1.id# = m.rule_set_id#
+    and d2.id# = m.rule_id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table factor_scope$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_factor_scope
+(
+      factor_name
+    , grantee
+)
+AS SELECT
+      d.name
+    , m.grantee
+FROM dvsys.factor_scope$ m, dvsys.dv$factor d
+WHERE
+    m.factor_id# = d.id#
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table MONITOR_RULE$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_monitor_rule
+(
+      name
+    , description
+    , monitor_rule_set_name
+    , restart_freq
+    , enabled
+)
+AS SELECT
+      d.name
+    , d.description
+    , drs.name
+    , m.restart_freq
+    , m.enabled
+FROM dvsys.monitor_rule$ m
+    , dvsys.monitor_rule_t$ d
+    , dvsys.dv$rule_set drs
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 7)
+    AND drs.id#  = m.monitor_rule_set_id#
+/
+
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the table RULE_SET$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_rule_set
+(
+      rule_set_name
+    , description
+    , enabled
+    , eval_options_meaning
+    , audit_options
+    , fail_options_meaning
+    , fail_message
+    , fail_code
+    , handler_options
+    , handler
+    , is_static
+)
+AS SELECT
+      d.name
+    , d.description
+    , m.enabled
+    , deval.value
+    , m.audit_options
+    , dfail.value
+    , d.fail_message
+    , m.fail_code
+    , m.handler_options
+    , m.handler
+    , DECODE(bitand(m.eval_options, 128) , 128, 'TRUE', 'FALSE')
+FROM dvsys.rule_set$ m
+    , dvsys.rule_set_t$ d
+    , dvsys.dv$code deval
+    , dvsys.dv$code dfail
+WHERE
+    m.id# = d.id#
+    AND d.language = DVSYS.dvlang(m.id#, 5)
+    AND deval.code  = TO_CHAR(m.eval_options -
+                             DECODE(bitand(m.eval_options,128) , 128, 128, 0))
+    AND deval.code_group = 'RULESET_EVALUATE'
+    AND dfail.code  = TO_CHAR(m.fail_options)
+    AND dfail.code_group = 'RULESET_FAIL'
+/
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates DBA views for the DV privilege management reports.
+Rem
+Rem
+Rem
+Rem
+Rem
+-- Bug 9671705 change definition of dba_dv_user_privs and dba_dv_user_privs_all
+CREATE OR REPLACE VIEW DVSYS.dba_dv_user_privs
+(
+    USERNAME
+    ,ACCESS_TYPE
+    ,PRIVILEGE
+    ,OWNER
+    ,OBJECT_NAME
+)
+AS SELECT
+    dbu.name
+    ,   decode(ue.name,dbu.name,'DIRECT',ue.name)
+    ,   tpm.name
+    ,   u.name
+    ,   o.name
+FROM sys.objauth$ oa,
+    sys.obj$ o,
+    sys.user$ u,
+    sys.user$ ue,
+    sys.user$ dbu,
+    sys.table_privilege_map tpm
+WHERE oa.obj# = o.obj#
+  AND oa.col# IS NULL
+  AND oa.privilege# = tpm.privilege
+  AND u.user# = o.owner#
+  AND oa.grantee# = ue.user#
+  AND dbu.type# = 1
+  AND (oa.grantee# = dbu.user#
+        or
+       oa.grantee# in (SELECT /*+ connect_by_filtering */ DISTINCT privilege#
+                        FROM (select * from sys.sysauth$ where privilege#>0)
+                        CONNECT BY grantee#=prior privilege#
+                        START WITH grantee#=dbu.user#))
+/
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_user_privs_all
+(
+    USERNAME
+    ,ACCESS_TYPE
+    ,PRIVILEGE
+    ,OWNER
+    ,OBJECT_NAME
+)
+AS SELECT
+    dbu.name
+       , decode(ue.name,dbu.name,'DIRECT',ue.name)
+       , tpm.name
+       , u.name
+       , o.name
+FROM sys.objauth$ oa,
+    sys.obj$ o,
+    sys.user$ u,
+    sys.user$ ue,
+    sys.user$ dbu,
+    table_privilege_map tpm
+WHERE oa.obj# = o.obj#
+  AND oa.col# IS NULL
+  AND oa.privilege# = tpm.privilege
+  AND u.user# = o.owner#
+  AND oa.grantee# = ue.user#
+  AND dbu.type# = 1
+  AND (oa.grantee# = dbu.user#
+        or
+       oa.grantee#  in (SELECT /*+ connect_by_filtering */ DISTINCT privilege#
+                        FROM (select * from sys.sysauth$ where privilege#>0)
+                        CONNECT BY grantee#=prior privilege#
+                        START WITH grantee#=dbu.user#))
+UNION ALL
+SELECT dbu.name
+       ,DECODE(ue.name,dbu.name,'DIRECT',ue.name)
+       ,spm.name
+       ,DECODE (INSTR(spm.name,' ANY '),0, NULL, '%')
+       ,DECODE (INSTR(spm.name,' ANY '),0, NULL, '%')
+FROM sys.sysauth$ oa,
+     sys.user$ ue,
+     sys.user$ dbu,
+     system_privilege_map spm
+WHERE
+      oa.privilege# = spm.privilege
+  AND oa.grantee# = ue.user#
+  AND oa.privilege# < 0
+  AND dbu.type# = 1
+  AND (oa.grantee# = dbu.user#
+        or
+       oa.grantee#  in (SELECT /*+ connect_by_filtering */ DISTINCT privilege#
+                        FROM (select * from sys.sysauth$ where privilege#>0)
+                        CONNECT BY grantee#=prior privilege#
+                        START WITH grantee#=dbu.user#))
+/
+
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_pub_privs
+(
+    USERNAME
+    ,ACCESS_TYPE
+    ,PRIVILEGE
+    ,OWNER
+    ,OBJECT_NAME
+)
+AS SELECT
+    dbu.name
+    ,   decode(ue.name,dbu.name,'DIRECT',ue.name)
+    ,   tpm.name
+    ,   u.name
+    ,   o.name
+FROM sys.objauth$ oa,
+    sys.obj$ o,
+    sys.user$ u,
+    sys.user$ ue,
+    sys.user$ dbu,
+    sys.table_privilege_map tpm
+WHERE oa.obj# = o.obj#
+  AND oa.col# IS NULL
+  AND oa.privilege# = tpm.privilege
+  AND u.user# = o.owner#
+  AND oa.grantee# = ue.user#
+  AND dbu.type# = 1
+  AND (oa.grantee# = 1)
+/
+
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the state (enabled or disabled) of 
+Rem      DV_PATCH_ADMIN audit from DV_AUTH$.
+Rem
+CREATE OR REPLACE VIEW DVSYS.dba_dv_patch_admin_audit
+(
+    state
+)
+AS 
+SELECT DECODE(cnt, 0, 'DISABLED', 'ENABLED') 
+FROM (SELECT COUNT(*) cnt FROM DVSYS.DV_AUTH$ WHERE GRANT_TYPE = 'DVPATCHAUDIT')
+/
+
+Rem
+Rem
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA views for job auth and datapump auth from DV_AUTH$.
+Rem
+Rem
+Rem
+Rem
+Rem
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_job_auth
+(
+      grantee
+    , schema
+)
+AS SELECT
+    grantee
+  , object_owner
+FROM dvsys.dv_auth$
+WHERE grant_type = 'JOB'
+/
+
+CREATE OR REPLACE VIEW DVSYS.dba_dv_datapump_auth
+(
+      grantee
+    , schema
+    , object
+)
+AS SELECT
+    grantee
+  , object_owner
+  , object_name
+FROM dvsys.dv_auth$
+WHERE grant_type = 'DATAPUMP'
+/
+
+Rem
+Rem    DESCRIPTION
+Rem      Creates a DBA view for the state (enabled or disabled) of 
+Rem      ORADEBUG from DV_AUTH$.
+Rem
+CREATE OR REPLACE VIEW DVSYS.dba_dv_oradebug
+(
+    state
+)
+AS 
+SELECT DECODE(cnt, 0, 'DISABLED', 'ENABLED') 
+FROM (SELECT COUNT(*) cnt FROM DVSYS.DV_AUTH$ WHERE GRANT_TYPE = 'ORADEBUG')
+/
+
+------------------------------------------------------------------------------
+--              Database Vault Protected Schema (DVPS) Interface
+--                       for Data Pump export/import 
+------------------------------------------------------------------------------
+-- UDT and object-view for the 'DVPS_IMPORT_STAGING_REALM' homogeneous type
+-- (xmltag: 'DVPS_IMPORT_STAGING_REALM_T', XSLT: rdbms/xml/xsl/kudvsta.xsl),
+-- as well as for the 'DVPS_DROP_IMPORT_STAGING_REALM' homogeneous type 
+-- (xmltag: 'DVPS_DISR_T', XSLT: rdbms/xml/xsl/kudvstad.xsl).
+create or replace type dvsys.ku$_dv_isr_t as object
+(
+  vers_major    char(1),                             /* UDT major version # */
+  vers_minor    char(1)                              /* UDT minor version # */
+)
+/
+
+-- The ku$_dv_isr_view contains one row if any Database Vault
+-- Realm-protected schema exists in the database, i.e. if any schema has
+-- been passed as the object_owner in a call to ADD_OBJECT_TO_REALM.
+-- The REALM_ID# sequence starts at 5000, so Realms with REALM_ID# 
+-- less than 5000 are reserved for internal use by Database Vault,
+-- and should not be exported. The Realm with realm_id# 5000 is a
+-- "seeded" Realm, created by the Database Vault installation, and
+-- should not be exported.
+create or replace force view dvsys.ku$_dv_isr_view
+       of dvsys.ku$_dv_isr_t
+  with object identifier (vers_major) as
+  select '0','0'
+    from dual
+   where (sys_context('USERENV','CURRENT_USERID') = 1279990
+          or exists (select 1
+                       from sys.session_roles
+                      where role='DV_OWNER'))
+     and exists (select 1
+                   from dvsys.realm_object$ objects_in_realm
+                  where objects_in_realm.REALM_ID# > 5000)
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_STAGING_REALM_MEMBERSHIP' homogeneous type,
+-- (xmltag: 'DVPS_STAGING_REALM_MEMBERSHP_T', XSLT rdbms/xml/xsl/kudvstam.xsl)
+-- corresponding to xmltag 'DVPS_STAGING_REALM_MEMBERSHP_T'.
+create or replace type dvsys.ku$_dv_isrm_t as object
+(
+  vers_major    char(1),                             /* UDT major version # */
+  vers_minor    char(1),                             /* UDT minor version # */
+  schema_name   varchar2(30)     /* schema to be protected by Staging Realm */
+)
+/
+
+-- The ku$_dv_isrm_view lists all of the schema names which have 
+-- been passed as the object_owner in a call to ADD_OBJECT_TO_REALM.
+-- These schemas will be added to a new Realm created as the first step
+-- of Full Database Import with the name 'Datapump Import Staging 
+-- Realm for Database Vault', using a wildcard for both object_name and 
+-- object_type, so that any imported objects in these schemas 
+-- will automatically be protected.
+-- The REALM_ID# sequence starts at 5000, so Realms with REALM_ID# 
+-- less than 5000 are reserved for internal use by Database Vault,
+-- and should not be exported. The Realm with realm_id# 5000 is a
+-- "seeded" Realm, created by the Database Vault installation, and
+-- should not be exported.
+create or replace force view dvsys.ku$_dv_isrm_view
+       of dvsys.ku$_dv_isrm_t
+  with object identifier (schema_name) as
+  select '0','0',
+         realm_objects.object_owner
+    from (select distinct(objects_in_realm.owner) object_owner
+            from dvsys.realm_object$ objects_in_realm
+           where objects_in_realm.REALM_ID# > 5000) realm_objects
+   where (sys_context('USERENV','CURRENT_USERID') = 1279990
+          or exists (select 1 
+                       from sys.session_roles
+                      where role='DV_OWNER'))
+/
+
+show errors;
+
+-- UDT and object-view for the 'DVPS_REALM' homogeneous type.
+-- (xmltag: 'DVPS_REALM_T', XSLT: rdbms/xml/xsl/kudvrlm.xsl),
+-- representing Database Vault Realms created using CREATE_REALM.
+create or replace type dvsys.ku$_dv_realm_t as object
+(
+  vers_major    char(1),                             /* UDT major version # */
+  vers_minor    char(1),                             /* UDT minor version # */
+  name          varchar2(90),               /* name of database vault realm */
+  description   varchar2(1024),      /* description of database vault realm */
+  language      varchar2(3),               /* language of realm description */
+  enabled       varchar2(1),       /* enabled state of database vault realm */
+  audit_options varchar2(78)       /* audit options of database vault realm */
+)
+/
+
+-- The realm$.id# sequence starts at 5000, so Realms with id# 
+-- less than 5000 are reserved for internal use by Database Vault,
+-- and should not be exported. The Realm with id# 5000 is a "seeded" Realm, 
+-- (created by the Database Vault installation), and should not be exported.
+create or replace force view dvsys.ku$_dv_realm_view
+       of dvsys.ku$_dv_realm_t
+  with object identifier (name) as
+  select '0','0',
+          rlmt.name,
+          rlmt.description,
+          rlmt.language,
+          rlm.enabled,
+          decode(rlm.audit_options,
+                 0,'DVSYS.DBMS_MACUTL.G_REALM_AUDIT_OFF',
+                 1,'DVSYS.DBMS_MACUTL.G_REALM_AUDIT_FAIL',
+                 2,'DVSYS.DBMS_MACUTL.G_REALM_AUDIT_SUCCESS',
+                 3,'(DVSYS.DBMS_MACUTL.G_REALM_AUDIT_SUCCESS+'||
+                    'DVSYS.DBMS_MACUTL.G_REALM_AUDIT_FAIL)',
+                 to_char(rlm.audit_options))
+  from    dvsys.realm$        rlm,
+          dvsys.realm_t$      rlmt
+  where   rlm.id# = rlmt.id#
+    and   rlm.id# > 5000
+    and   (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990
+           or exists ( select 1 
+                         from sys.session_roles
+                        where role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for the 'DVPS_REALM_MEMBERSHIP' homogeneous type,
+-- (xmltag: 'DVPS_REALM_MEMBERSHIP_T', XSLT: rdbms/xml/xsl/kudvrlmm.xsl),
+-- representing realm protections created using ADD_OBJECT_TO_REALM.
+create or replace type dvsys.ku$_dv_realm_member_t as object
+(
+  vers_major    char(1),                             /* UDT major version # */
+  vers_minor    char(1),                             /* UDT minor version # */
+  name          varchar2(90),               /* name of database vault realm */
+  object_owner  varchar2(30),    /* owner of object protected by this realm */
+  object_name   varchar2(128),    /* name of object protected by this realm */
+  object_type   varchar2(19)      /* type of object protected by this realm */
+)
+/
+
+-- The realm$.id# sequence starts at 5000, so Realms with id# 
+-- less than 5000 are reserved for internal use by Database Vault,
+-- and should not be exported. The Realm with id# 5000 is a "seeded" Realm, 
+-- (created by the Database Vault installation), and should not be exported.
+create or replace force view dvsys.ku$_dv_realm_member_view
+       of ku$_dv_realm_member_t
+  with object identifier (object_name, name) as
+  select '0','0',
+          rlmt.name,
+          rlmo.owner,
+          rlmo.object_name,
+          rlmo.object_type
+  from    dvsys.realm$        rlm,
+          dvsys.realm_t$      rlmt,
+          dvsys.realm_object$ rlmo
+  where   rlm.id# = rlmt.id#
+    and   rlmo.realm_id# = rlm.id#
+    and   rlm.id# > 5000
+    and   (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990
+           or exists ( select 1 
+                         from sys.session_roles
+                        where role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_REALM_AUTHORIZATION' homogeneous type
+-- (xmltag: 'DVPS_REALM_AUTHORIZATION_T', XSLT: rdbms/xml/xsl/kudvrlma.xsl),
+-- representing Realm participants/owners added using ADD_AUTH_TO_REALM.
+create or replace type dvsys.ku$_dv_realm_auth_t as object
+(
+  vers_major    char(1),                             /* UDT major version # */
+  vers_minor    char(1),                             /* UDT minor version # */
+  realm_name    varchar2(90),               /* name of database vault realm */
+  grantee       varchar2(30),         /* owner of (or participant in) realm */
+  rule_set_name varchar2(90),      /* rule set used to authorize (optional) */
+  auth_options  varchar2(42)        /* authorization (participant or owner) */
+)
+/
+
+-- The realm$.id# sequence starts at 5000, so Realms with id# 
+-- less than 5000 are reserved for internal use by Database Vault,
+-- and should not be exported. The Realm with id# 5000 is a "seeded" Realm, 
+-- (created by the Database Vault installation), and should not be exported.
+create or replace force view dvsys.ku$_dv_realm_auth_view
+       of dvsys.ku$_dv_realm_auth_t
+  with object identifier (realm_name, grantee) as
+  select '0','0',
+          rlmt.name,
+          rlma.grantee,
+          rs.name,
+          decode(rlma.auth_options,
+                 0,'DVSYS.DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT',
+                 1,'DVSYS.DBMS_MACUTL.G_REALM_AUTH_OWNER',
+                 to_char(rlma.auth_options))
+  from    dvsys.realm$                   rlm,
+          dvsys.realm_t$                 rlmt,
+          dvsys.realm_auth$              rlma,
+          (select m.id#,
+                  d.name
+             from dvsys.rule_set$   m,
+                  dvsys.rule_set_t$ d
+            where m.id# = d.id#)         rs
+  where   rlm.id# = rlma.realm_id#
+    and   rlm.id# = rlmt.id#
+    and   rs.id# (+)= rlma.auth_rule_set_id#
+    and   rlm.id# > 5000
+    and   (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990
+           or exists ( select 1 
+                         from sys.session_roles
+                        where role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_RULE' homogeneous type
+-- (xmltag: 'DVPS_RULE_T', XSLT: rdbms/xml/xsl/kudvrul.xsl),
+-- representing Rules added using CREATE_RULE.
+-- This object-view is similar to the DVSYS.dv$rule view.
+create or replace type dvsys.ku$_dv_rule_t as object
+(
+  vers_major    char(1),                             /* UDT major version # */
+  vers_minor    char(1),                             /* UDT minor version # */
+  rule_name     varchar2(90),                               /* name of Rule */
+  rule_expr     varchar2(1024),       /* PL/SQL boolean expression for Rule */
+  language      varchar2(3)                        /* language of Rule name */
+)
+/
+
+-- The rule$.id# sequence starts at 5000, so Rules with id# 
+-- less than 5000 are reserved for internal use by Database Vault,
+-- and should not be exported.
+-- In addition, Rules which are members of the Rule Set with the name
+-- 'Allow Oracle Data Pump Operation' (which has a rule_set_id# of 8) should 
+-- not be exported, as they are system-managed Rules created 
+-- by means of the dbms_macadm.authorize_datapump_user API.
+create or replace force view dvsys.ku$_dv_rule_view
+       of dvsys.ku$_dv_rule_t
+  with object identifier (rule_name) as
+  select '0','0',
+          rult.name,
+          rul.rule_expr,
+          rult.language
+  from    dvsys.rule$                   rul,
+          dvsys.rule_t$                 rult
+  where   rul.id# = rult.id#
+    and   rul.id# >= 5000
+    and   rul.id# not in (select rule_id#
+                            from dvsys.rule_set_rule$
+                           where rule_set_id# = 8)
+    and   (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990
+           or exists ( select 1 
+                         from sys.session_roles
+                        where role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_RULE_SET' homogeneous type
+-- (xmltag: 'DVPS_RULE_SET_T', XSLT: rdbms/xml/xsl/kudvruls.xsl),
+-- representing Rule Sets added using CREATE_RULE_SET.
+-- This object-view is similar to the DVSYS.dba_dv_rule_set view.
+create or replace type dvsys.ku$_dv_rule_set_t as object
+(
+  vers_major      char(1),                           /* UDT major version # */
+  vers_minor      char(1),                           /* UDT minor version # */
+  rule_set_name   varchar2(90),                         /* name of Rule Set */
+  description     varchar2(1024),                /* description of Rule Set */
+  language        varchar2(3),          /* language of Rule Set description */
+  enabled         varchar2(1),      /* the Rule Set is enabled ('Y' or 'N') */
+  eval_options    varchar2(36),                 /* evaluate all or any Rule */
+  audit_options   varchar2(78),  /* auditing: off, on failure or on success */
+  fail_options    varchar2(39),    /* show an error message, or stay silent */
+  fail_message    varchar2(80),      /* error message to display on failure */
+  fail_code       varchar2(10),   /* code to associate with failure message */
+  handler_options varchar2(43),  /* error handler: off, on fail, on success */
+  handler         varchar2(1024) /* PL/SQL routine for custom event handler */
+)
+/
+
+-- The rule_set$.id# sequence starts at 5000, so Rule Sets with id# 
+-- less than 5000 are reserved for internal use by Database Vault,
+-- and should not be exported. 
+create or replace force view dvsys.ku$_dv_rule_set_view
+       of dvsys.ku$_dv_rule_set_t
+  with object identifier (rule_set_name) as
+  select '0','0',
+          rulst.name,
+          rulst.description,
+          rulst.language,
+          ruls.enabled,
+          decode(ruls.eval_options,
+                 1,'DVSYS.DBMS_MACUTL.G_RULESET_EVAL_ALL',
+                 2,'DVSYS.DBMS_MACUTL.G_RULESET_EVAL_ANY',
+                 to_char(ruls.eval_options)),
+          decode(ruls.audit_options,
+                 0,'DVSYS.DBMS_MACUTL.G_REALM_AUDIT_OFF',
+                 1,'DVSYS.DBMS_MACUTL.G_REALM_AUDIT_FAIL',
+                 2,'DVSYS.DBMS_MACUTL.G_REALM_AUDIT_SUCCESS',
+                 3,'(DVSYS.DBMS_MACUTL.G_REALM_AUDIT_SUCCESS+'||
+                    'DVSYS.DBMS_MACUTL.G_REALM_AUDIT_FAIL)',
+                 to_char(ruls.audit_options)),
+          decode(ruls.fail_options,
+                 1,'DVSYS.DBMS_MACUTL.G_RULESET_FAIL_SHOW',
+                 2,'DVSYS.DBMS_MACUTL.G_RULESET_FAIL_SILENT',
+                 to_char(ruls.fail_options)),
+          rulst.fail_message,
+          ruls.fail_code,
+          decode(ruls.handler_options,
+                 0,'DVSYS.DBMS_MACUTL.G_RULESET_HANDLER_OFF',
+                 1,'DVSYS.DBMS_MACUTL.G_RULESET_HANDLER_FAIL',
+                 2,'DVSYS.DBMS_MACUTL.G_RULESET_HANDLER_SUCCESS',
+                 3,'(DVSYS.DBMS_MACUTL.G_RULESET_HANDLER_FAIL+'||
+                    'DVSYS.DBMS_MACUTL.G_RULESET_HANDLER_SUCCESS)',
+                 to_char(ruls.handler_options)),
+          ruls.handler
+  from    dvsys.rule_set$               ruls,
+          dvsys.rule_set_t$             rulst
+  where   ruls.id# = rulst.id#
+    and   ruls.id# >= 5000
+    and   (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990
+           or exists ( select 1 
+                         from sys.session_roles
+                        where role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_RULE_SET_MEMBERSHIP' homogeneous type
+-- (xmltag: 'DVPS_RULE_SET_MEMBERSHIP_T', XSLT: rdbms/xml/xsl/kudvrsm.xsl),
+-- representing the Rules added to a Rule Set using ADD_RULE_TO_RULE_SET.
+-- This object-view is similar to the DVSYS.dba_dv_rule_set_rule view.
+create or replace type dvsys.ku$_dv_rule_set_member_t as object
+(
+  vers_major      char(1),                           /* UDT major version # */
+  vers_minor      char(1),                           /* UDT minor version # */
+  rule_set_name   varchar2(90),                         /* name of Rule Set */
+  rule_name       varchar2(90),                             /* name of Rule */
+  rule_order      number,                         /* unused in this release */
+  enabled         varchar2(1)       /* the Rule Set is enabled ('Y' or 'N') */
+)
+/
+
+-- The rule_set$.id# sequence starts at 5000, so Rule Sets with id# 
+-- less than 5000 are reserved for internal use by Database Vault,
+-- and should not be exported. 
+create or replace force view dvsys.ku$_dv_rule_set_member_view
+       of dvsys.ku$_dv_rule_set_member_t
+  with object identifier (rule_set_name,rule_name) as
+  select '0','0',
+          rulst.name,
+          rult.name,
+          rsr.rule_order, 
+          rsr.enabled
+  from    dvsys.rule_set_rule$          rsr,
+          dvsys.rule_set$               ruls,
+          dvsys.rule_set_t$             rulst,
+          dvsys.rule$                   rul,
+          dvsys.rule_t$                 rult
+  where   ruls.id# = rsr.rule_set_id#
+    and   ruls.id# = rulst.id#
+    and    rul.id# = rsr.rule_id#
+    and    rul.id# = rult.id#
+    and   ruls.id# >= 5000
+    and   (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990
+           or exists ( select 1
+                         from sys.session_roles
+                        where role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_COMMAND_RULE' homogeneous type
+-- (xmltag: 'DVPS_COMMAND_RULE_T', XSLT: rdbms/xml/xsl/kudvcr.xsl),
+-- representing the Command Rules created using CREATE_COMMAND_RULE.
+-- This object-view selects directly from the DVSYS.dv$command_rule view.
+create or replace type dvsys.ku$_dv_command_rule_t as object
+(
+  vers_major      char(1),                           /* UDT major version # */
+  vers_minor      char(1),                           /* UDT minor version # */
+  command         varchar2(30),                 /* SQL statement to protect */
+  rule_set_name   varchar2(90),                         /* name of Rule Set */
+  object_owner    varchar2(30),                             /* schema owner */
+  object_name     varchar2(128),       /* object name (may be wildcard '%') */
+  enabled         varchar2(1)   /* the Command Rule is enabled ('Y' or 'N') */
+)
+/
+
+-- The command_rule$.id# sequence starts at 5000, so Command Rules with id# 
+-- less than 5000 are reserved for internal use by Database Vault,
+-- and should not be exported.
+create or replace force view dvsys.ku$_dv_command_rule_view
+       of dvsys.ku$_dv_command_rule_t
+  with object identifier (rule_set_name) as
+  select '0','0',
+          command,
+          rule_set_name,
+          object_owner, 
+          object_name,
+          enabled
+  from    dvsys.dv$command_rule         cvcr
+  where   cvcr.id# >= 5000
+    and   (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990
+           or exists ( select 1
+                         from sys.session_roles
+                        where role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_ROLE' homogeneous type
+-- (xmltag: 'DVPS_ROLE_T', XSLT: rdbms/xml/xsl/kudvrol.xsl),
+-- representing the Roles created using CREATE_ROLE.
+-- This object-view is based on the DVSYS.dba_dv_role view.
+create or replace type dvsys.ku$_dv_role_t as object
+(
+  vers_major         char(1),                        /* UDT major version # */
+  vers_minor         char(1),                        /* UDT minor version # */
+  role               varchar2(30),                             /* Role name */
+  enabled            varchar2(1),                      /* Enabled? (Y or N) */
+  rule_set_name      varchar2(90)                          /* Rule Set name */
+)
+/
+
+-- The dvsys.role$_seq sequence for role$.id# starts at 5000,
+-- so Roles with id# less than 5000 are reserved for internal use
+-- by Database Vault, and should not be exported.
+create or replace force view dvsys.ku$_dv_role_view
+       of dvsys.ku$_dv_role_t
+  with object identifier (role) as
+  select '0','0',
+         roles.role,
+         roles.enabled,
+         rulst.name
+    from dvsys.role$         roles,
+         dvsys.rule_set$     ruls,
+         dvsys.rule_set_t$   rulst
+   where roles.rule_set_id# = ruls.id#
+     and ruls.id# = rulst.id#
+     and roles.id# >= 5000
+     and (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990 OR
+          EXISTS ( SELECT * FROM sys.session_roles
+                   WHERE role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_FACTOR' homogeneous type
+-- (xmltag: 'DVPS_FACTOR_T', XSLT: rdbms/xml/xsl/kudvf.xsl),
+-- representing the Factors created using CREATE_FACTOR.
+-- This object-view is based on the DVSYS.dba_dv_factor view.
+create or replace type dvsys.ku$_dv_factor_t as object
+(
+  vers_major         char(1),                        /* UDT major version # */
+  vers_minor         char(1),                        /* UDT minor version # */
+  factor_name        varchar2(30),                           /* Factor name */
+  factor_type_name   varchar2(90),                      /* Factor Type name */
+  description        varchar2(4000),                         /* Description */
+  language           varchar2(3),         /* language of Factor description */
+  rule_set_name      varchar2(90),                         /* Rule Set name */
+  get_expr           varchar2(1024),                      /* Get expression */
+  validate_expr      varchar2(1024),                 /* Validate expression */
+  identify_by        varchar2(40),                           /* Identify by */
+  labeled_by         varchar2(40),                            /* Labeled by */
+  eval_options       varchar2(40),                          /* Eval options */
+  audit_options      varchar2(400),                        /* Audit options */
+  fail_options       varchar2(37)                           /* Fail options */
+)
+/
+
+-- The dvsys.factor$_seq sequence for factor$.id# starts at 5000,
+-- so Factors with id# less than 5000 are reserved for internal use 
+-- by Database Vault, and should not be exported.
+-- The use of substr removes the initial " || " from the audit_options string.
+create or replace force view dvsys.ku$_dv_factor_view
+       of dvsys.ku$_dv_factor_t
+  with object identifier (factor_name) as
+  select '0','0',
+         m.name,
+         dft.name,
+         d.description,
+         d.language,
+         drs.name,
+         m.get_expr,
+         m.validate_expr,
+         decode(m.identified_by,
+                 0,'DVSYS.DBMS_MACUTL.G_IDENTIFY_BY_CONSTANT', 
+                 1,'DVSYS.DBMS_MACUTL.G_IDENTIFY_BY_METHOD',
+                 2,'DVSYS.DBMS_MACUTL.G_IDENTIFY_BY_FACTOR',
+                 3,'DVSYS.DBMS_MACUTL.G_IDENTIFY_BY_CONTEXT',
+                 4,'DVSYS.DBMS_MACUTL.G_IDENTIFY_BY_RULESET',
+                 to_char(m.identified_by)),
+         decode(m.labeled_by,
+                 0,'DVSYS.DBMS_MACUTL.G_LABELED_BY_SELF', 
+                 1,'DVSYS.DBMS_MACUTL.G_LABELED_BY_FACTORS',
+                 to_char(m.labeled_by)),
+         decode(m.eval_options,
+                 0,'DVSYS.DBMS_MACUTL.G_EVAL_ON_SESSION', 
+                 1,'DVSYS.DBMS_MACUTL.G_EVAL_ON_ACCESS',
+                 2,'DVSYS.DBMS_MACUTL.G_EVAL_ON_STARTUP',
+                 to_char(m.eval_options)),
+         decode(m.audit_options,
+                0,'DVSYS.DBMS_MACUTL.G_AUDIT_OFF', 
+                substr(
+                  decode(bitand(m.audit_options,power(2,0)),
+                        power(2,0),
+                          ' || DVSYS.DBMS_MACUTL.G_AUDIT_ALWAYS',
+                        0,'') ||
+                  decode(bitand(m.audit_options,power(2,1)),
+                        power(2,1),
+                          ' || DVSYS.DBMS_MACUTL.G_AUDIT_ON_GET_ERROR',
+                        0,'') ||
+                  decode(bitand(m.audit_options,power(2,2)),
+                        power(2,2),
+                          ' || DVSYS.DBMS_MACUTL.G_AUDIT_ON_GET_NULL',
+                        0,'') ||
+                  decode(bitand(m.audit_options,power(2,3)),
+                        power(2,3),
+                          ' || DVSYS.DBMS_MACUTL.G_AUDIT_ON_VALIDATE_ERROR',
+                        0,'') ||
+                  decode(bitand(m.audit_options,power(2,4)),
+                        power(2,4),
+                          ' || DVSYS.DBMS_MACUTL.G_AUDIT_ON_VALIDATE_FALSE',
+                        0,'') ||
+                  decode(bitand(m.audit_options,power(2,5)),
+                        power(2,5),
+                          ' || DVSYS.DBMS_MACUTL.G_AUDIT_ON_TRUST_LEVEL_NULL',
+                        0,'') ||
+                  decode(bitand(m.audit_options,power(2,6)),
+                        power(2,6),
+                          ' || DVSYS.DBMS_MACUTL.G_AUDIT_ON_TRUST_LEVEL_NEG',
+                        0,''), 5)),
+         decode(m.fail_options,
+                 1,'DVSYS.DBMS_MACUTL.G_FAIL_WITH_MESSAGE', 
+                 2,'DVSYS.DBMS_MACUTL.G_FAIL_SILENTLY',
+                 to_char(m.fail_options))
+   from dvsys.factor$         m,
+        dvsys.factor_t$       d,
+        dvsys.factor_type_t$  dft,
+        dvsys.rule_set_t$     drs
+  where m.id# = d.id#
+    and dft.id# = m.factor_type_id#
+    and drs.id#  (+)= m.assign_rule_set_id#
+    and m.id# >= 5000
+    and (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990 OR
+         EXISTS ( SELECT * FROM sys.session_roles
+                  WHERE role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_FACTOR_LINK' homogeneous type
+-- (xmltag: 'DVPS_FACTOR_LINK_T', XSLT: rdbms/xml/xsl/kudvfl.xsl),
+-- representing the Factor Links created using ADD_FACTOR_LINK.
+-- This object-view is based on the DVSYS.dba_dv_factor_link view.
+create or replace type dvsys.ku$_dv_factor_link_t as object
+(
+  vers_major         char(1),                        /* UDT major version # */
+  vers_minor         char(1),                        /* UDT minor version # */
+  parent_factor_name varchar2(30),                    /* Parent Factor name */
+  child_factor_name  varchar2(30),                     /* Child Factor name */
+  label_indicator    varchar2(1) /* Contributes to label of parent (Y or N) */
+)
+/
+
+-- The dvsys.factor_link$_seq sequence for factor_link$.id# starts at 5000,
+-- so Factor Links with id# less than 5000 are reserved for internal use 
+-- by Database Vault, and should not be exported.
+create or replace force view dvsys.ku$_dv_factor_link_view
+       of dvsys.ku$_dv_factor_link_t
+  with object identifier (parent_factor_name) as
+  select '0','0',
+          d1.name,
+          d2.name,
+          m.label_ind
+  from    dvsys.factor_link$   m,
+          dvsys.factor$        d1,
+          dvsys.factor$        d2
+  where   d1.id# = m.parent_factor_id#
+    and   d2.id# = m.child_factor_id#
+    and   m.id# >= 5000
+    and   (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990 OR
+           EXISTS ( SELECT * FROM sys.session_roles
+                    WHERE role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_FACTOR_TYPE' homogeneous type
+-- (xmltag: 'DVPS_FACTOR_TYPE_T', XSLT: rdbms/xml/xsl/kudvft.xsl),
+-- representing the Factor Types created using CREATE_FACTOR_TYPE.
+-- This object-view is based on the DVSYS.dba_dv_factor_type view.
+create or replace type dvsys.ku$_dv_factor_type_t as object
+(
+  vers_major      char(1),                           /* UDT major version # */
+  vers_minor      char(1),                           /* UDT minor version # */
+  name            varchar2(90),                         /* Factor type name */
+  description     varchar2(1024),  /* Description of purpose of Factor type */
+  language        varchar2(3)        /* language of Factor type description */
+)
+/
+
+-- The dvsys.factor_type$_seq sequence for factor_type$.id# starts at 5000,
+-- so Factor Types with id# less than 5000 are reserved for internal use 
+-- by Database Vault, and should not be exported.
+create or replace force view dvsys.ku$_dv_factor_type_view
+       of dvsys.ku$_dv_factor_type_t
+  with object identifier (name) as
+  select '0','0',
+          factt.name,
+          factt.description,
+          factt.language
+  from    dvsys.factor_type$            fact,
+          dvsys.factor_type_t$          factt
+  where   fact.id# = factt.id#
+    and   fact.id# >= 5000
+    and   (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990 OR
+           EXISTS ( SELECT * FROM sys.session_roles
+                    WHERE role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_IDENTITY' homogeneous type
+-- (xmltag: 'DVPS_IDENTITY_T', XSLT: rdbms/xml/xsl/kudvid.xsl),
+-- representing the Identities created using CREATE_IDENTITY.
+-- This object-view is based on the DVSYS.dba_dv_identity view.
+create or replace type dvsys.ku$_dv_identity_t as object
+(
+  vers_major      char(1),                           /* UDT major version # */
+  vers_minor      char(1),                           /* UDT minor version # */
+  factor_name     varchar2(30),                         /* Factor type name */
+  value           varchar2(1024),  /* Description of purpose of Factor type */
+  trust_level     number    /* Trust, relative to other ids for same Factor */
+)
+/
+
+-- The dvsys.dvsys.identity$_seq sequence for identity$.id# starts at 5000,
+-- so Identities  with id# less than 5000 are reserved for internal use 
+-- by Database Vault, and should not be exported.
+create or replace force view dvsys.ku$_dv_identity_view
+       of dvsys.ku$_dv_identity_t
+  with object identifier (factor_name) as
+  select '0','0',
+          fac.name,
+          iden.value,
+          iden.trust_level
+  from    dvsys.factor$                 fac,
+          dvsys.identity$               iden
+  where   fac.id# = iden.factor_id#
+    and   fac.id# >= 5000
+    and   (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990 OR
+           EXISTS ( SELECT * FROM sys.session_roles
+                    WHERE role='DV_OWNER' ))
+/
+
+show errors;
+
+-- UDT and object-view for 'DVPS_IDENTITY_MAP' homogeneous type
+-- (xmltag: 'DVPS_IDENTITY_MAP_T', XSLT: rdbms/xml/xsl/kudvidm.xsl),
+-- representing the Identity Maps created using CREATE_IDENTITY_MAP.
+-- This object-view is based on the DVSYS.dba_dv_identity_map view.
+create or replace type dvsys.ku$_dv_identity_map_t as object
+(
+  vers_major               char(1),                  /* UDT major version # */
+  vers_minor               char(1),                  /* UDT minor version # */
+  identity_factor_name     varchar2(30),           /* Factor the map is for */
+  identity_factor_value    varchar2(1024),     /* Value the map will assume */
+  parent_factor_name       varchar2(30),              /* parent Factor link */
+  child_factor_name        varchar2(30),               /* child Factor link */
+  operation                varchar2(30),             /* relational operator */
+  operand1                 varchar2(30),                    /* left operand */
+  operand2                 varchar2(30)                    /* right operand */
+)
+/
+
+-- The dvsys.identity_map$_seq sequence for identity_map$.id# starts at 5000,
+-- so Identity Maps  with id# less than 5000 are reserved for internal use 
+-- by Database Vault, and should not be exported.
+create or replace force view dvsys.ku$_dv_identity_map_view
+       of dvsys.ku$_dv_identity_map_t
+  with object identifier (identity_factor_name) as
+  select '0','0',
+          d6.name,
+          d1.value,
+          d4.name,
+          d5.name,
+          d2.code,
+          m.operand1,
+          m.operand2
+  from    dvsys.identity_map$           m,
+          dvsys.identity$               d1,
+          dvsys.code$                   d2,
+          dvsys.factor_link$            d3,
+          dvsys.factor$                 d4,
+          dvsys.factor$                 d5,
+          dvsys.factor$                 d6
+  where   d1.id# = m.identity_id#
+    and   m.id# >= 5000
+    and   d2.id# = m.operation_code_id#
+    and   d2.code_group = 'OPERATORS'
+    and   d3.id# (+)= m.factor_link_id#
+    and   d4.id# (+)= d3.parent_factor_id#
+    and   d5.id# (+)= d3.child_factor_id#
+    and   d6.id# = d1.factor_id#
+    and   (SYS_CONTEXT('USERENV','CURRENT_USERID') = 1279990 OR
+           EXISTS ( SELECT * FROM sys.session_roles
+                    WHERE role='DV_OWNER' ))
+/
+
+show errors;
+

@@ -1,0 +1,2944 @@
+REM   himagarw  04/03/13 - Backport himagarw_bug-16411833 from MAIN 
+REM   csantelm  02/26/13 - Bug 14377554, adding entry for OWBSYS_AUDIT
+REM   cslink    01/25/12 - RADM Bug #12885283: remove columns from radm_mc$
+REM   pknaggs   01/30/12 - RADM Proj #44284 backport Data Redaction to 11.2.0.4
+REM   nalamand  06/03/10 - Bug-9765326, 9747794: Add missing default passwords
+REM   apsrivas  07/01/10 - Bug 9148218, add def pwds for APR_USER and ARGUSUSER
+REM   msakayed  10/12/09 - Bug #5842629: auditing for direct path loading
+REM   rkgautam  07/15/09 - Bug 8675976, adding another def pwds for ORACLE_OCM
+REM   rkgautam  06/22/09 - Bug 8617056, adding another def pwds for EXFSYS
+REM   rkgautam  06/06/09 - Bug 8569337,adding def pwds for EUL4_US, EUL5_US
+REM   rkgautam  01/04/09 - Bug 8399691,adding default pwds for AIA, JMSUSER
+Rem   rkgautam  03/26/09 - Bug 8339992,8356126,8351767 more default accounts
+REM   sarchak   03/02/09 - Bug 7829203,default_pwd$ should not be recreated
+REM   apsrivas  11/04/08 - Bug 6755639: Update comment for dbid 
+REM   ssonawan  09/29/08 - Bug 7295457: Add missing audit options in 
+REM                        stmt_audit_option_map
+REM   nkgopal   09/17/08 - Bug 6856975: Add ALL STATEMENTS to 
+REM                        STMT_AUDIT_OPTION_MAP
+REM   ssonawan  03/27/07 - bug 5921164: add column powner to fga$ 
+REM   mjgreave  05/12/08 - Add OUTLINE to STMT_AUDIT_OPTION_MAP. #6845085
+REM   nkgopal   03/06/08 - Bug 6810355: Add back plhol column to fga_log$ 
+REM                        since it breaks Logical Standby code
+REM   srtata    01/16/08 - Remove xs$session_hws
+REM   nkgopal   01/11/08 - drop PLHOL column from FGA_LOG$
+REM   srtata    22/05/07 - proxyid change in xs$sessions
+REM   snadhika  10/15/07 - added unique index on sessions table
+REM   achoi     06/11/07 - PUBLIC is non-versionable
+REM   srtata    05/09/07 - add modtime to xs$session_appns
+REM   sfeinste  04/09/07 - rename build process to cube build process
+REM   wechen    03/18/07 - rename primary dimension to cube dimension,
+REM                        rename interaction to build process
+REM   hosu      02/20/07 - support administer sql management object
+REM                        privilege
+REM   jnarasin  01/23/07 - Change authtimeout to sessize
+REM   mhho      12/19/06 - made change to xs$sessions to fix bug 5567978 
+REM   wechen    12/14/06 - change xs$sessions userid column to NUMBER
+REM   liaguo    11/16/06 - flashback archive privilege
+REM   wechen    11/15/06 - Add "update any primary dimension"
+REM   jaeblee   08/10/06 - set spare1 field for PUBLIC in user$
+REM   gviswana  06/22/06 - Add edition name to aud$, fga_log$
+REM   wechen    06/21/06 - Add OLAP API system privileges
+REM   ciyer     05/22/06 - grant use on edition ora$base to public
+REM   rdecker   03/15/06 - Add .NET assemblies
+REM   jnarasin  03/13/06 - Change size of cookie column in lwts table
+REM   suelee    02/16/06 - bug 4956995 - moved objauth$ et al to dcore.bsq
+REM   jnarasin  02/14/06 - Add Application Namespace tables for LWT Session
+REM   jnarasin  01/31/06 - Add LWT Session tables
+REM   jklein    08/01/05 - creation
+REM
+REM Note that there is a dependency between this file and obj_dict_sql.bsq due
+REM to the aud$ table use of a CLOB column.
+REM
+
+create sequence object_grant                 /* object grant sequence number */
+  start with 1
+  increment by 1
+  minvalue 1
+  nomaxvalue
+  cache 20
+  order
+  nocycle
+/
+create sequence system_grant                 /* system grant sequence number */
+  start with 1
+  increment by 1
+  minvalue 1
+  nomaxvalue
+  cache 20
+  order
+  nocycle
+/
+create user sys identified by "D_SYSPW" 
+/
+create role public
+/
+grant select on dual to public with grant option
+/
+create role connect
+/
+grant create session to connect
+/
+create role resource
+/
+grant create table,create cluster,create sequence,create trigger,
+ create procedure, create type, create indextype, create operator
+ to resource
+/
+create role dba
+/
+grant all privileges, select any dictionary, analyze any dictionary
+  to dba with admin option
+/
+create user system identified by "D_SYSTPW" 
+/
+grant dba to system with admin option
+/
+create role select_catalog_role
+/
+create role execute_catalog_role
+/
+create role delete_catalog_role
+/
+grant select_catalog_role to dba with admin option
+/
+grant execute_catalog_role to dba with admin option
+/
+grant delete_catalog_role to dba with admin option
+/
+create table "_default_auditing_options_"   /* default auditing option table */
+( a             varchar2(1))                              /* auditing option */
+/
+create sequence audses$                               /* auditing session id */
+  start with 1
+  increment by 1
+  minvalue 1
+  maxvalue 2E9                                     /* maxvalue fits in a ub4 */
+  cycle
+  cache 10000
+  noorder
+/
+create table audit$                                 /* auditing option table */
+( user#         number not null,                   /* user identifier number */
+  proxy#        number, /* UID of the proxy user.
+                        ** Special values:
+                        ** NULL = no proxy authentication
+                        ** 0 = all proxies may authenticate the user
+                        */
+  option#       number not null,                   /* auditing option number */
+  success       number,                                 /* audit on success? */
+  failure       number)                                 /* audit on failure? */
+               /* null = no audit, 1 = audit by session, 2 = audit by access */
+/
+create unique index i_audit on audit$(user#, proxy#, option#)
+                       /* this index is more for uniqueness than performance */
+/
+rem
+rem  FAMILY "PRIVILEGE MAP"
+rem  Tables for mapping privilege numbers to privilege names.
+rem
+rem  SYSTEM_PRIVILEGE_MAP maps a system privilege  number
+rem  to the name.
+rem
+create table SYSTEM_PRIVILEGE_MAP (
+        PRIVILEGE     number not null,
+        NAME          varchar2(40) not null,
+        PROPERTY      number not null /* 0x01 = do not export this privilege */
+                                      /* using sql statements */
+        )
+/
+comment on table SYSTEM_PRIVILEGE_MAP is
+'Description table for privilege type codes.  Maps privilege  type numbers to type names'
+/
+comment on column SYSTEM_PRIVILEGE_MAP.PRIVILEGE is
+'Numeric privilege type code'
+/
+comment on column SYSTEM_PRIVILEGE_MAP.NAME is
+'Name of the type of privilege'
+/
+comment on column SYSTEM_PRIVILEGE_MAP.PROPERTY is
+'Property flag of privilege like not export this privilege, etc'
+/
+insert into SYSTEM_PRIVILEGE_MAP values (-3, 'ALTER SYSTEM', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-4, 'AUDIT SYSTEM', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-5, 'CREATE SESSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-6, 'ALTER SESSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-7, 'RESTRICTED SESSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-10, 'CREATE TABLESPACE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-11, 'ALTER TABLESPACE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-12, 'MANAGE TABLESPACE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-13, 'DROP TABLESPACE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-15, 'UNLIMITED TABLESPACE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-20, 'CREATE USER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-21, 'BECOME USER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-22, 'ALTER USER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-23, 'DROP USER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-30, 'CREATE ROLLBACK SEGMENT', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-31, 'ALTER ROLLBACK SEGMENT', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-32, 'DROP ROLLBACK SEGMENT', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-40, 'CREATE TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-41, 'CREATE ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-42, 'ALTER ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-43, 'BACKUP ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-44, 'DROP ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-45, 'LOCK ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-46, 'COMMENT ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-47, 'SELECT ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-48, 'INSERT ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-49, 'UPDATE ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-50, 'DELETE ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-60, 'CREATE CLUSTER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-61, 'CREATE ANY CLUSTER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-62, 'ALTER ANY CLUSTER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-63, 'DROP ANY CLUSTER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-71, 'CREATE ANY INDEX', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-72, 'ALTER ANY INDEX', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-73, 'DROP ANY INDEX', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-80, 'CREATE SYNONYM', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-81, 'CREATE ANY SYNONYM', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-82, 'DROP ANY SYNONYM', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-83, 'SYSDBA', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-84, 'SYSOPER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-85, 'CREATE PUBLIC SYNONYM', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-86, 'DROP PUBLIC SYNONYM', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-90, 'CREATE VIEW', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-91, 'CREATE ANY VIEW', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-92, 'DROP ANY VIEW', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-105, 'CREATE SEQUENCE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-106, 'CREATE ANY SEQUENCE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-107, 'ALTER ANY SEQUENCE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-108, 'DROP ANY SEQUENCE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-109, 'SELECT ANY SEQUENCE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-115, 'CREATE DATABASE LINK', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-120, 'CREATE PUBLIC DATABASE LINK', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-121, 'DROP PUBLIC DATABASE LINK', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-125, 'CREATE ROLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-126, 'DROP ANY ROLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-127, 'GRANT ANY ROLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-128, 'ALTER ANY ROLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-130, 'AUDIT ANY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-135, 'ALTER DATABASE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-138, 'FORCE TRANSACTION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-139, 'FORCE ANY TRANSACTION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-140, 'CREATE PROCEDURE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-141, 'CREATE ANY PROCEDURE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-142, 'ALTER ANY PROCEDURE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-143, 'DROP ANY PROCEDURE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-144, 'EXECUTE ANY PROCEDURE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-151, 'CREATE TRIGGER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-152, 'CREATE ANY TRIGGER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-153, 'ALTER ANY TRIGGER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-154, 'DROP ANY TRIGGER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-160, 'CREATE PROFILE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-161, 'ALTER PROFILE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-162, 'DROP PROFILE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-163, 'ALTER RESOURCE COST', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-165, 'ANALYZE ANY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-167, 'GRANT ANY PRIVILEGE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-172, 'CREATE MATERIALIZED VIEW', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-173, 'CREATE ANY MATERIALIZED VIEW', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-174, 'ALTER ANY MATERIALIZED VIEW', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-175, 'DROP ANY MATERIALIZED VIEW', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-177, 'CREATE ANY DIRECTORY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-178, 'DROP ANY DIRECTORY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-180, 'CREATE TYPE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-181, 'CREATE ANY TYPE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-182, 'ALTER ANY TYPE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-183, 'DROP ANY TYPE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-184, 'EXECUTE ANY TYPE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-186, 'UNDER ANY TYPE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-188, 'CREATE LIBRARY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-189, 'CREATE ANY LIBRARY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-190, 'ALTER ANY LIBRARY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-191, 'DROP ANY LIBRARY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-192, 'EXECUTE ANY LIBRARY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-200, 'CREATE OPERATOR', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-201, 'CREATE ANY OPERATOR', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-202, 'ALTER ANY OPERATOR', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-203, 'DROP ANY OPERATOR', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-204, 'EXECUTE ANY OPERATOR', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-205, 'CREATE INDEXTYPE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-206, 'CREATE ANY INDEXTYPE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-207, 'ALTER ANY INDEXTYPE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-208, 'DROP ANY INDEXTYPE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-209, 'UNDER ANY VIEW', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-210, 'QUERY REWRITE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-211, 'GLOBAL QUERY REWRITE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-212, 'EXECUTE ANY INDEXTYPE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-213, 'UNDER ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-214, 'CREATE DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-215, 'CREATE ANY DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-216, 'ALTER ANY DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-217, 'DROP ANY DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-218, 'MANAGE ANY QUEUE', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-219, 'ENQUEUE ANY QUEUE', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-220, 'DEQUEUE ANY QUEUE', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-222, 'CREATE ANY CONTEXT', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-223, 'DROP ANY CONTEXT', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-224, 'CREATE ANY OUTLINE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-225, 'ALTER ANY OUTLINE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-226, 'DROP ANY OUTLINE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-227, 'ADMINISTER RESOURCE MANAGER', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-228, 'ADMINISTER DATABASE TRIGGER',0);
+insert into SYSTEM_PRIVILEGE_MAP values (-233, 'MERGE ANY VIEW', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-234, 'ON COMMIT REFRESH', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-235, 'EXEMPT ACCESS POLICY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-236, 'RESUMABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-237, 'SELECT ANY DICTIONARY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-238, 'DEBUG CONNECT SESSION', 0);
+rem insert into SYSTEM_PRIVILEGE_MAP values (-239, 'DEBUG CONNECT USER', 0);
+rem insert into SYSTEM_PRIVILEGE_MAP values (-240, 'DEBUG CONNECT ANY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-241, 'DEBUG ANY PROCEDURE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-243, 'FLASHBACK ANY TABLE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-244, 'GRANT ANY OBJECT PRIVILEGE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-245, 'CREATE EVALUATION CONTEXT', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-246, 'CREATE ANY EVALUATION CONTEXT',
+                                         1);
+insert into SYSTEM_PRIVILEGE_MAP values (-247, 'ALTER ANY EVALUATION CONTEXT',
+                                         1);
+insert into SYSTEM_PRIVILEGE_MAP values (-248, 'DROP ANY EVALUATION CONTEXT',
+                                         1);
+insert into SYSTEM_PRIVILEGE_MAP values (-249, 
+                                         'EXECUTE ANY EVALUATION CONTEXT', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-250, 'CREATE RULE SET', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-251, 'CREATE ANY RULE SET', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-252, 'ALTER ANY RULE SET', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-253, 'DROP ANY RULE SET', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-254, 'EXECUTE ANY RULE SET', 1);
+
+insert into SYSTEM_PRIVILEGE_MAP values (-255, 'EXPORT FULL DATABASE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-256, 'IMPORT FULL DATABASE', 0);
+
+insert into SYSTEM_PRIVILEGE_MAP values (-257, 'CREATE RULE', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-258, 'CREATE ANY RULE', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-259, 'ALTER ANY RULE', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-260, 'DROP ANY RULE', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-261, 'EXECUTE ANY RULE', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-262, 'ANALYZE ANY DICTIONARY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-263, 'ADVISOR', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-264, 'CREATE JOB', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-265, 'CREATE ANY JOB', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-266, 'EXECUTE ANY PROGRAM', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-267, 'EXECUTE ANY CLASS', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-268, 'MANAGE SCHEDULER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-269, 'SELECT ANY TRANSACTION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-270, 'DROP ANY SQL PROFILE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-271, 'ALTER ANY SQL PROFILE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-272, 'ADMINISTER SQL TUNING SET', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-273,
+                                         'ADMINISTER ANY SQL TUNING SET', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-274, 'CREATE ANY SQL PROFILE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-275, 'EXEMPT IDENTITY POLICY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-276, 'MANAGE FILE GROUP', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-277, 'MANAGE ANY FILE GROUP', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-278, 'READ ANY FILE GROUP', 1);
+insert into SYSTEM_PRIVILEGE_MAP values (-279, 'CHANGE NOTIFICATION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-280, 'CREATE EXTERNAL JOB',0);
+insert into SYSTEM_PRIVILEGE_MAP values (-281, 'CREATE ANY EDITION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-282, 'DROP ANY EDITION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-283, 'ALTER ANY EDITION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-284, 'CREATE ASSEMBLY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-285, 'CREATE ANY ASSEMBLY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-286, 'ALTER ANY ASSEMBLY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-287, 'DROP ANY ASSEMBLY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-288, 'EXECUTE ANY ASSEMBLY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-289, 'EXECUTE ASSEMBLY', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-290, 'CREATE MINING MODEL', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-291, 'CREATE ANY MINING MODEL', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-292, 'DROP ANY MINING MODEL', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-293, 'SELECT ANY MINING MODEL', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-294, 'ALTER ANY MINING MODEL', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-295, 'COMMENT ANY MINING MODEL', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-301, 'CREATE CUBE DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-302, 'ALTER ANY CUBE DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-303, 'CREATE ANY CUBE DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-304, 'DELETE ANY CUBE DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-305, 'DROP ANY CUBE DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-306, 'INSERT ANY CUBE DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-307, 'SELECT ANY CUBE DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-308, 'CREATE CUBE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-309, 'ALTER ANY CUBE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-310, 'CREATE ANY CUBE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-311, 'DROP ANY CUBE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-312, 'SELECT ANY CUBE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-313, 'UPDATE ANY CUBE', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-314, 'CREATE MEASURE FOLDER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-315, 'CREATE ANY MEASURE FOLDER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-316, 'DELETE ANY MEASURE FOLDER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-317, 'DROP ANY MEASURE FOLDER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-318, 'INSERT ANY MEASURE FOLDER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-319, 'CREATE CUBE BUILD PROCESS', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-320, 'CREATE ANY CUBE BUILD PROCESS', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-321, 'DROP ANY CUBE BUILD PROCESS', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-322, 'UPDATE ANY CUBE BUILD PROCESS', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-326, 'UPDATE ANY CUBE DIMENSION', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-327,
+                                         'ADMINISTER SQL MANAGEMENT OBJECT', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-328,
+                                         'ALTER PUBLIC DATABASE LINK', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-329,
+                                         'ALTER DATABASE LINK', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-350, 'FLASHBACK ARCHIVE ADMINISTER', 0);
+insert into SYSTEM_PRIVILEGE_MAP values (-351, 'EXEMPT REDACTION POLICY', 0);
+
+Rem NOTE - Whenever a new system privilege is introduced, please add the 
+Rem        corresponding entry to STMT_AUDIT_OPTION_MAP as well.
+
+create unique index I_SYSTEM_PRIVILEGE_MAP
+        on SYSTEM_PRIVILEGE_MAP (PRIVILEGE, NAME)
+/
+create public synonym SYSTEM_PRIVILEGE_MAP for SYSTEM_PRIVILEGE_MAP
+/
+grant select on SYSTEM_PRIVILEGE_MAP to public with grant option
+/
+rem
+rem  TABLE_PRIVILEGE_MAP maps a table privilege (auditing option) number
+rem  to the name.
+rem
+create table TABLE_PRIVILEGE_MAP (
+        PRIVILEGE       number not null,
+        NAME            varchar2(40) not null)
+/
+comment on table TABLE_PRIVILEGE_MAP is
+'Description table for privilege (auditing option) type codes.  Maps privilege (auditing option) type numbers to type names'
+/
+comment on column TABLE_PRIVILEGE_MAP.PRIVILEGE is
+'Numeric privilege (auditing option) type code'
+/
+comment on column TABLE_PRIVILEGE_MAP.NAME is
+'Name of the type of privilege (auditing option)'
+/
+insert into TABLE_PRIVILEGE_MAP values (0, 'ALTER');
+insert into TABLE_PRIVILEGE_MAP values (1, 'AUDIT');
+insert into TABLE_PRIVILEGE_MAP values (2, 'COMMENT');
+insert into TABLE_PRIVILEGE_MAP values (3, 'DELETE');
+insert into TABLE_PRIVILEGE_MAP values (4, 'GRANT');
+insert into TABLE_PRIVILEGE_MAP values (5, 'INDEX');
+insert into TABLE_PRIVILEGE_MAP values (6, 'INSERT');
+insert into TABLE_PRIVILEGE_MAP values (7, 'LOCK');
+insert into TABLE_PRIVILEGE_MAP values (8, 'RENAME');
+insert into TABLE_PRIVILEGE_MAP values (9, 'SELECT');
+insert into TABLE_PRIVILEGE_MAP values (10, 'UPDATE');
+insert into TABLE_PRIVILEGE_MAP values (11, 'REFERENCES');
+insert into TABLE_PRIVILEGE_MAP values (12, 'EXECUTE');
+insert into TABLE_PRIVILEGE_MAP values (16, 'CREATE');
+insert into TABLE_PRIVILEGE_MAP values (17, 'READ');
+insert into TABLE_PRIVILEGE_MAP values (18, 'WRITE');
+insert into TABLE_PRIVILEGE_MAP values (20, 'ENQUEUE');
+insert into TABLE_PRIVILEGE_MAP values (21, 'DEQUEUE');
+insert into TABLE_PRIVILEGE_MAP values (22, 'UNDER');
+insert into TABLE_PRIVILEGE_MAP values (23, 'ON COMMIT REFRESH');
+insert into TABLE_PRIVILEGE_MAP values (24, 'QUERY REWRITE');
+rem ?? UPSERT missing?
+insert into TABLE_PRIVILEGE_MAP values (26, 'DEBUG');
+insert into TABLE_PRIVILEGE_MAP values (27, 'FLASHBACK');
+insert into TABLE_PRIVILEGE_MAP values (28, 'MERGE VIEW');
+insert into TABLE_PRIVILEGE_MAP values (29, 'USE');
+insert into TABLE_PRIVILEGE_MAP values (30, 'FLASHBACK ARCHIVE');
+
+create unique index I_TABLE_PRIVILEGE_MAP
+        on TABLE_PRIVILEGE_MAP (PRIVILEGE, NAME)
+/
+create public synonym TABLE_PRIVILEGE_MAP for TABLE_PRIVILEGE_MAP
+/
+grant select on TABLE_PRIVILEGE_MAP to public with grant option
+/
+rem
+rem  FAMILY "OPTION MAP"
+rem     Tables for mapping auditing option numbers to auditing 
+rem  the name.
+rem
+rem  STMT_AUDIT_OPTION_MAP maps a auditing option number to the name.
+rem
+create table STMT_AUDIT_OPTION_MAP (
+        OPTION#         number not null,
+        NAME            varchar2(40) not null,
+        PROPERTY        number not null  /* 0x01 = do not export this audit */
+                                         /* option using sql statements */
+)
+/
+comment on table STMT_AUDIT_OPTION_MAP is
+'Description table for auditing option type codes.  Maps auditing option type numbers to type names'
+/
+comment on column STMT_AUDIT_OPTION_MAP.OPTION# is
+'Numeric auditing option type code'
+/
+comment on column STMT_AUDIT_OPTION_MAP.NAME is
+'Name of the type of auditing option'
+/
+comment on column STMT_AUDIT_OPTION_MAP.PROPERTY is
+'Property flag of auditing option'
+/
+insert into STMT_AUDIT_OPTION_MAP values (  3, 'ALTER SYSTEM', 0);
+insert into STMT_AUDIT_OPTION_MAP values (  4, 'SYSTEM AUDIT', 0);
+insert into STMT_AUDIT_OPTION_MAP values (  5, 'CREATE SESSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (  6, 'ALTER SESSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (  7, 'RESTRICTED SESSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (  8, 'TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (  9, 'CLUSTER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 10, 'CREATE TABLESPACE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 11, 'ALTER TABLESPACE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 12, 'MANAGE TABLESPACE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 13, 'DROP TABLESPACE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 14, 'TABLESPACE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 15, 'UNLIMITED TABLESPACE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 16, 'USER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 17, 'ROLLBACK SEGMENT', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 18, 'TYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 19, 'INDEX', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 20, 'CREATE USER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 21, 'BECOME USER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 22, 'ALTER USER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 23, 'DROP USER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 24, 'SYNONYM', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 25, 'PUBLIC SYNONYM', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 26, 'VIEW', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 27, 'SEQUENCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 28, 'DATABASE LINK', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 29, 'PUBLIC DATABASE LINK', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 30, 'CREATE ROLLBACK SEGMENT', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 31, 'ALTER ROLLBACK SEGMENT', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 32, 'DROP ROLLBACK SEGMENT', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 33, 'ROLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 34, 'DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 35, 'PROCEDURE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 36, 'TRIGGER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 37, 'PROFILE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 38, 'DIRECTORY', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 39, 'MATERIALIZED VIEW', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 40, 'CREATE TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 41, 'CREATE ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 42, 'ALTER ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 43, 'BACKUP ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 44, 'DROP ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 45, 'LOCK ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 46, 'COMMENT ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 47, 'SELECT ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 48, 'INSERT ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 49, 'UPDATE ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 50, 'DELETE ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 51, 'OUTLINE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 52, 'MINING MODEL', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 60, 'CREATE CLUSTER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 61, 'CREATE ANY CLUSTER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 62, 'ALTER ANY CLUSTER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 63, 'DROP ANY CLUSTER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 71, 'CREATE ANY INDEX', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 72, 'ALTER ANY INDEX', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 73, 'DROP ANY INDEX', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 78, 'ALL STATEMENTS', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 80, 'CREATE SYNONYM', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 81, 'CREATE ANY SYNONYM', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 82, 'DROP ANY SYNONYM', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 83, 'SYSDBA', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 84, 'SYSOPER', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 85, 'CREATE PUBLIC SYNONYM', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 86, 'DROP PUBLIC SYNONYM', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 90, 'CREATE VIEW', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 91, 'CREATE ANY VIEW', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 92, 'DROP ANY VIEW', 0);
+insert into STMT_AUDIT_OPTION_MAP values (105, 'CREATE SEQUENCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (106, 'CREATE ANY SEQUENCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (107, 'ALTER ANY SEQUENCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (108, 'DROP ANY SEQUENCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (109, 'SELECT ANY SEQUENCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (111, 'GRANT SEQUENCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (115, 'CREATE DATABASE LINK', 0);
+insert into STMT_AUDIT_OPTION_MAP values (120, 'CREATE PUBLIC DATABASE LINK', 0);
+insert into STMT_AUDIT_OPTION_MAP values (121, 'DROP PUBLIC DATABASE LINK', 0);
+insert into STMT_AUDIT_OPTION_MAP values (125, 'CREATE ROLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (126, 'DROP ANY ROLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (127, 'GRANT ANY ROLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (128, 'ALTER ANY ROLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (130, 'AUDIT ANY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (131, 'SYSTEM GRANT', 0);
+insert into STMT_AUDIT_OPTION_MAP values (135, 'ALTER DATABASE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (138, 'FORCE TRANSACTION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (139, 'FORCE ANY TRANSACTION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (140, 'CREATE PROCEDURE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (141, 'CREATE ANY PROCEDURE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (142, 'ALTER ANY PROCEDURE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (143, 'DROP ANY PROCEDURE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (144, 'EXECUTE ANY PROCEDURE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (146, 'EXECUTE PROCEDURE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (147, 'GRANT PROCEDURE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (151, 'CREATE TRIGGER', 0);
+insert into STMT_AUDIT_OPTION_MAP values (152, 'CREATE ANY TRIGGER', 0);
+insert into STMT_AUDIT_OPTION_MAP values (153, 'ALTER ANY TRIGGER', 0);
+insert into STMT_AUDIT_OPTION_MAP values (154, 'DROP ANY TRIGGER', 0);
+insert into STMT_AUDIT_OPTION_MAP values (160, 'CREATE PROFILE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (161, 'ALTER PROFILE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (162, 'DROP PROFILE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (163, 'ALTER RESOURCE COST', 0);
+insert into STMT_AUDIT_OPTION_MAP values (165, 'ANALYZE ANY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (167, 'GRANT ANY PRIVILEGE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (172, 'CREATE MATERIALIZED VIEW', 0);
+insert into STMT_AUDIT_OPTION_MAP values (173, 'CREATE ANY MATERIALIZED VIEW', 0);
+insert into STMT_AUDIT_OPTION_MAP values (174, 'ALTER ANY MATERIALIZED VIEW', 0);
+insert into STMT_AUDIT_OPTION_MAP values (175, 'DROP ANY MATERIALIZED VIEW', 0);
+insert into STMT_AUDIT_OPTION_MAP values (176, 'NETWORK', 0);
+insert into STMT_AUDIT_OPTION_MAP values (177, 'CREATE ANY DIRECTORY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (178, 'DROP ANY DIRECTORY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (179, 'GRANT DIRECTORY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (180, 'CREATE TYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (181, 'CREATE ANY TYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (182, 'ALTER ANY TYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (183, 'DROP ANY TYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (184, 'EXECUTE ANY TYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (186, 'UNDER ANY TYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (187, 'GRANT TYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (188, 'CREATE LIBRARY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (189, 'CREATE ANY LIBRARY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (190, 'ALTER ANY LIBRARY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (191, 'DROP ANY LIBRARY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (192, 'EXECUTE ANY LIBRARY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (193, 'EXECUTE LIBRARY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (200, 'CREATE OPERATOR', 0);
+insert into STMT_AUDIT_OPTION_MAP values (201, 'CREATE ANY OPERATOR', 0);
+insert into STMT_AUDIT_OPTION_MAP values (202, 'ALTER ANY OPERATOR', 0);
+insert into STMT_AUDIT_OPTION_MAP values (203, 'DROP ANY OPERATOR', 0);
+insert into STMT_AUDIT_OPTION_MAP values (204, 'EXECUTE ANY OPERATOR', 0);
+insert into STMT_AUDIT_OPTION_MAP values (205, 'CREATE INDEXTYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (206, 'CREATE ANY INDEXTYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (207, 'ALTER ANY INDEXTYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (208, 'DROP ANY INDEXTYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (209, 'UNDER ANY VIEW', 0);
+insert into STMT_AUDIT_OPTION_MAP values (210, 'QUERY REWRITE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (211, 'GLOBAL QUERY REWRITE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (212, 'EXECUTE ANY INDEXTYPE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (213, 'UNDER ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (214, 'CREATE DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (215, 'CREATE ANY DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (216, 'ALTER ANY DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (217, 'DROP ANY DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (218, 'MANAGE ANY QUEUE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (219, 'ENQUEUE ANY QUEUE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (220, 'DEQUEUE ANY QUEUE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (222, 'CREATE ANY CONTEXT', 0);
+insert into STMT_AUDIT_OPTION_MAP values (223, 'DROP ANY CONTEXT', 0);
+insert into STMT_AUDIT_OPTION_MAP values (224, 'CREATE ANY OUTLINE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (225, 'ALTER ANY OUTLINE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (226, 'DROP ANY OUTLINE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (227, 'ADMINISTER RESOURCE MANAGER', 1);
+insert into STMT_AUDIT_OPTION_MAP values (228, 'ADMINISTER DATABASE TRIGGER',0);
+insert into STMT_AUDIT_OPTION_MAP values ( 77, 'NOT EXISTS', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 54, 'ALTER TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 57, 'LOCK TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 58, 'COMMENT TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 65, 'SELECT TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 66, 'INSERT TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 67, 'UPDATE TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 68, 'DELETE TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values ( 69, 'GRANT TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (103, 'ALTER SEQUENCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (104, 'SELECT SEQUENCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (221, 'CONTEXT', 0);
+insert into STMT_AUDIT_OPTION_MAP values (233, 'MERGE ANY VIEW', 0);
+insert into STMT_AUDIT_OPTION_MAP values (234, 'ON COMMIT REFRESH', 0);
+insert into STMT_AUDIT_OPTION_MAP values (235, 'EXEMPT ACCESS POLICY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (236, 'RESUMABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (237, 'SELECT ANY DICTIONARY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (238, 'DEBUG CONNECT SESSION', 0);
+rem insert into STMT_AUDIT_OPTION_MAP values (239, 'DEBUG CONNECT USER', 0);
+rem insert into STMT_AUDIT_OPTION_MAP values (240, 'DEBUG CONNECT ANY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (241, 'DEBUG ANY PROCEDURE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (242, 'DEBUG PROCEDURE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (243, 'FLASHBACK ANY TABLE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (244, 'GRANT ANY OBJECT PRIVILEGE',0);
+insert into STMT_AUDIT_OPTION_MAP values (245, 'CREATE EVALUATION CONTEXT', 0);
+insert into STMT_AUDIT_OPTION_MAP
+   values (246, 'CREATE ANY EVALUATION CONTEXT', 0);
+insert into STMT_AUDIT_OPTION_MAP
+   values (247, 'ALTER ANY EVALUATION CONTEXT', 0);
+insert into STMT_AUDIT_OPTION_MAP
+   values (248, 'DROP ANY EVALUATION CONTEXT', 0);
+insert into STMT_AUDIT_OPTION_MAP
+   values (249, 'EXECUTE ANY EVALUATION CONTEXT', 0);
+insert into STMT_AUDIT_OPTION_MAP values (250, 'CREATE RULE SET', 0);
+insert into STMT_AUDIT_OPTION_MAP values (251, 'CREATE ANY RULE SET', 0);
+insert into STMT_AUDIT_OPTION_MAP values (252, 'ALTER ANY RULE SET', 0);
+insert into STMT_AUDIT_OPTION_MAP values (253, 'DROP ANY RULE SET', 0);
+insert into STMT_AUDIT_OPTION_MAP values (254, 'EXECUTE ANY RULE SET', 0);
+insert into STMT_AUDIT_OPTION_MAP values (255, 'EXPORT FULL DATABASE',0);
+insert into STMT_AUDIT_OPTION_MAP values (256, 'IMPORT FULL DATABASE',0);
+insert into STMT_AUDIT_OPTION_MAP values (257, 'CREATE RULE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (258, 'CREATE ANY RULE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (259, 'ALTER ANY RULE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (260, 'DROP ANY RULE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (261, 'EXECUTE ANY RULE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (262, 'ANALYZE ANY DICTIONARY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (263, 'ADVISOR',0);
+insert into STMT_AUDIT_OPTION_MAP values (264, 'CREATE JOB', 0);
+insert into STMT_AUDIT_OPTION_MAP values (265, 'CREATE ANY JOB', 0);
+insert into STMT_AUDIT_OPTION_MAP values (266, 'EXECUTE ANY PROGRAM', 0);
+insert into STMT_AUDIT_OPTION_MAP values (267, 'EXECUTE ANY CLASS', 0);
+insert into STMT_AUDIT_OPTION_MAP values (268, 'MANAGE SCHEDULER', 0);
+insert into STMT_AUDIT_OPTION_MAP values (269, 'SELECT ANY TRANSACTION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (270, 'DROP ANY SQL PROFILE',0);
+insert into STMT_AUDIT_OPTION_MAP values (271, 'ALTER ANY SQL PROFILE',0);
+insert into STMT_AUDIT_OPTION_MAP values (272, 'ADMINISTER SQL TUNING SET', 0);
+insert into STMT_AUDIT_OPTION_MAP values (273,
+                                          'ADMINISTER ANY SQL TUNING SET', 0);
+insert into STMT_AUDIT_OPTION_MAP values (274, 'CREATE ANY SQL PROFILE',0);
+insert into STMT_AUDIT_OPTION_MAP values (275, 'EXEMPT IDENTITY POLICY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (276, 'MANAGE FILE GROUP', 0);
+insert into STMT_AUDIT_OPTION_MAP values (277, 'MANAGE ANY FILE GROUP', 0);
+insert into STMT_AUDIT_OPTION_MAP values (278, 'READ ANY FILE GROUP', 0);
+insert into STMT_AUDIT_OPTION_MAP values (279, 'CHANGE NOTIFICATION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (280, 'CREATE EXTERNAL JOB', 0);
+insert into STMT_AUDIT_OPTION_MAP values (281, 'CREATE ANY EDITION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (282, 'DROP ANY EDITION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (283, 'ALTER ANY EDITION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (284, 'CREATE ASSEMBLY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (285, 'CREATE ANY ASSEMBLY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (286, 'ALTER ANY ASSEMBLY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (287, 'DROP ANY ASSEMBLY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (288, 'EXECUTE ANY ASSEMBLY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (289, 'EXECUTE ASSEMBLY', 0);
+insert into STMT_AUDIT_OPTION_MAP values (290, 'CREATE MINING MODEL', 0);
+insert into STMT_AUDIT_OPTION_MAP values (291, 'CREATE ANY MINING MODEL', 0);
+insert into STMT_AUDIT_OPTION_MAP values (292, 'DROP ANY MINING MODEL', 0);
+insert into STMT_AUDIT_OPTION_MAP values (293, 'SELECT ANY MINING MODEL', 0);
+insert into STMT_AUDIT_OPTION_MAP values (294, 'ALTER ANY MINING MODEL', 0);
+insert into STMT_AUDIT_OPTION_MAP values (295, 'COMMENT ANY MINING MODEL', 0);
+insert into STMT_AUDIT_OPTION_MAP values (296, 'ALTER MINING MODEL', 0);
+insert into STMT_AUDIT_OPTION_MAP values (297, 'COMMENT MINING MODEL', 0);
+insert into STMT_AUDIT_OPTION_MAP values (298, 'GRANT MINING MODEL', 0);
+insert into STMT_AUDIT_OPTION_MAP values (299, 'SELECT MINING MODEL', 0);
+insert into STMT_AUDIT_OPTION_MAP values (93, 'CREATE JAVA SOURCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (94, 'CREATE JAVA CLASS', 0);
+insert into STMT_AUDIT_OPTION_MAP values (95, 'CREATE JAVA RESOURCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (96, 'ALTER JAVA SOURCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (97, 'ALTER JAVA CLASS', 0);
+insert into STMT_AUDIT_OPTION_MAP values (98, 'ALTER JAVA RESOURCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (99, 'DROP JAVA SOURCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (100, 'DROP JAVA CLASS', 0);
+insert into STMT_AUDIT_OPTION_MAP values (101, 'DROP JAVA RESOURCE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (301, 'CREATE CUBE DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (302, 'ALTER ANY CUBE DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (303, 'CREATE ANY CUBE DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (304, 'DELETE ANY CUBE DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (305, 'DROP ANY CUBE DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (306, 'INSERT ANY CUBE DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (307, 'SELECT ANY CUBE DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (308, 'CREATE CUBE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (309, 'ALTER ANY CUBE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (310, 'CREATE ANY CUBE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (311, 'DROP ANY CUBE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (312, 'SELECT ANY CUBE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (313, 'UPDATE ANY CUBE', 0);
+insert into STMT_AUDIT_OPTION_MAP values (314, 'CREATE MEASURE FOLDER', 0);
+insert into STMT_AUDIT_OPTION_MAP values (315, 'CREATE ANY MEASURE FOLDER', 0);
+insert into STMT_AUDIT_OPTION_MAP values (316, 'DELETE ANY MEASURE FOLDER', 0);
+insert into STMT_AUDIT_OPTION_MAP values (317, 'DROP ANY MEASURE FOLDER', 0);
+insert into STMT_AUDIT_OPTION_MAP values (318, 'INSERT ANY MEASURE FOLDER', 0);
+insert into STMT_AUDIT_OPTION_MAP values (319, 'CREATE CUBE BUILD PROCESS', 0);
+insert into STMT_AUDIT_OPTION_MAP values (320, 'CREATE ANY CUBE BUILD PROCESS', 0);
+insert into STMT_AUDIT_OPTION_MAP values (321, 'DROP ANY CUBE BUILD PROCESS', 0);
+insert into STMT_AUDIT_OPTION_MAP values (322, 'UPDATE ANY CUBE BUILD PROCESS', 0);
+insert into STMT_AUDIT_OPTION_MAP values (323, 'COMMENT EDITION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (324, 'GRANT EDITION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (325, 'USE EDITION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (326, 'UPDATE ANY CUBE DIMENSION', 0);
+insert into STMT_AUDIT_OPTION_MAP values (327, 'ADMINISTER SQL MANAGEMENT OBJECT',
+0);
+insert into STMT_AUDIT_OPTION_MAP values (328,
+                                          'ALTER PUBLIC DATABASE LINK', 0);
+insert into STMT_AUDIT_OPTION_MAP values (329,
+                                          'ALTER DATABASE LINK', 0);
+insert into STMT_AUDIT_OPTION_MAP values (330, 'DIRECT_PATH LOAD', 0);
+insert into STMT_AUDIT_OPTION_MAP values (331, 'DIRECT_PATH UNLOAD', 0);
+/* Schema Synonyms got postponed to 12g */
+/* insert into STMT_AUDIT_OPTION_MAP values (332, 'CREATE SCHEMA SYNONYM', 0); */
+/* insert into STMT_AUDIT_OPTION_MAP values (333, 'DROP SCHEMA SYNONYM', 0); */
+insert into STMT_AUDIT_OPTION_MAP values (350, 'FLASHBACK ARCHIVE ADMINISTER', 0);
+insert into STMT_AUDIT_OPTION_MAP values (351, 'EXEMPT REDACTION POLICY', 0);
+
+create unique index I_STMT_AUDIT_OPTION_MAP
+        on STMT_AUDIT_OPTION_MAP (OPTION#, NAME)
+/
+create public synonym  STMT_AUDIT_OPTION_MAP for STMT_AUDIT_OPTION_MAP
+/
+grant select on STMT_AUDIT_OPTION_MAP to public
+/
+create table user_history$ 
+( user# number not null,   /* user number; this mapping is for (user$.user#) */
+  password  varchar2("M_IDEN"),                      /* password of the user */
+  password_date date                        /* date the password was entered */
+)
+/
+create table rls$                                      /* Row Level Security */
+(
+  obj#            NUMBER NOT NULL,       /* synonym/table/view object number */
+  gname           VARCHAR2("M_IDEN") NOT NULL,       /* name of policy group */
+  pname           VARCHAR2("M_IDEN") NOT NULL,             /* name of policy */
+  stmt_type       NUMBER NOT NULL,             /* statement and policy types */
+                                   /* 0x0001 SELECT statement policy */
+                                   /* 0x0002 INSERT statement policy */
+                                   /* 0x0004 UPDATE statement policy */
+                                   /* 0x0008 DELETE statement policy */
+                                   /* 0x0010 static policy */
+                                   /* 0x0020 policy associated with synonym */
+                                   /* 0x0040 shared static policy */
+                                   /* 0x0080 context sensitive policy */
+                                   /* 0x0100 shared context sensitive policy */
+                                   /* 0x0200 4000 bytes max predicate length */
+                                   /* 0x0400 security relevant column policy */
+  check_opt       NUMBER NOT NULL,                      /* with check option */
+                                            /* 0 = no checking, 1 = checking */
+  enable_flag     NUMBER NOT NULL,              /* 0 = disabled, 1 = enabled */
+  pfschma         VARCHAR2("M_IDEN") NOT NULL,  /* schema of policy function */
+  ppname          VARCHAR2("M_IDEN"),                 /* policy package name */
+  pfname          VARCHAR2("M_IDEN") NOT NULL,       /* policy function name */
+  ptype           NUMBER                                         /* obsolete */
+)
+/
+create index i_rls on rls$(obj#, gname, pname)
+/
+create index i_rls2 on rls$(obj#)
+/
+create table rls_sc$                       /* RLS secrurity relevant columns */
+(
+  obj#            NUMBER NOT NULL,        /* parent table/view object number */
+  gname           VARCHAR2("M_IDEN") NOT NULL,       /* name of policy group */
+  pname           VARCHAR2("M_IDEN") NOT NULL,             /* name of policy */
+  intcol#         NUMBER                      /* security relevant column ID */
+)
+/
+create index i_rls_sc on rls_sc$(obj#, gname, pname)
+/
+
+create table rls_grp$
+(
+  obj#            NUMBER NOT NULL,                   /* parent object number */
+  gname           VARCHAR2("M_IDEN") NOT NULL,       /* name of policy group */
+  synid           NUMBER                                         /* obsolete */
+)
+/
+create index i_rls_grp on rls_grp$(obj#)
+/
+create table rls_ctx$
+(
+  obj#            NUMBER NOT NULL,                   /* parent object number */
+  ns              VARCHAR2("M_IDEN") NOT NULL,                  /* namespace */
+  attr            VARCHAR2("M_IDEN") NOT NULL,                  /* attribute */
+  synid           NUMBER                                         /* obsolete */
+)
+/
+create index i_rls_ctx on rls_ctx$(obj#)
+/
+
+Rem
+Rem  Create the RADM dictionary tables radm$, radm_mc$, and radm_fptm$
+Rem  radm_fptm_lob$, radm_td$, and radm_cd$
+Rem
+create table radm$ /* Real-time Application-controlled Data Masking policies */
+(
+  obj#        NUMBER NOT NULL,             /* object number of table or view */
+  pname       VARCHAR2("M_IDEN") NOT NULL,               /* RADM policy name */
+  pexpr       VARCHAR2(4000) NOT NULL,             /* RADM Policy Expression */
+  enable_flag NUMBER NOT NULL     /* Policy State: 0 = disabled, 1 = enabled */
+)
+/
+create index i_radm1 on radm$(obj#)
+/
+create index i_radm2 on radm$(obj#, pname)
+/
+create table radm_mc$                      /* RADM policies - Masked Columns */
+(
+  obj#                   NUMBER NOT NULL,             /* table object number */
+  intcol#                NUMBER NOT NULL,                   /* column number */
+  mfunc                  NUMBER NOT NULL,           /* RADM Masking Function */
+  mparams                VARCHAR2(1000),          /* RADM Masking Parameters */
+  regexp_pattern         VARCHAR2(512),        /* Regular Expression pattern */
+  regexp_replace_string  VARCHAR2(4000),               /* Replacement string */
+  regexp_position        NUMBER,                 /* Position to begin search */
+  regexp_occurrence      NUMBER,    /* Replace specified or every occurrence */
+  regexp_match_parameter VARCHAR2(10),          /* Control matching behavior */
+  mp_iformat_start_byte  INTEGER,         /* starting byte # of INPUT FORMAT */
+  mp_iformat_end_byte    INTEGER,           /* ending byte # of INPUT FORMAT */
+  mp_oformat_start_byte  INTEGER,        /* starting byte # of OUTPUT FORMAT */
+  mp_oformat_end_byte    INTEGER,          /* ending byte # of OUTPUT FORMAT */
+  mp_maskchar_start_byte INTEGER,            /* starting byte # of MASK CHAR */
+  mp_maskchar_end_byte   INTEGER,              /* ending byte # of MASK CHAR */
+  mp_maskfrom            INTEGER,         /* MASK FROM, converted to integer */
+  mp_maskto              INTEGER,           /* MASK TO, converted to integer */
+  mp_datmask_Mo          INTEGER,                     /* date mask for Month */
+  mp_datmask_D           INTEGER,                       /* date mask for Day */
+  mp_datmask_Y           INTEGER,                      /* date mask for Year */
+  mp_datmask_H           INTEGER,                      /* date mask for Hour */
+  mp_datmask_Mi          INTEGER,                    /* date mask for Minute */
+  mp_datmask_S           INTEGER                     /* date mask for Second */
+)
+/
+create index i_radm_mc1 on radm_mc$(obj#)
+/
+create index i_radm_mc2 on radm_mc$(obj#, intcol#)
+/
+create table radm_fptm$ /* RADM Fixed PoinT Masking values */
+(
+  numbercol    NUMBER NOT NULL,
+  binfloatcol  BINARY_FLOAT NOT NULL,
+  bindoublecol BINARY_DOUBLE NOT NULL,
+  charcol      CHAR(1),
+  varcharcol   VARCHAR2(1),
+  ncharcol     NCHAR(1),
+  nvarcharcol  NVARCHAR2(1),
+  datecol      DATE NOT NULL,
+  ts_col       TIMESTAMP NOT NULL,
+  tswtz_col    TIMESTAMP WITH TIME ZONE NOT NULL,
+  fpver        NUMBER NOT NULL
+)
+/
+create unique index i_radm_fptm on radm_fptm$(fpver)
+/
+insert into radm_fptm$ values
+(
+  0,
+  0,
+  0,
+  ' ',
+  ' ',
+  N' ',
+  N' ',
+  TO_DATE('01-JAN-01','DD-MON-YY','NLS_DATE_LANGUAGE = AMERICAN'),
+  TO_TIMESTAMP('01-JAN-2001 01.00.00.000000AM','DD-MON-YYYY HH.MI.SS.FF6AM','NLS_DATE_LANGUAGE = AMERICAN'),
+  TO_TIMESTAMP_TZ('01-JAN-2001 01.00.00.000000AM +00:00','DD-MON-YYYY HH.MI.SS.FF6AM TZH:TZM','NLS_DATE_LANGUAGE = AMERICAN'),
+  1
+)
+/
+create table radm_fptm_lob$ /* RADM Fixed PoinT Masking values for LOBs*/
+(
+  blobcol      BLOB,
+  clobcol      CLOB,
+  nclobcol     NCLOB,
+  fpver        NUMBER NOT NULL
+)
+tablespace SYSAUX
+/
+create unique index i_radm_fptm_lob on radm_fptm_lob$(fpver)
+tablespace SYSAUX
+/
+insert into radm_fptm_lob$ values
+(
+  NULL,
+  NULL,
+  NULL,
+  0
+)
+/
+create table radm_td$
+(
+  obj#        NUMBER NOT NULL,             /* object number of table or view */
+  pname       VARCHAR2("M_IDEN") NOT NULL,               /* RADM policy name */
+  pdesc       VARCHAR2(4000)                      /* RADM policy description */
+)
+/
+create index i_radm_td1 on radm_td$(obj#)
+/
+create index i_radm_td2 on radm_td$(obj#, pname)
+/
+create table radm_cd$
+(
+  obj#        NUMBER NOT NULL,             /* object number of table or view */
+  intcol#     NUMBER NOT NULL,                              /* column number */
+  pname       VARCHAR2("M_IDEN") NOT NULL,               /* RADM policy name */
+  cdesc       VARCHAR2(4000)         /* column level RADM policy description */
+)
+/
+create index i_radm_cd1 on radm_cd$(obj#)
+/
+create index i_radm_cd2 on radm_cd$(obj#, intcol#)
+/
+create index i_radm_cd3 on radm_cd$(obj#, intcol#, pname)
+/
+Rem  Creation of AUD$ is moved here because of new CLOB type columns.
+Rem    We can define CLOB columns only after LOB$ table is defined.
+Rem 
+create table aud$                                       /* audit trail table */
+( sessionid     number not null,                        /* server session id */
+  entryid       number not null,           /* serial number to audit records */
+  statement     number not null,                     /* sql statement number */
+  timestamp#    date,            /* OBSOLETE: 10iR1 and above: time of query */
+  userid        varchar2("M_IDEN"),                     /* database username */
+  userhost      varchar2("M_HOST"),              /* client host machine name */
+  terminal      varchar2("M_TERM"),                    /* client terminal id */
+  action#       number not null,          /* action responsible for auditing */
+  returncode    number not null,               /* return code for the action */
+  obj$creator   varchar2("M_IDEN"),           /* schema where object resides */
+  obj$name      varchar2("M_XDBI"),                    /* name of the object */
+  auth$privileges varchar2("S_PRFL"),                  /* granted privileges */
+  auth$grantee  varchar2("M_IDEN"),                      /* grantee username */
+  new$owner     varchar2("M_IDEN"),        /* schema of the dependent object */
+  new$name      varchar2("M_XDBI"),          /* name of the dependent object */
+  ses$actions   varchar2("S_ACFL"),        /* success/failure of each action */
+  ses$tid       number,                                         /* object id */
+  logoff$lread  number,            /* number of logical reads in the session */
+  logoff$pread  number,           /* number of physical reads in the session */
+  logoff$lwrite number,           /* number of logical writes in the session */
+  logoff$dead   number,                /* number of deadlocks in the session */
+  logoff$time   date,                                    /* session duration */
+  comment$text  varchar2("M_VCSZ"),  /* type authentication/trigger/protocol */
+  clientid      varchar2(64),              /* user defined client identifier */
+  spare1        varchar2(255),                               /* OS user name */
+  spare2        number,             /* whether this table (aud$) is modified */
+  obj$label     raw(255),                         /* OBSOLETE: 8.0 and above */
+  ses$label     raw(255),                         /* OBSOLETE: 8.0 and above */
+  priv$used     number,                              /* system privlege used */
+  sessioncpu    number,                    /* total cpu time for the session */
+  ntimestamp#   timestamp,                /* new timestamp (in UTC) of query */
+  proxy$sid     number,                       /* proxy session serial number */
+  user$guid     varchar2(32),                      /* global user identifier */
+  instance#     number,                                   /* instance number */
+  process#      varchar2("M_PIDL"),                         /* OS process id */
+  xid           raw(8),                            /* transaction identifier */
+  auditid       varchar2(64),                          /* audit operation id */
+  scn           number,                                  /* SCN of the query */
+  dbid          number,                 /* database identifier for source db */
+  sqlbind       clob,                        /* bind variables for the query */
+  sqltext       clob,                               /* sql text of the query */
+  obj$edition   varchar2("M_IDEN")                    /* Object edition name */
+)
+/
+grant delete on aud$ to delete_catalog_role
+/
+create table fga$
+(
+  obj#            NUMBER NOT NULL,                   /* parent object number */
+  pname           VARCHAR2("M_IDEN") NOT NULL,             /* name of policy */
+  ptxt            VARCHAR2("M_VCSZ"),                    /* policy predicate */
+  pfschma         VARCHAR2("M_IDEN"),             /* schema of event handler */
+  ppname          VARCHAR2("M_IDEN"),                  /* event package name */
+  pfname          VARCHAR2("M_IDEN"),                 /* event function name */
+  pcol            VARCHAR2("M_IDEN"),                     /* relevant column */
+  enable_flag     NUMBER NOT NULL,              /* 0 = disabled, 1 = enabled */
+  stmt_type       NUMBER default 1 NOT NULL,               /* statement type */
+  powner#         NUMBER NOT NULL                         /* owner of policy */
+)
+/
+create index i_fga on fga$(obj#)
+/
+create unique index i_fgap on fga$(obj#, pname)
+/
+create table fgacol$
+(
+  obj#            NUMBER NOT NULL,                   /* parent object number */
+  pname           VARCHAR2("M_IDEN") NOT NULL,             /* name of policy */
+  intcol#         NUMBER NOT NULL                           /* column number */
+)
+/
+create unique index i_fgacol on fgacol$(obj#, pname, intcol#)
+/
+create table fga_log$
+(
+  sessionid     number not null,                               /* session id */
+  timestamp#    date,            /* OBSOLETE: 10iR1 and above: time of query */
+  dbuid         varchar2("M_IDEN"),                     /* database username */
+  osuid         varchar2(255),                                  /* OS userid */
+  oshst         varchar2("M_HOST"),                           /* client host */
+  clientid      varchar2(64),                           /* client identifier */
+  extid         varchar2("M_VCSZ"),                    /* external user name */
+  obj$schema    varchar2("M_IDEN"),                         /* object schema */
+  obj$name      varchar2("M_XDBI"),                           /* object name */
+  policyname    varchar2("M_IDEN"),             /* fine grained audit policy */
+  scn           number,                                  /* SCN of the query */
+  sqltext       varchar2("M_VCSZ"),                       /* only used in 9i */
+  lsqltext      clob,                               /* sql text of the query */
+  sqlbind       varchar2("M_VCSZ"),                  /* only used until 9iR2 */
+  comment$text  varchar2("M_VCSZ"),
+  plhol         long,                        /* place holder for int. values */
+  stmt_type     number,                                    /* statement type */
+  ntimestamp#   timestamp,                /* new timestamp (in UTC) of query */
+  proxy$sid     number,                       /* proxy session serial number */
+  user$guid     varchar2(32),                      /* global user identifier */
+  instance#     number,                                /* db instance number */
+  process#      varchar2("M_PIDL"),                         /* OS process id */
+  xid           raw(8),                  /* modifying transaction identifier */
+  auditid       varchar2(64),                     /* user defined audit info */
+  statement     number,                              /* sql statement number */
+  entryid       number,                    /* serial number to audit records */
+  dbid          number,          /* null or remote dbid. for Logical Standby */
+  lsqlbind      clob,                        /* bind variables for the query */
+  obj$edition   varchar2("M_IDEN")                    /* Object edition name */
+)
+/
+grant delete on fga_log$ to delete_catalog_role
+/
+create table approle$                                    /* Application Role */
+(
+  role#           NUMBER NOT NULL,                                  /* role# */
+  schema          VARCHAR2("M_IDEN") NOT NULL,  /* schema of policy function */
+  package         VARCHAR2("M_IDEN") NOT NULL         /* policy package name */
+)
+/
+create unique index i_approle on approle$(role#)
+/
+create table enc$ (
+  obj#    number,                                     /* table object number */
+  owner#  number,                         /* user id of the master key owner */
+  mkeyid  varchar2(64),                           /* global id of master key */
+  encalg  number,                                 /* encryption algorithm id */
+  intalg  number,                                  /* integrity algorithm id */
+  colklc  raw(2000),                                   /* column key locator */
+  klclen  number,                                   /* length of key locator */
+  flag    number,                                                    /* flag */
+  supplemental log group enc$_log_grp (obj#, owner#) always
+)
+/
+create unique index enc_idx on enc$(obj#, owner#)
+/
+create table proxy_info$
+( client#            NUMBER NOT NULL,                      /* client user ID */
+  proxy#             NUMBER NOT NULL,                       /* proxy user ID */
+  credential_type#   NUMBER NOT NULL,  /* Type of credential passed by proxy */
+                   /*
+                    * Values
+                    * 0 = No Authentication
+                    * 5 = Authentication
+                    */
+  flags               NUMBER NOT NULL /* Mask flags of associated with entry */
+             /* Flags values:
+              * 1 = proxy can activate all client roles
+              * 2 = proxy can activate no client roles
+              * 4 = role can be activated by proxy,
+              * 8 = role cannot be activated by proxy
+              */
+)
+/
+create unique index i_proxy_info$ on proxy_info$(client#, proxy#)
+/
+create table proxy_role_info$
+( client#       NUMBER NOT NULL,                           /* client user ID */
+  proxy#        NUMBER NOT NULL,                            /* proxy user ID */
+  role#         NUMBER NOT NULL                                   /* role ID */
+)
+/
+create index i_proxy_role_info$_1 on
+  proxy_role_info$(client#, proxy#)
+/
+create unique index i_proxy_role_info$_2 on
+  proxy_role_info$(client#, proxy#, role#)
+/
+create table xs$verifiers
+( user#       NUMBER        NOT NULL,             /* light weight user's UID */
+  verifier    VARCHAR2(256) NOT NULL,                   /* password verifier */
+  type#       NUMBER                                        /* verifier type */
+)
+/
+create unique index i_xs$verifiers1 on xs$verifiers(user#)
+/
+create table xs$sessions
+(
+  username             varchar2(4000) not null ,   /* Light Weight User Name */
+  userid               number(10)     not null ,     /* Light Weight User ID */
+  userguid             raw(16)        not null ,   /* Light Weight User GUID */
+  acloid               raw(16)                 ,                  /* ACL OID */
+  sid                  raw(16)        not null ,  /* Light Weight Session ID */
+  cookie               varchar2(1024)          ,                   /* Cookie */
+  proxyguid            raw(16)                 ,          /* Proxy User GUID */
+  creatorid            raw(16)        not null ,          /* Creator User ID */
+  updateid             raw(16)        not null ,          /* Updator User ID */
+  createtime           timestamp      not null ,      /* Session Create time */
+  authtime             timestamp      not null , /* Last Authentication Time */
+  accesstime           timestamp      not null ,         /* Last Access Time */
+  inactivetimeout      number(6)               ,       /* Inactivity Timeout */
+  sessize              number                  ,             /* Session Size */
+  nls_calendar         varchar2(255)           ,
+  nls_comp             varchar2(255)           ,
+  nls_credit           varchar2(255)           ,
+  nls_currency         varchar2(255)           ,
+  nls_date_format      varchar2(255)           ,
+  nls_date_language    varchar2(255)           ,
+  nls_debit            varchar2(255)           ,
+  nls_iso_currency     varchar2(255)           ,
+  nls_lang             varchar2(255)           ,
+  nls_language         varchar2(255)           ,
+  nls_length_semantics varchar2(255)           ,
+  nls_list_separator   varchar2(255)           ,
+  nls_monetary_chrs    varchar2(255)           ,
+  nls_nchar_conv_excp  varchar2(255)           ,
+  nls_numeric_chrs     varchar2(255)           ,
+  nls_sort             varchar2(255)           ,
+  nls_territory        varchar2(255)           ,
+  nls_timestamp_fmt    varchar2(255)           ,
+  nls_timestamp_tz_fmt varchar2(255)           ,
+  nls_dual_currency    varchar2(255)           ,
+  apps_feature         varchar2(255)           ,
+  proxyid              number(10)                           /* Proxy User ID */
+)
+tablespace SYSAUX
+/
+create unique index i_xs$sessions1 on xs$sessions(cookie)
+/
+
+create unique index xs$sessions_i1 on xs$sessions(sid);
+/
+
+create table xs$session_roles
+(
+  sid             raw(16)        not null ,       /* Light Weight Session ID */
+  roleintid       number(10)     not null ,              /* Role Internal ID */
+  roleid          raw(16)        not null ,                       /* Role ID */
+  rolename        varchar2(4000) not null ,                     /* Role Name */
+  roleflags       number(10)     not null                      /* Role Flags */
+)
+tablespace SYSAUX
+/
+
+create index xs$session_roles_i1 on xs$session_roles(sid);
+/
+
+create table xs$session_appns
+(
+  sid             raw(16)        not null ,       /* Light Weight Session ID */
+  nsname          varchar2(4000) not null ,                /* Namespace Name */
+  attrname        varchar2(4000)          ,                /* Attribute Name */
+  nsacloid        raw(16)                 ,         /* ACL OID for Namespace */
+  nshandler       varchar2(255)           ,             /* Namespace Handler */
+  nsaudit         number(10)              ,                 /* Audit Options */
+  flags           number(10)              ,               /* Namespace Flags */
+  attrvalue       varchar2(4000)          ,               /* Attribute Value */
+  modtime         timestamp
+)
+tablespace SYSAUX
+/
+
+create index xs$session_appns_i1 on xs$session_appns(sid);
+/
+
+create table xs$parameters
+(
+  name                  varchar2(256)  not null ,          /* Parameter Name */
+  value                 varchar2(4000) not null ,         /* Parameter Value */
+  description           varchar2(4000) not null ,   /* Parameter Description */
+  registration_sequence number         not null , /* Parameter Reg. Sequence */
+  flags                 number         not null           /* Parameter flags */
+)
+/
+create sequence xsparam_reg_sequence$  /* XS parameter registration sequence */
+  start with 1
+  increment by 1
+  minvalue 1
+  nomaxvalue
+  cache 20
+  order
+  nocycle
+/
+grant select on map_object to select_catalog_role
+/
+grant all on map_object to dba
+/
+grant all privileges to sys
+/
+insert into props$ values ('TDE_MASTER_KEY_ID', NULL, NULL) 
+/
+
+Rem
+Rem The ora$base edition created in denv.bsq needs to be granted to PUBLIC.
+Rem However, PUBLIC gets created only in this file which runs after denv.
+Rem Hence, this is the earliest the grant to PUBLIC could be placed.
+Rem
+grant use on edition ora$base to public
+/
+
+Rem BEGIN: BUG 7829203, DEFAULT_PWD$ CHANGES
+
+create table default_pwd$
+(  user_name varchar2(128),
+   pwd_verifier  varchar2(512),
+   pv_type NUMBER default 0
+) 
+/
+create unique index i_default_pwd on default_pwd$(user_name,pwd_verifier)
+/
+
+Rem Inserting values into default_pwd$
+
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AASH',  '9B52488370BB3D77');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ABA1',  '30FD307004F350DE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ABM',  'D0F2982F121C7840');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AD_MONITOR',  '54F0C83F51B03F49');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ADAMS',  '72CDEF4A3483F60D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ADLDEMO',  '147215F51929A6E8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ADS',  'D23F0F5D871EB69F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ADSEUL_US',  '4953B2EB6FCB4339');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AHL',  '7910AE63C9F7EEEE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AHM',  '33C2E27CF5E401A4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AIA',  '3866BBB1FB9D80C3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AK',  '8FCB78BBA8A59515');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AL',  '384B2C568DE4C2B5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ALA1',  '90AAC5BD7981A3BA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ALLUSERS',  '42F7CD03B7D2CA0F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ALR',  'BE89B24F9F8231A9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ALT_ADMIN',  '779344313F899066');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMA1',  '585565C23AB68F71');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMA2',  '37E458EE1688E463');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMA3',  '81A66D026DC5E2ED');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMA4',  '194CCC94A481DCDE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMF',  'EC9419F55CDC666B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMS',  'BD821F59270E5F34');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMS1',  'DB8573759A76394B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMS2',  'EF611999C6AD1FD7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMS3',  '41D1084F3F966440');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMS4',  '5F5903367FFFB3A3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMSYS',  '4C1EF14ECE13B5DE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMV',  '38BC87EB334A1AC4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AMW',  '0E123471AACA2A62');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ANNE',  '1EEA3E6F588599A6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ANONYMOUS',  '94C33111FD9C66F3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AOLDEMO',  'D04BBDD5E643C436');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AP',  'EED09A552944B6AD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APA1',  'D00197BF551B2A79');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APA2',  '121C6F5BD4674A33');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APA3',  '5F843C0692560518');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APA4',  'BF21227532D2794A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APEX_PUBLIC_USER',  '084062DA5B2E2B75');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APPLEAD',  '5331DB9C240E093B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APPLSYS',  '0F886772980B8C79');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APPLSYS',  'E153FFF4DAE6C9F7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APPLSYSPUB',  'D2E3EF40EE87221E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APPQOSSYS',  '519D632B7EE7F63A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APPS',  'D728438E8A5925E0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APR_USER',  '0E0840494721500A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APS1',  'F65751C55EA079E6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APS2',  '5CACE7B928382C8B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APS3',  'C786695324D7FB3B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('APS4',  'F86074C4F4F82D2C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AQDEMO',  '5140E342712061DD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AQJAVA',  '8765D2543274B42E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AQUSER',  '4CF13BDAC1D7511C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AR',  'BBBFE175688DED7E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ARA1',  '4B9F4E0667857EB8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ARA2',  'F4E52BFBED4652CD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ARA3',  'E3D8D73AE399F7FE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ARA4',  '758FD31D826E9143');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ARGUSUSER',  'AB1079A1727006AD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ARS1',  '433263ED08C7A4FD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ARS2',  'F3AF9F26D0213538');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ARS3',  'F6755F08CC1E7831');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ARS4',  '452B5A381CABB241');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ART',  '665168849666C4F3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ASF',  'B6FD427D08619EEE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ASG',  '1EF8D8BD87CF16BE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ASL',  '03B20D2C323D0BFE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ASN',  '1EE6AEBD9A23D4E0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ASO',  'F712D80109E3C9D8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ASP',  'CF95D2C6C85FF513');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AST',  'F13FF949563EAB3C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AUC_GUEST',  '8A59D349DAEC26F7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AUDIOUSER',  'CB4F2CEC5A352488');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AURORA$ORB$UNAUTHENTICATED',  '80C099F0EADF877E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AUTHORIA',  'CC78120E79B57093');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AX',  '0A8303530E86FCDD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('AZ',  'AAA18B5D51B0D5AC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('B2B',  'CC387B24E013C616');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BAM',  '031091A1D1A30061');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BC4J_INTERNAL',  'D15756F15F62D5BA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BCA1',  '398A69209360BD9D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BCA2',  '801D9C90EBC89371');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BEN',  '9671866348E03616');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BI',  'FA1D2B85B70213F3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BIC',  'E84CC95CBBAC1B67');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BIL',  'BF24BCE2409BE1F7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BIM',  '6026F9A8A54B9468');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BIS',  '7E9901882E5F3565');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BIV',  '2564B34BE50C2524');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BIX',  '3DD36935EAEDE2E3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BLAKE',  '9435F2E60569158E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BMEADOWS',  '2882BA3D3EE1F65A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BNE',  '080B5C7EE819BF78');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BOM',  '56DB3E89EAE5788E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BP01',  '612D669D2833FACD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BP02',  'FCE0C089A3ECECEE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BP03',  '0723FFEEFBA61545');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BP04',  'E5797698E0F8934E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BP05',  '58FFC821F778D7E9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BP06',  '2F358909A4AA6059');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BSC',  'EC481FD7DCE6366A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BUYACCT',  'D6B388366ECF2F61');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BUYAPPR1',  'CB04931693309228');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BUYAPPR2',  '3F98A3ADC037F49C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BUYAPPR3',  'E65D8AD3ACC23DA3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BUYER',  '547BDA4286A2ECAE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('BUYMTCH',  '0DA5E3B504CC7497');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CAMRON',  '4384E3F9C9C9B8F1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CANDICE',  'CF458B3230215199');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CARL',  '99ECCC664FFDFEA2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CARLY',  'F7D90C099F9097F1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CARMEN',  '46E23E1FD86A4277');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CARRIECONYERS',  '9BA83B1E43A5885B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CATADMIN',  'AF9AB905347E004F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CATALOG',  '397129246919E8DA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CCT',  'C6AF8FCA0B51B32F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CDEMO82',  '7299A5E2A5A05820');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CDEMOCOR',  '3A34F0B26B951F3F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CDEMORID',  'E39CEFE64B73B308');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CDEMOUCB',  'CEAE780F25D556F8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CDR_DPSERVER',  'D9AA439707214B0D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CE',  'E7FDFE26A524FE39');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CEASAR',  'E69833B8205D5DD7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CENTRA',  '63BF5FFE5E3EA16D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CFD',  '667B018D4703C739');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CFLUENTDEV',  'D930962979E34C47');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CHANDRA',  '184503FA7786C82D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CHARLEY',  'E500DAA705382E8D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CHRISBAKER',  '52AFB6B3BE485F81');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CHRISTIE',  'C08B79CCEC43E798');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CINDY',  '3AB2C717D1BD0887');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CLARK',  '74DF527800B6D713');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CLARK',  '7AAFE7D01511D73F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CLAUDE',  'C6082BCBD0B69D20');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CLIENT_STORAGE',  '66AA3738639CCA31');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CLINT',  '163FF8CCB7F11691');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CLN',  'A18899D42066BFCA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CN',  '73F284637A54777D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CNCADMIN',  'C7C8933C678F7BF9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('COMPANY',  '402B659C15EAF6CB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CONNIE',  '982F4C420DD38307');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CONNOR',  '52875AEB74008D78');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CORY',  '93CE4CCE632ADCD2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CRM1',  '6966EA64B0DFC44E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CRM2',  'B041F3BEEDA87F72');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CRP',  'F165BDE5462AD557');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CRPB733',  '2C9AB93FF2999125');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CRPCTL',  '4C7A200FB33A531D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CRPDTA',  '6665270166D613BC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CS',  'DB78866145D4E1C3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSADMIN',  '94327195EF560924');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSAPPR1',  '47D841B5A01168FF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSC',  'EDECA9762A8C79CD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSD',  '144441CEBAFC91CF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSDUMMY',  '7A587C459B93ACE4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSE',  'D8CC61E8F42537DA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSF',  '684E28B3C899D42C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSI',  '71C2B12C28B79294');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSL',  'C4D7FE062EFB85AB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSM',  '94C24FC0BE22F77F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSMIG',  '09B4BB013FBD0D65');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSP',  '5746C5E077719DB4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSR',  '0E0F7C1B1FE3FA32');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CSS',  '3C6B8C73DDC6B04F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CTXDEMO',  'CB6B5E9D9672FE89');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CTXSYS',  '24ABAB8B06281B4C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CTXSYS',  '71E687F036AD56E5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CTXTEST',  '064717C317B551B6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CUA',  'CB7B2E6FFDD7976F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CUE',  'A219FE4CA25023AA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CUF',  '82959A9BD2D51297');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CUG',  '21FBCADAEAFCC489');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CUI',  'AD7862E01FA80912');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CUN',  '41C2D31F3C85A79D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CUP',  'C03082CD3B13EC42');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CUS',  '00A12CC6EBF8EDB8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('CZ',  '9B667E9C5A0D21A6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DAVIDMORGAN',  'B717BAB262B7A070');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DBSNMP',  'E066D214D5421CCC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DCM',  '45CCF86E1058D3A5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DD7333',  '44886308CF32B5D4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DD7334',  'D7511E19D9BD0F90');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DD810',  '0F9473D8D8105590');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DD811',  'D8084AE609C9A2FD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DD812',  'AB71915CF21E849E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DD9',  'E81821D03070818C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DDB733',  '7D11619CEE99DE12');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DDD',  '6CB03AF4F6DD133D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DDR',  '834EC9EAC5998DC3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DEMO',  '4646116A123897CF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DEMO8',  '0E7260738FDFD678');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DES',  'ABFEC5AC2274E54D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DES2K',  '611E7A73EC4B425A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DEV2000_DEMOS',  '18A0C8BD6B13BEE2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DEVB733',  '7500DF89DC99C057');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DEVUSER',  'C10B4A80D00CA7A5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DGRAY',  '5B76A1EB8F212B85');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DIP',  'CE4A36B8E06CA59C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DISCOVERER5',  'AF0EDB66D914B731');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DKING',  '255C2B0E1F0912EA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DLD',  '4454B932A1E0E320');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DMADMIN',  'E6681A8926B40826');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DMATS',  '8C692701A4531286');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DMS',  '1351DC7ED400BD59');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DMSYS',  'BFBA5A553FD9E28A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DNA',  'C5E32FB2E153E257');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DOM',  '51C9F2BECA78AE0E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DPOND',  '79D6A52960EEC216');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DPP',  '9C332D64EAF7243E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DSGATEWAY',  '6869F3CFD027983A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DV7333',  '36AFA5CD674BA841');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DV7334',  '473B568021BDB428');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DV810',  '52C38F48C99A0352');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DV811',  'B6DC5AAB55ECB66C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DV812',  '7359E6E060B945BA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DV9',  '07A1D03FD26E5820');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('DVP1',  '0559A0D3DE0759A6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EAA',  'A410B2C5A0958CDF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EAM',  'CE8234D92FCFB563');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EC',  '6A066C462B62DD46');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ECX',  '0A30645183812087');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EDR',  '5FEC29516474BB3A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EDWEUL_US',  '5922BA2E72C49787');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EDWREP',  '79372B4AB748501F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EGC1',  'D78E0F2BE306450D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EGD1',  'DA6D6F2089885BA6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EGM1',  'FB949D5E4B5255C0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EGO',  'B9D919E5F5A9DA71');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EGR1',  'BB636336ADC5824A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EM_MONITOR',  '5BEEF0684A63B990');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EMP',  'B40C23C6E2B4EA3D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('END1',  '688499930C210B75');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ENG',  '4553A3B443FB3207');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ENI',  '05A92C0958AFBCBC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ENM1',  '3BDABFD1246BFEA2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ENS1',  'F68A5D0D6D2BB25B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ENTMGR_CUST',  '45812601EAA2B8BD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ENTMGR_PRO',  '20002682991470B3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ENTMGR_TRAIN',  'BE40A3BE306DD857');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EOPP_PORTALADM',  'B60557FD8C45005A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EOPP_PORTALMGR',  '9BB3CF93F7DE25F1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EOPP_USER',  '13709991FC4800A1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EUL_US',  '28AEC22561414B29');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EUL4_US',  '89867444DCC3C48C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EUL5_US',  'B94851DE238A8AFF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EVENT',  '7CA0A42DA768F96D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EVM',  '137CEDC20DE69F71');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EXA1',  '091BCD95EE112EE3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EXA2',  'E4C0A21DBD06B890');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EXA3',  '40DC4FA801A73560');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EXA4',  '953885D52BDF5C86');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EXFSYS',  '33C758A8E388DEE5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EXFSYS',  '66F4EF5650C20355');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EXS1',  'C5572BAB195817F0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EXS2',  '8FAA3AC645793562');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EXS3',  'E3050174EE1844BA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('EXS4',  'E963BFE157475F7D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FA',  '21A837D0AED8F8E5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FEM',  'BD63D79ADF5262E7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FIA1',  '2EB76E07D3E094EC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FII',  'CF39DE29C08F71B9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FINANCE',  '6CBBF17292A1B9AA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FLM',  'CEE2C4B59E7567A3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FLOWS_030000',  'FA1D2B85B70213F3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FLOWS_FILES',  '0CE415AC5D50F7A1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FND',  '0C0832F8B6897321');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FNI1',  '308839029D04F80C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FNI2',  '05C69C8FEAB4F0B9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FOD',  '9C140B8BA4ADB59B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FPA',  '9FD6074B9FD3754C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FPT',  '73E3EC9C0D1FAECF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FRM',  '9A2A7E2EBE6E4F71');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FTA1',  '65FF9AB3A49E8A13');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FTE',  '2FB4D2C9BAE2CCCA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FTP',  '958CCB397C152ED2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FUN',  '8A7055CA462DB219');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FV',  '907D70C0891A85B1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('FVP1',  '6CC7825EADF994E8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GALLEN',  'F8E8ED9F15842428');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GCA1',  '47DA9864E018539B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GCA2',  'FD6E06F7DD50E868');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GCA3',  '4A4B9C2E9624C410');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GCA9',  '48A7205A4C52D6B5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GCMGR1',  '14A1C1A08EA915D6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GCMGR2',  'F4F11339A4221A4D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GCMGR3',  '320F0D4258B9D190');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GCS',  '7AE34CA7F597EBF7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GCS1',  '2AE8E84D2400E61D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GCS2',  'C242D2B83162FF3D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GCS3',  'DCCB4B49C68D77E2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GEORGIAWINE',  'F05B1C50A1C926DE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GL',  'CD6E99DACE4EA3A6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GLA1',  '86C88007729EB36F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GLA2',  '807622529F170C02');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GLA3',  '863A20A4EFF7386B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GLA4',  'DB882CF89A758377');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GLS1',  '7485C6BD564E75D1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GLS2',  '319E08C55B04C672');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GLS3',  'A7699C43BB136229');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GLS4',  '7C171E6980BE2DB9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_AWDA',  '4A06A107E7A3BB10');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_COPI',  '03929AE296BAAFF2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_DPHD',  '0519252EDF68FA86');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_MLCT',  '24E8B569E8D1E93E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLADMA',  '2946218A27B554D8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLADMH',  '2F6EDE96313AF1B7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLCCA',  '7A99244B545A038D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLCCH',  '770D9045741499E6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLCOMA',  '91524D7DE2B789A8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLCOMH',  'FC1C6E0864BF0AF2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLCONA',  '1F531397B19B1E05');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLCONH',  'C5FE216EB8FCD023');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLNSCA',  'DB9DD2361D011A30');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLNSCH',  'C80D557351110D51');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLSCTA',  '3A778986229BA20C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLSCTH',  '9E50865473B63347');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_PLVET',  '674885FDB93D34B9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_SPO',  'E57D4BD77DAF92F0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GM_STKH',  'C498A86BE2663899');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GMA',  'DC7948E807DFE242');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GMD',  'E269165256F22F01');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GME',  'B2F0E221F45A228F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GMF',  'A07F1956E3E468E1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GMI',  '82542940B0CF9C16');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GML',  '5F1869AD455BBA73');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GMO',  '09965CDCFEAFF416');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GMP',  '450793ACFCC7B58E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GMS',  'E654261035504804');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GPFD',  'BA787E988F8BC424');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GPLD',  '9D561E4D6585824B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GR',  'F5AB0AA3197AEE42');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('GUEST',  '1C0A090E404CECD0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('HCC',  '25A25A7FEFAC17B6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('HHCFO',  '62DF37933FB35E9F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('HLW',  '855296220C095810');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('HR',  '4C6D73C3E8B0F0DA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('HRI',  '49A3A09B8FC291D0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('HXC',  '4CEA0BF02214DA55');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('HXT',  '169018EB8E2C4A77');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IA',  '42C7EAFBCEEC09CC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IBA',  '0BD475D5BF449C63');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IBC',  '9FB08604A30A4951');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IBE',  '9D41D2B3DD095227');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IBP',  '840267B7BD30C82E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IBU',  '0AD9ABABC74B3057');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IBW',  '33261A65FA16710E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IBY',  'F483A48F6A8C51EC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ICX',  '7766E887AF4DCC46');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IEB',  'A695699F0F71C300');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IEC',  'CA39F929AF0A2DEC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IEM',  '37EF7B2DD17279B5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IEO',  'E93196E9196653F1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IES',  '30802533ADACFE14');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IEU',  '5D0E790B9E882230');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IEX',  '6CC978F56D21258D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IGC',  'D33CEB8277F25346');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IGF',  '1740079EFF46AB81');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IGI',  '8C69D50E9D92B9D0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IGS',  'DAF602231281B5AC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IGW',  'B39565F4E3CF744B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IMAGEUSER',  'E079BF5E433F0B89');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IMC',  'C7D0B9CDE0B42C73');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IMEDIA',  '8FB1DC9A6F8CE827');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IMT',  'E4AAF998653C9A72');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('INL',  '1E0296A1C65D2DA1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('INS1',  '2ADC32A0B154F897');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('INS2',  'EA372A684B790E2A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('INTERNET_APPSERVER_REGISTRY',  'A1F98A977FFD73CD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('INV',  'ACEAB015589CF4BC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IP',  'D29012C144B58A40');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IPA',  'EB265A08759A15B4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IPD',  '066A2E3072C1F2F3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IPM',  'CC6375A05C243C9E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ISC',  '373F527DC0CFAE98');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ISTEWARD',  '8735CA4085DE3EEA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ITA',  '7FF3EB385C43C19B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ITG',  'D90F98746B68E6CA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IX',  '2BE6F80744E08FEB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IX',  '885DA62CD26FED7E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('IZU',  '66ADE345B0C57B1C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JA',  '9AC2B58153C23F3D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JD7333',  'FB5B8A12AE623D52');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JD7334',  '322810FCE43285D9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JD9',  '9BFAEC92526D027B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JDE',  '7566DC952E73E869');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JDEDBA',  'B239DD5313303B1D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JE',  'FBB3209FD6280E69');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JG',  '37A99698752A1CF1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JL',  '489B61E488094A8D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JMF',  'E135EB82FB383423');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JMSUSER',  'A79CAEC8EC0D7A44');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JMUSER',  '063BA85BF749DF8E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JOHNINARI',  'B3AD4DA00F9120CE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JONES',  'B9E99443032F059D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JTF',  '5C5F6FC2EBB94124');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JTI',  'B8F03D3E72C96F71');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JTM',  '6D79A2259D5B4B5A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JTR',  'B4E2BE38B556048F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JTS',  '4087EE6EB7F9CD7C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JUNK_PS',  'BBC38DB05D2D3A7A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('JUSTOSHUM',  '53369CD63902FAAA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('KELLYJONES',  'DD4A3FF809D2A6CF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('KEVINDONS',  '7C6D9540B45BBC39');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('KPN',  'DF0AED05DE318728');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('LADAMS',  'AE542B99505CDCD2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('LBA',  '18E5E15A436E7157');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('LBACSYS',  'AC9700FD3F1410EB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('LDQUAL',  '1274872AB40D4FCD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('LHILL',  'E70CA2CA0ED555F5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('LNS',  'F8D2BC61C10941B2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('LQUINCY',  '13F9B9C1372A41B6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('LSA',  '2D5E6036E3127B7E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MDDATA',  'DF02A496267DEE66');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MDSYS',  '72979A94BAD2AF80');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MDSYS',  '9AAEB2214DCC9A31');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ME',  'E5436F7169B29E4D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MFG',  'FC1B0DD35E790847');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MGDSYS',  'C4F9B839D589AA92');
+insert into default_pwd$(user_name, pwd_verifier)
+ values('MGMT_VIEW',  '5D5BC23A318B6F53');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MGMT_VIEW',  '919E8A172B2AAB87');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MGR1',  'E013305AB0185A97');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MGR2',  '5ADE358F8ACE73E8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MGR3',  '05C365C883F1251A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MGR4',  'E229E942E8542565');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MIGRATE',  '5A88CE52084E9700');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MIKEIKEGAMI',  'AAF7A168C83D5C47');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MILLER',  'D0EFCD03C95DF106');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MJONES',  'EE7BB3FEA50A21C5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MLAKE',  '7EC40274AC1609CA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MMO2',  'AE128772645F6709');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MM1',  '4418294570E152E7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MM2',  'C06B5B28222E1E62');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MM3',  'A975B1BD0C093DA3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MM4',  '88256901EB03A012');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MM5',  '4CEA62CBE776DCEC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MMARTIN',  'D52F60115FE87AA4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MOBILEADMIN',  '253922686A4A45CC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MODTEST',  'BBFF58334CDEF86D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MOREAU',  'CF5A081E7585936B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MRP',  'B45D4DF02D4E0C85');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MSC',  '89A8C104725367B2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MSD',  '6A29482069E23675');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MSO',  '3BAA3289DB35813C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MSR',  'C9D53D00FE77D813');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MST',  'A96D2408F62BE1BC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MTH',  '6FB1B758D9877D4F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MTSSYS',  '6465913FF5FF1831');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MWA',  '1E2F06BE2A1D41A6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('MXAGENT',  'C5F0512A64EB0E7F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('NAMES',  '9B95D28A979CC5C4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('NEILKATSU',  '1F625BB9FEBC7617');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OBJ7333',  'D7BDC9748AFEDB52');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OBJ7334',  'EB6C5E9DB4643CAC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OBJB733',  '61737A9F7D54EF5F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OCA',  '9BC450E4C6569492');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OCITEST',  'C09011CB0205B347');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ODM',  'C252E8FA117AF049');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ODM_MTR',  'A7A32CD03D3CE8D5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ODS',  '89804494ADFC71BC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ODSCOMMON',  '59BBED977430C1A8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OE',  'D1A2DFC623FDA40A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OEMADM',  '9DCE98CCF541AAE6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OKB',  'A01A5F0698FC9E31');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OKC',  '31C1DDF4D5D63FE6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OKE',  'B7C1BB95646C16FE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OKI',  '991C817E5FD0F35A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OKL',  'DE058868E3D2B966');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OKO',  '6E204632EC7CA65D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OKR',  'BB0E28666845FCDC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OKS',  'C2B4C76AB8257DF5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OKX',  'F9FDEB0DE52F5D6B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OL810',  'E2DA59561CBD0296');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OL811',  'B3E88767A01403F8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OL812',  'AE8C7989346785BA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OL9',  '17EC83E44FB7DB5B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OLAPDBA',  '1AF71599EDACFB00');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OLAPSVR',  'AF52CFD036E8F425');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OLAPSYS',  '3FB8EF9DB538647C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OLAPSYS',  '4AC23CC3B15E2208');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ONT',  '9E3C81574654100A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPS$OPAPPS',  '75E951CFD55482F9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPI',  '1BF23812A0AEEDA0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPS$GUEST1',  '9F7E5A6AAA14AB3F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPS$GUEST2',  '0129EC7B1A376587');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPS$GUEST3',  'FB268CD96FFD8D15');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPS$GUEST4',  'A885B9C548D9D575');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPS$GUEST5',  '31462E009CD7016F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPS$GUEST6',  '75BB189B6BE55A3D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPS$GUEST7',  '2D2B86A16BC8B14A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPS$GUEST8',  '8F18911775F065A0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPS$GUEST9',  'F2A99B33E50A8076');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OPS$TMSBROWSER',  '7602826AEE50895C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORABAM',  'D0A4EA93EF21CE25');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORABAMSAMPLES',  '507F11063496F222');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORABPEL',  '26EFDE0C9C051988');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORACLE_OCM',  '6D17CF1EB1611F94');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORACLE_OCM',  '5A2E026A9157958C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORAESB',  'CC7FCCB3A1719EDA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORAOCA_PUBLIC',  'FA99021634DDC111');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORASAGENT',  '234B6F4505AD8F25');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORASSO',  'F3701A008AA578CF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORASSO_DS',  '17DC8E02BC75C141');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORASSO_PA',  '133F8D161296CB8F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORASSO_PS',  '63BB534256053305');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORASSO_PUBLIC',  'C6EED68A8F75F5D3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORDPLUGINS',  '88A2B2C183431F00');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORDSYS',  '7EFA02EC7EA6B86F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ORDDATA',  'A93EC937FCD1DC2A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OSM',  '106AE118841A5D8C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OTA',  'F5E498AC7009A217');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OUTLN',  '4A3BA55E08595C81');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OWAPUB',  '6696361B64F9E0A9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OWBSYS',  '610A3C38F301776F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OWBSYS_AUDIT',  'FD8C3D14F6B60015');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OWF_MGR',  '3CBED37697EB01D1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OZF',  '970B962D942D0C75');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OZP',  'B650B1BB35E86863');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('OZS',  '0DABFF67E0D33623');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PA',  '8CE2703752DB36D8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PABLO',  '5E309CB43FE2C2FF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PAIGE',  '02B6B704DFDCE620');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PAM',  '1383324A0068757C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PARRISH',  '79193FDACFCE46F6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PARSON',  'AE28B2BD64720CD7');
+insert into default_pwd$(user_name, pwd_verifier)
+ values ('PAS', 'D9F82FCE636766EA');
+insert into default_pwd$(user_name, pwd_verifier)
+ values ('PASJMS', '20634D3199F83899');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PAT',  'DD20769D59F4F7BF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PATORILY',  '46B7664BD15859F9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PATRICKSANCHEZ',  '47F74BD3AD4B5F0A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PATSY',  '4A63F91FEC7980B7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PAUL',  '35EC0362643ADD3F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PAULA',  'BB0DC58A94C17805');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PAXTON',  '4EB5D8FAD3434CCC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PCA1',  '8B2E303DEEEEA0C0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PCA2',  '7AD6CE22462A5781');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PCA3',  'B8194D12FD4F537D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PCA4',  '83AD05F1D0B0C603');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PCS1',  '2BE6DD3D1DEA4A16');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PCS2',  '78117145145592B1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PCS3',  'F48449F028A065B1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PCS4',  'E1385509C0B16BED');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PD7333',  '5FFAD8604D9DC00F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PD7334',  'CDCF262B5EE254E1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PD810',  'EB04A177A74C6BCB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PD811',  '3B3C0EFA4F20AC37');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PD812',  'E73A81DB32776026');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PD9',  'CACEB3F9EA16B9B7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PDA1',  'C7703B70B573D20F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PEARL',  'E0AFD95B9EBD0261');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PEG',  '20577ED9A8DB8D22');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PENNY',  'BB6103E073D7B811');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PEOPLE',  '613459773123B38A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PERCY',  'EB9E8B33A2DDFD11');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PERFSTAT',  'AC98877DE1297365');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PERRY',  'D62B14B93EE176B6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PETE',  '4040619819A9C76E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PEYTON',  'B7127140004677FC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PFT',  'F5B571D73A38C13F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PHIL',  '181446AE258EE2F6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PJI',  '5024B1B412CD4AB9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PJM',  '021B05DBB892D11F');
+insert into default_pwd$(user_name, pwd_verifier)
+ values('PLM',  '53544627CD6E8B7F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PM',  'C7A235E6D2AF6018');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PM',  '72E382A52E89575A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PMI',  'A7F7978B21A6F65E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PN',  'D40D0FEF9C8DC624');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PO',  '355CBEC355C10FEF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PO8',  '7E15FBACA7CDEBEC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('POA',  '2AB40F104D8517A0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('POLLY',  'ABC770C112D23DBE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('POM',  '123CF56E05D4EF3C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PON',  '582090FD3CC44DA3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL',  'A96255A27EC33614');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL_APP',  '831A79AFB0BD29EC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL_DEMO',  'A0A3A6A577A931A3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL_PUBLIC',  '70A9169655669CE8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL30',  '969F9C3839672C6D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL30_ADMIN',  '7AF870D89CABF1C7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL30_DEMO',  'CFD1302A7F832068');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL30_PS',  '333B8121593F96FB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL30_PUBLIC',  '42068201613CA6E2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL30_SSO',  '882B80B587FCDBC8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL30_SSO_ADMIN',  'BDE248D4CCCD015D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL30_SSO_PS',  'F2C3DC8003BC90F8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PORTAL30_SSO_PUBLIC',  '98741BDA2AC7FFB2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('POS',  '6F6675F272217CF7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('POWERCARTUSER',  '2C5ECE3BEC35CE69');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PPM1',  'AA4AE24987D0E84B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PPM2',  '4023F995FF78077C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PPM3',  '12F56FADDA87BBF9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PPM4',  '84E17CB7A3B0E769');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PPM5',  '804C159C660F902C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PRIMARY',  '70C3248DFFB90152');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PRISTB733',  '1D1BCF8E03151EF5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PRISTCTL',  '78562A983A2F78FB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PRISTDTA',  '3FCBC379C8FE079C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PRODB733',  '9CCD49EB30CB80C4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PRODCTL',  'E5DE2F01529AE93C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PRODDTA',  '2A97CD2281B256BA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PRODUSER',  '752E503EFBF2C2CA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PROJMFG',  '34D61E5C9BC7147E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PRP',  'C1C4328F8862BC16');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PS',  '0AE52ADF439D30BD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PS810',  '90C0BEC7CA10777E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PS810CTL',  'D32CCE5BDCD8B9F9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PS810DTA',  'AC0B7353A58FC778');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PS811',  'B5A174184403822F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PS811CTL',  '18EDE0C5CCAE4C5A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PS811DTA',  '7961547C7FB96920');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PS812',  '39F0304F007D92C8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PS812CTL',  'E39B1CE3456ECBE5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PS812DTA',  '3780281C933FE164');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PSA',  'FF4B266F9E61F911');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PSB',  '28EE1E024FC55E66');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PSBASS',  'F739804B718D4406');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PSEM',  '40ACD8C0F1466A57');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PSFT',  '7B07F6F3EC08E30D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PSFTDBA',  'E1ECD83073C4E134');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PSP',  '4FE07360D435E2F0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTADMIN',  '4C35813E45705EBA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTCNE',  '463AEFECBA55BEE8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTDMO',  '251D71390034576A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTE',  '380FDDB696F0F266');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTESP',  '5553404C13601916');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTFRA',  'A360DAD317F583E3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTG',  '7AB0D62E485C9A3D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTGER',  'C8D1296B4DF96518');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTJPN',  '2159C2EAF20011BF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTUKE',  'D0EF510BCB2992A3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTUPG',  '2C27080C7CC57D06');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTWEB',  '8F7F509D4DC01DF6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PTWEBSERVER',  '3C8050536003278B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PUBSUB',  '80294AE45A46E77B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PV',  '76224BCC80895D3D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PY7333',  '2A9C53FE066B852F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PY7334',  'F3BBFAE0DDC5F7AC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PY810',  '95082D35E94B88C2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PY811',  'DC548D6438E4D6B7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PY812',  '99C575A55E9FDA63');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('PY9',  'B8D4E503D0C4FCFD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QA',  'C7AEAA2D59EB1EAE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QOT',  'B27D0E5BA4DC8DEA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QP',  '10A40A72991DCA15');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QPR',  '9D58E13752C8A432');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QRM',  '098286E4200B22DE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QS',  '4603BCD2744BDE4F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QS_ADM',  '3990FB418162F2A0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QS_CB',  '870C36D8E6CD7CF5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QS_CBADM',  '20E788F9D4F1D92C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QS_CS',  '2CA6D0FC25128CF3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QS_ES',  '9A5F2D9F5D1A9EF4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QS_OS',  '0EF5997DC2638A61');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('QS_WS',  '0447F2F756B4F460');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RDW13DEV',  'FEAC65EA45E13825');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RDWDEV',  '0EB196C95E3E3F68');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RDWDM',  'FDD277EC7AAF5E38');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RDWSYS',  '91C718625D7E26DA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RE',  '933B9A9475E882A6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RENE',  '9AAD141AB0954CF0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('REPADMIN',  '915C93F34954F5F8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('REPORTS',  '0D9D14FE6653CF69');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('REPORTS_USER',  '635074B4416CD3AC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RESTRICTED_US',  'E7E67B60CFAFBB2D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RG',  '0FAA06DA0F42F21F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RHX',  'FFDF6A0C8C96E676');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RLA',  'C1959B03F36C9BB2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RLM',  '4B16ACDA351B557D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RM1',  'CD43500DAB99F447');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RM2',  '2D8EE7F8857D477E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RM3',  '1A95960A95AC2E1D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RM4',  '651BFD4E1DE4B040');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RM5',  'FDCC34D74A22517C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RMAIL',  'DA4435BBF8CAE54C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RMAN',  'E7B5D92911C831E1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ROB',  '94405F516486CA24');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RPARKER',  'CEBFE4C41BBCC306');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RRS',  '5CA8F5380C959CA9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RWA1',  'B07E53895E37DBBB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXA_ACCESS',  'F502B0CF72A32DE3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXA_DES',  '27CE2AC19A98CE9C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXA_LR',  'D13AF40CCA5F3915');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXA_RAND',  '6345DA1B5503537B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXA_READ',  '6D8E49FC0F60ED57');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXC',  '043FA64BA9C19AB9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXC_COMMON',  '7A5E40AD77667314');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXC_DISC_REP',  '8769BDF187623626');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXC_MAA',  '4F7E585AF66C8D1A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXC_PD',  '62D0273BFE2D71EA');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXC_REP',  '47FE00E292BD12BF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXC_SERVLETSP',  '8CBCAC11A95CBF3B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('RXC_SERVLETST',  'E1D2A7B96C1DBA94');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SALLYH',  '21457C94616F5716');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SAM',  '4B95138CB6A4DB94');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SAMPLE',  'E74B15A3F7A19CA8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SARAHMANDY',  '60BE21D8711EE7D9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SCM1',  '507306749131B393');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SCM2',  'CBE8D6FAC7821E85');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SCM3',  '2B311B9CDC70F056');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SCM4',  '1FDF372790D5A016');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SCOTT',  'F894844C34402B67');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SDAVIS',  'A9A3B88C6A550559');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SDOS_ICSAP',  'C789210ACC24DA16');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SECDEMO',  '009BBE8142502E10');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SEDWARDS',  '00A2EDFD7835BC43');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SELLCM',  '8318F67F72276445');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SELLER',  'B7F439E172D5C3D0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SELLTREAS',  '6EE7BA85E9F84560');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SERVICES',  'B2BE254B514118A5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SETUP',  '9EA55682C163B9A3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SH',  '54B253CBBAAA8C48');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SI_INFORMTN_SCHEMA',  '84B8CBCA4D477FA3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SID',  'CFA11E6EBA79D33E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SKAYE',  'ED671B63BDDB6B50');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SKYTETSUKA',  'EB5DA777D1F756EC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SLSAA',  '99064FC6A2E4BBE8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SLSMGR',  '0ED44093917BE294');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SLSREP',  '847B6AAB9471B0A5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SPATIAL_CSW_ADMIN_USR',  '1B290858DD14107E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SPATIAL_WFS_ADMIN_USR',  '7117215D6BEE6E82');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SRABBITT',  '85F734E71E391DF5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SRALPHS',  '975601AA57CBD61A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SRAY',  'C233B26CFC5DC643');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SRDEMO',  '7C3269BF04F441BD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SRIVERS',  '95FE94ADC2B39E08');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SSA1',  'DEE6E1BEB962AA8B');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SSA2',  '96CA278B20579E34');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SSA3',  'C3E8C3B002690CD4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SSC1',  '4F7AC652CC728980');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SSC2',  'A1350B328E74AE87');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SSC3',  'EE3906EC2DA586D8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SSOSDK',  '7C48B6FF3D54D006');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SSP',  '87470D6CE203FB4D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SSS1',  'E78C515C31E83848');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SST',  '2DACCD0C919B4435');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SUPERUSER',  '84DEF330533B56EF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SUPPLIER',  '2B45928C2FE77279');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SVM7333',  '04B731B0EE953972');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SVM7334',  '62E2A2E886945CC8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SVM810',  '0A3DCD8CA3B6ABD9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SVM811',  '2B0CD57B1091C936');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SVM812',  '778632974E3947C9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SVM9',  '552A60D8F84441F1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SVMB733',  'DD2BFB14346146FE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SVP1',  'F7BF1FFECE27A834');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SY810',  'D56934CED7019318');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SY811',  '2FDC83B401477628');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SY812',  '812B8D7211E7DEF1');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SY9',  '3991E64C4BC2EC5D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYS',  '43CA255A7916ECFE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYS',  '5638228DAF52805F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYS',  'D4C5016086B2DC6A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYS',  '089509EC42EF6C07');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYS7333',  'D7CDB3124F91351E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYS7334',  '06959F7C9850F1E3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYSADMIN',  'DC86E8DEAA619C1A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYSB733',  '7A7F5C90BEC02F0E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYSMAN',  'EB258E708132DD2D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYSTEM',  '4D27CA6E3E3066E6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYSTEM',  'D4DF7931AB130E37');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('SYS_ADMIN',  '4B85054970355BBD');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TAHITI',  'F339612C73D27861');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TDEMARCO',  'CAB71A14FA426FAE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TDOS_ICSAP',  '7C0900F751723768');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TDX',  'C54CC64803BD0EEB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TESTCTL',  '205FA8DF03A1B0A6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TESTDTA',  'EEAF97B5F20A3FA3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TMS',  'CD5EB4CEAB7AAA3C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TRA1',  'BE8EDAE6464BA413');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TRACESVR',  'F9DA8977092B7B81');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TRBM1',  'B10ED16CD76DBB60');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TRCM1',  '530E1F53715105D0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TRDM1',  'FB1B8EF14CF3DEE7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TRRM1',  '4F29D85290E62EBE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TSDEV',  '29268859446F5A8C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TSMSYS',  '3DF26A8B17D0F29F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TSUSER',  '90C4F894E2972F08');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('TWILLIAMS',  '6BF819CE663B8499');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('UDDISYS',  'BF5E56915C3E1C64');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('USER0',  '8A0760E2710AB0B4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('USER1',  'BBE7786A584F9103');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('USER2',  '1718E5DBB8F89784');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('USER3',  '94152F9F5B35B103');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('USER4',  '2907B1BFA9DA5091');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('USER5',  '6E97FCEA92BAA4CB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('USER6',  'F73E1A76B1E57F3D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('USER7',  '3E9C94488C1A3908');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('USER8',  'D148049C2780B869');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('USER9',  '0487AFEE55ECEE66');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('UTLBSTATU',  'C42D1FA3231AB025');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VEA',  'D38D161C22345902');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VEH',  '72A90A786AAE2914');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VIDEO31',  '2FA72981199F9B97');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VIDEO4',  '9E9B1524C454EEDE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VIDEO5',  '748481CFF7BE98BB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VIDEOUSER',  '29ECA1F239B0F7DF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VIF_DEVELOPER',  '9A7DCB0C1D84C488');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VIRUSER',  '404B03707BF5CEA3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VP1',  '3CE03CD65316DBC7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VP2',  'FCCEFD28824DFEC5');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VP3',  'DEA4D8290AA247B2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VP4',  'F4730B0FA4F701DC');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VP5',  '7DD67A696734AE29');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VP6',  '45660DEE49534ADB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('VRR1',  '811C49394C921D66');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WAA1',  'CF013DC80A9CBEE3');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WAA2',  '6160E7A17091741A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WCRSYS',  '090263F40B744BD8');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WEBDB',  'D4C4DCDD41B05A5D');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WEBSYS',  '54BA0A1CB5994D64');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WENDYCHO',  '7E628CDDF051633A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WH',  '91792EFFCB2464F9');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WIP',  'D326D25AE0A0355C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WIRELESS',  '1495D279640E6C3A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WIRELESS',  'EB9615631433603E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WK_TEST',  '29802572EB547DBF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WKPROXY',  'AA3CB2A4D9188DDB');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WKPROXY',  'B97545C4DD2ABE54');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WKSYS',  '545E13456B7DDEA0');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WMS',  'D7837F182995E381');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WMSYS',  '7C9BA362F8314299');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WPS',  '50D22B9D18547CF7');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WSH',  'D4D76D217B02BD7A');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('WSM',  '750F2B109F49CC13');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XDB',  '88D8364765FCE6AF');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XDB',  'FD6C945857807E3C');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XDO',  'E9DDE8ACFA7FE8E4');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XDP',  'F05E53C662835FA2');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XLA',  '2A8ED59E27D86D41');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XLE',  'CEEBE966CC6A3E39');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XNB',  '03935918FA35C993');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XNC',  'BD8EA41168F6C664');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XNI',  'F55561567EF71890');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XNM',  '92776EA17B8B5555');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XNP',  '3D1FB783F96D1F5E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XNS',  'FABA49C38150455E');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('XTR',  'A43EE9629FA90CAE');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('YCAMPOS',  'C3BBC657F099A10F');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('YSANCHEZ',  'E0C033C4C8CC9D84');
+insert into default_pwd$(user_name, pwd_verifier)
+ values('ZFA',  '742E092A27DDFB77');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ZPB',  'CAF58375B6D06513');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ZSA',  'AFD3BD3C7987CBB6');
+insert into default_pwd$(user_name, pwd_verifier) 
+ values('ZX',  '7B06550956254585');
+
+-- Accounts for nologin users with no default password
+insert into default_pwd$(user_name, pwd_verifier, pv_type)
+values ('XS$NULL', 'NOLOGIN000000000', -1);

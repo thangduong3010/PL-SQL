@@ -1,0 +1,34 @@
+CREATE OR REPLACE PACKAGE sys.dbms_internal_safe_scn wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+55e 21b
+dVhzqLDonvuQnIjFhZgGqS/i/lkwg5CJAK5qfC9AWE7VemHTtvawDM/e2JLvwnIC3Cs3Zqg1
+W5e1H1Ls6LJr922c28IsmlX4QUyELaxswrHBcoQwmqq7vDMF0Li0vM0V7gFy3V5sV9U0DU0+
+MAenvZwBDSpEwCD33qIccWsXepzmZFR4Rkgk9kvpRDPuIguGr04qo0lf3BuejCfK95k+Ebei
+5y4Rs7NSyc/4t/3v89KNL8lspVFfhW7mRx+Tp42HH44Dh2ZEz+XwY92Nfum46QKe0X36XZI1
+yAx3DqXffon2qyvyuFwZBCxeSnUzxSBfQ1SsnHdZY26CbV3N3mI8EDNokJksH1WtWMjyD6Xw
+dnn8qlKEviW+TSUWGcycvZdULY6r4A+gm3RRsqDcrRrr/JKoTi3py0w0TK/zL/9F/JZFkbTX
+0MoWidQ5W2z5myoNDf8QblnnAsa6WPJuVX3av8AkchNbflO10Iu5AWlnLjF6dysWSxOTba73
+TUK2hL5QIio77pCpbZgs8o0cqw==
+
+/
+show errors
+GRANT EXECUTE ON dbms_internal_safe_scn TO logstdby_administrator;
+GRANT EXECUTE ON dbms_internal_safe_scn TO execute_catalog_role;
+/

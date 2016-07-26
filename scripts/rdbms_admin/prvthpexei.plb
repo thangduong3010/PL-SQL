@@ -1,0 +1,36 @@
+create or replace package dbms_parallel_execute_internal wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+edc 3e1
+84xhQ00OxCjAkCYpdGxTsNMxT2kwg83qDNDrfC+LaA84vVDf01rd9xjWhlkDa0qQgQvE2ZXF
+UB0Jk2sB9846V//4c6nvzCjeKoKaeJp6iht1drjnfR7BuyTX0OuGKcCtD0c6/jrZZLADOjOl
+9T/PV0wvpxOy5jPvDWS5tmee2dZSIBbxFqUL3tNWfGNnsnY3EUQbDUIICaWYd0icW02qIZmp
+aVbKZw0HuBuUyZ5/pPjKUPgofYEFkCrE91Hd50dWmsxOeCYyMw15GQt5C8FoM+zzlFJA5nDK
+uEGsOFdAeWZwLKTM21Bib12rbb8WqQA8w2vVnE2+m98+rKZj6QFDm9w2SS8R++PnFgZIOpDp
+QrkRMUuIa+r9IaWJw2mQ20sA7lJ038xGI6GCLiaxZh/nQaAmLmUKMD1wNAnr3PxdowPWIfnt
+UoHYCnyAQD/pi6ElpYE+BAftJb81PifQLpbXmFg7sZoUtY2bPkkH6fJDXq5XeYUNaWRKEW0x
+vxr4E+fV1eptcIFQf7ofr/T2kdK9b1zmGVBs9pEnjEelA+Ng5VStIea+JGqwBNHBhsfc+wMZ
+DXVsYVaM9D1U2kjDn9wNgM92ayo9XgkBMl9ok9kNq9B5KKFrwN4JC/7fcJlWFqJuoNcG/xT3
+OUqbmDUBipSAfofiKw0alIIgkwKNp9XsuC4dK/z/6fp9Yu5E5hqZ4rk4mh5Jkl+mLXQfcb0h
+aglgqLo9tYyCaYChoOevU7sJ5kurfu5orZiUTCUsnRHZR75tyR+RUFNMLvtjYdcJjQRDgZhM
+4hQWZJz/7SHSn3ki00h01oxlxHXLuGThmddZ247nQCa+hgam4ExCK9H+0Gi7Ge+DeRQ9nTSd
+3z3A85CQzHqQFXmB2TD9oIn1sPRzjF3jl2sWpOTPWtmqk/dfmRpG8uoTSyj/Spa08B7CRgsU
+jW4FP4zwV+eJza8NWgBp6yLLwkIqLUnGuTEsrDnvcw==
+
+/

@@ -1,0 +1,101 @@
+CREATE OR REPLACE PACKAGE xdb.dbms_xdbz0 wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+e95 388
+TIrXhnmz4AQtaBsPZ5zT4FTs1+kwgz3qLtATfC/NWA/uC8hRPeXGURw5gi941GF+ty4jLaCD
+9q7tw3OBpLbThYsd3/rystPT4RLki+1YB3mplmvmMzOSHr/OTjOS/lg1hh9RcDQtb40o8ITZ
+Rguh8QQKrW/w6RuJpR5mv1qMRpqRvQtS3fnF/ZXtUBgIRJtjLeABY5nLbMAgl1j/qlCEuNIN
+OZ7UK3A64YqxrW330UxVw0QquRdjjANWktQz2ZH6V1RrFgiA+7ovAxwsNn4LnjAES0zXoxD9
+GQqo0GscqDruuL+N5JoGuQAvlF3TauYO8O94XQQcO+FC77nrhcG3yTNw5NSiE8noDWXQlL7O
+xLvrPJabg0TC/k+uTEpxXjZDVSEvBTRiK1Jzcfb0DgaDbFoH3mCO5uk0U9QE9CqVRIga4uGU
+Vkf/wnsXKk05keyQw4wvuQNdUzXQ8zXolQ5ttB7pMWOeCdyiLXnlDgHzKxGkKpD9J07zBLei
+epbUaZXt++d4BL5iqQZnvP2g9j2Y8kUSMus1hMzlmDa/Lo3cy+uIXkkFFtYZGPz5imPGfEpi
+7ebpEU1dNDvDEFxbyxNKssEanHSSdKwG8ZkU63uqe+MdyhklXjbT1vUW6MyP7MKOHqFpXF4H
+z4az7dUJ5Tvzbh2ZMn2Gu7GEj8qtAsjmOLrpY0YY1wYGIqcrDMYSVM2cgophThJq3pqQ5AwU
+sx8jog1No7Lw4xbCDPgHH3mc/6awr+ogdiK8C1eAubOh+tMqo41504pZHJQIneE+GKZx/308
+9XTvpW+HM0OL37neTNl9gIDyyyvwawavOzu+zkvQIReY/ll4vK5Oqf7Ni3+g8QmhBMNEUMx8
+l325zFtqnmMCPs8g93IxnKqiUrb8
+
+/
+show errors;
+CREATE OR REPLACE FUNCTION is_vpd_enabled wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+420 264
+BAGk1fGSOtd2Mc8JVBkUKyaDZ7Awg41erycFZy/NrQ9/RquhSPxTuWJgAo16wmGT1xhVjXH+
+wiFXB+YWYzfxcrvYkb3ZNgm76XyCu9cTeIxRa2ihLqVOMbVzEKXQnT96egAc4JAQgd+WLdPK
+vaM4mwl1PbJxr6qdZzVRFb2vRM4JUb1L7b/4RQsmjYHxdkiz3Uwj9KcuK5O1ebcQD1oe96Lo
+uIbH13FdfsD79zWxBKxZ9gKsZ4OpMjdkT42afPY0o9Gc+nuOuBdqg8dVyB0n5XQuH2QN8Tq8
+ynWPIlvDQLqha2BvLwzC/9vWa3gvTIC9GqU+++pmpENPTXDHfrcufzR6AqAyQwQMIuIjQk1W
+vPJlwzNcoDh/Hgo1dzE/JXhZIvd7StdiZiLC5LzfwrLLk8N1mEXj//Xt9HwjNpCFire42rWm
+5j4g0v8V5G9FANtORiCXKSnAnozVHKLO4oyimWKK8iHnzaxVcN9kv9v+sRPH5Ok2/nZOkEIp
+JreopMRtP+MiGl0A5iESrXrkQiNB6Q6yNKOl+UOPFzSKvIR/5DspfYUjVMaRX5ZLbmjUCH6Q
+3qXPhsbDqFchf8idHr+1po95TsM=
+
+/
+show errors;
+grant execute on is_vpd_enabled to public;
+CREATE OR REPLACE FUNCTION get_table_name wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+3e9 223
+8kOglv67x++a/YNJ40X82aFW04Awg40JACDWfC/NR2RXMvsaIVGIbWUEV6z9S/d5WoOV8mNN
+DAU+tQ8AfGsaZgkVrEP+7pi/nHhmKnGeznpBiimlCDKgJAe7C8q36grr4dU5cWfZw6N8DaOp
+W3iqDVY7cJQlUidSB9Y4ofT/hN/JoOe7S2kRq2zK98KiG6n2IAlYKhiDLBDWXI7pOIrwlsHC
+85PBZYULlq+yH6Q3wS+4a/Ce/8mZpSxzLzyldqw+aTCcPnQg7dg1ePpjSuBizH5ZfxkCrtXq
+W6erZKuQIHa3xUNCijLBvJc4w6sMWT6YbC6Jy9Eu0V9u6BPVkzWnfAynekNNawJMN5619cBJ
+acy/t5Vw0pGYimwg/xdznZc3FSViBfVLT2yNYfhWQtDk+0dy/VpsWyKtsAWjCCuNg0WDHmiw
+fsGmbBdLX3zWsTeTzF4Xfishpu0W9SmHSFvXN6PpW+4ilUX21AgW5vvmo8JwHRDCiLV5wGBq
+SknyoZFjILdQzvi1S7u2h4oytGqW+5XNSA==
+
+/
+show errors;
+grant execute on get_table_name to public;

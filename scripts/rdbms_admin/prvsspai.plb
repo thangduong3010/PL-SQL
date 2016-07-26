@@ -1,0 +1,32 @@
+CREATE OR REPLACE PACKAGE prvt_sqlpa wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+4d3 250
+I6LjGg3vx7sKwWOcD/jrn1W8BkIwgzte2dxqfC9dbmSlO/DDL477rOPWE34YJgsTgUWOqJFS
+wd0McamqSf9tiUa67wz3DYYI/zA8pfWVnN1BDyQZcwXZ607vht8YBB5vyuh7HSBX8w7gJiun
+U2Zhi3WHUm6u0MEXsBd/mFORtyZg+QEac/HJtruaLLlPJM9Bz67xTYAxSZrul5DyoRGVL19g
+mzNgq7n0BT2g2GVgZgtVScOBXuJUpv/lks3yyXNFn9vC6Tgd861EGffIgFs3UFvYh3Fy5W0M
+bd/II5WZfczEuUc/8/UX+YCJ9bweuBoANh4UQj6eNQsyvfbIIpzP3phOmWtXGUJr56di/+bN
+0/0eRirqXDlmXYRaMAFDGtj6o+kLkVwc3wJuIcvKJ9KoobW31MxTbnFYwptwyq5RVZHmzkEk
+QfUwdyOCpEWxYXiLOE6PCxVb8WAlt/wVuEZBUDNnwvi+fE1ehXbmPprxga38FQcU3x3z8eTa
+jjXpJGn7faxCMsKEQnUpq2m+fzZ+E6P7YLZC72JpeCQ4uWFCq6m8XKmqplLe/U3YiUVIGyIx
++PuPtuGs
+
+/
+show errors;

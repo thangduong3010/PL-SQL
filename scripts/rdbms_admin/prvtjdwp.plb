@@ -1,0 +1,33 @@
+create or replace package body dbms_debug_jdwp wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+a62 2f6
+D8Th3IVu22ombcF+DMIrgq0Tvj4wgzsrrxgFfC/NrQ9rjB0iGhLFsgAWm6LVPPdc8DTNQTYM
+8mtpFoklmmQa8PYx92JjBS/9hkdHEk7J5HbpMR1DZ8tMTqL/cpqqg06cwQ8PzcROuyyij8mE
+WldRZCWk1uixZxwiCQjjwsBbzGKjqLK4UAUQ41HkovSdY9CJNZX8DDDOMbBL3FFrJdu+XXNb
+m5/EBc2h+Yb0pBL6X32RjxWInlGv0iMVFwJKcrjP0wKli+bOCRHF0B7MK/6kq5taKpiwkuIZ
+FBPMkP/Uysp7GCshfwpZfKxvoGJaEY9QxwqYb8B61FoKIiq+fdxCTM0tY3aZEd0XHSWCgNnc
+8Iwg8r/Z9pDsNe/IXLWhmCrP0LcV6nTVcrJ1LRGgyHrvMSG07ElEY3Z2KydPY+UUAPDWVcsF
+AGhUunkmCUzuNMnN4oMiFVQm9ITXvVw89rIlgQCNtZI10v+ihftTyDXdhePhxYjAQIDrmjYx
+iuruaCc0HPLbaYzgalqyXumfaX3nbeiPEMMzeRNymBkIz0gVxUih7FNgIlL6Z8+LSK15VVoV
+bYu5VTxjF0l6f5t7dMk52strQb3amXbpTResR+GG6B6ilgXSQUIoI5MN/Cwf750flezXX7/R
+1+aZ7p5MjLYfNNc1ICF3JUDikDTcPRz9map1+avLWwtj1lzD2ob1SnV/Q9OjLfhxdkI16nGA
+ncK7CcxAH69jZ0a5ciD5pq7+9kc=
+
+/

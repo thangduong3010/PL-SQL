@@ -1,0 +1,30 @@
+CREATE OR REPLACE PACKAGE dbms_streams_handler_internal wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+337 1be
+j56x+JFmicbau28ILPpP5Yfn8TAwg5AJLq7hfy+BR2R11r1+Bq99LgY4YaRwhNqVnydTKgRa
+ITXL3bXQAvxFFlstWBoHQk4ZzzSI5T5KvaeWu5igBSDqbeSd0d/ZgScTGd/4PZ8DVB1AHGdK
+vcLfXbdSJ56XUi+RNxfSJ6z5SLiquq9q79LWMOb94l4fmixvSnaMhfKrxi/b8pknV5Vn1m5b
+aYVKBXSMbBFTlOVl1LeicmnaF+dCtPivWU4bWlpMN7VlqjIATtz3SkFnQwhG0RudPgQXYkM7
+ModbHexgBPCmgAvy+2BSJlr8u6xyMw5iBGu9w5D26hJ4mM+2wXXhoagnzpuvA5NG3IByBAFx
+TJshSZQoxgw3QWYte8C4oCo6tw3DF26JMjBZeVtD5KrsTsS34yp9gxxox9JSxmvmQbN0ZCKm
+ZNxQPg==
+
+/
+show errors;

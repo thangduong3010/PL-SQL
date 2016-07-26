@@ -1,0 +1,94 @@
+REM   jklein    08/01/05 - creation
+create table map_file$ (
+  file_idx      number,                       /* file index */
+  file_cfgid    varchar2("M_CSIZ"),           /* file configuration id */
+  file_status   number,                       /* file status */
+  file_name     varchar2("M_CSIZ"),           /* file name */
+  file_struct   number,                       /* file structure */
+  file_type     number,                       /* file type */
+  file_size     number,                       /* file size */
+  file_nexts    number                        /* file number of extents */
+)
+/
+create table map_file_extent$(
+  file_idx     number,                     /* file index */      
+  ext_num      number,                     /* file extent number */
+  ext_dev_off  number,                     /* element offset */
+  ext_size     number,                     /* file extent size */
+  ext_file_off number,                     /* file offset */
+  ext_type     number,                     /* file extent type */
+  elem_name    varchar2("M_CSIZ"),         /* element name */
+  elem_idx     number                      /* element index */
+)
+/
+create table map_subelement$(
+  sub_num      number,                     /* subelement number */      
+  sub_size     number,                     /* subelement size */
+  elem_offset  number,                     /* element offset */
+  sub_flags    number,                     /* subelement flags */
+  parent_idx   number,                     /* parent element index */
+  child_idx    number,                     /* child element index */
+  elem_name    varchar2("M_CSIZ")          /* element name */
+)
+/
+create table map_element$ (
+  elem_name     varchar2("M_CSIZ"),        /* element name */
+  elem_cfgid    varchar2("M_CSIZ"),        /* element configuration id */
+  elem_type     number,                    /* element type */
+  elem_idx      number,                    /* element index */
+  elem_size     number,                    /* element size */
+  elem_nsubelem number,                    /* number of subelements */
+  elem_descr    varchar2("M_CSIZ"),        /* description */
+  stripe_size   number,                    /* element stripe size */
+  elem_flags    number                     /* flags */
+)
+/
+create table map_extelement$ (
+  elem_idx      number,                    /* element index */
+  num_attrb     number,                    /* number of attributes */
+  attrb1_name   varchar2("M_IDEN"),        /* attribute 1 name */
+  attrb1_val    varchar2("M_IDEN"),        /* attribute 1 value */
+  attrb2_name   varchar2("M_IDEN"),        /* attribute 2 name */
+  attrb2_val    varchar2("M_IDEN"),        /* attribute 2 value */
+  attrb3_name   varchar2("M_IDEN"),        /* attribute 3 name */
+  attrb3_val    varchar2("M_IDEN"),        /* attribute 3 value */
+  attrb4_name   varchar2("M_IDEN"),        /* attribute 4 name */
+  attrb4_val    varchar2("M_IDEN"),        /* attribute 4 value */
+  attrb5_name   varchar2("M_IDEN"),        /* attribute 5 name */
+  attrb5_val    varchar2("M_IDEN")         /* attribute 5 value */
+)
+/
+create table map_complist$ (
+  elem_idx      number,                    /* element index */
+  num_comp      number,                    /* number of components */
+  comp1_name    varchar2("M_IDEN"),        /* component 1 name */
+  comp1_val     varchar2("M_CSIZ"),        /* component 1 value */
+  comp2_name    varchar2("M_IDEN"),        /* component 2 name */
+  comp2_val     varchar2("M_CSIZ"),        /* component 2 value */
+  comp3_name    varchar2("M_IDEN"),        /* component 3 name */
+  comp3_val     varchar2("M_CSIZ"),        /* component 3 value */
+  comp4_name    varchar2("M_IDEN"),        /* component 4 name */
+  comp4_val     varchar2("M_CSIZ"),        /* component 4 value */
+  comp5_name    varchar2("M_IDEN"),        /* component 5 name */
+  comp5_val     varchar2("M_CSIZ")         /* component 5 value */
+)
+/
+create global temporary table map_object (
+  object_name   varchar2("M_CSIZ"),        /* object name */
+  object_owner  varchar2("M_CSIZ"),        /* object owner */
+  object_type   varchar2("M_CSIZ"),        /* object type */
+  file_map_idx  number,                    /* file index */
+  depth         number,                    /* element depth */
+  elem_idx      number,                    /* element index */
+  cu_size       number,                    /* contiguous unit size */
+  stride        number,                    /* stride size */
+  num_cu        number,                    /* number of contiguous units */
+  elem_offset   number,                    /* element offset */
+  file_offset   number,                    /* file offset */
+  data_type     varchar2("M_CSIZ"),        /* data type */
+  parity_pos    number,                    /* parity position */
+  parity_period number                     /* parity period */
+) on commit preserve rows
+/
+create public synonym map_object for sys.map_object
+/

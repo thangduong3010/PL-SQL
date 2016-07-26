@@ -1,0 +1,21 @@
+#  
+#   $Header: spuexp.par 16-feb-00.16:50:53 cdialeri Exp $
+#  
+#   spuexp.sql
+#  
+#    Copyright (c) Oracle Corporation 1999, 2000. All Rights Reserved.
+#  
+#      NAME
+#        spuexp.par
+#  
+#      DESCRIPTION
+#        Export parameter file used to export the whole STATSPACK user.
+#  
+#      NOTES
+#        Must be run as the STATSPACK owner, PERFSTAT
+#  
+#      MODIFIED   (MM/DD/YY)
+#      cdialeri    02/16/00 - 1191805
+#      cdialeri    08/13/99 - Created for heri
+#
+file=spuexp.dmp log=spuexp.log compress=y grants=y indexes=y rows=y constraints=y owner=PERFSTAT consistent=y

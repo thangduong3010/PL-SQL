@@ -1,0 +1,119 @@
+#
+# This file contains list of function entry points for "genagtsh.sh" script
+#
+#  This includes functions for each from HS agent object file needed
+#  except the file defining main().
+#  In general, most linkers only need the reference of one extern function
+#  from an object to force the object to be included in a shared lib
+#  and all externs from the object exported implicitly,
+#  if it's not already referenced by other related code.  However,
+#  there may be porting exceptions which require additional symbols
+#  be explicitly exported.
+#  Any port-specific symbols should be added to the end of the file.
+#  Please keep all lists in sorted order, and please ensure not duplicates
+#  exist.
+
+#
+# Format:
+#	product : function
+#
+rdbms : hocdrv
+rdbms : hocdtc
+rdbms : hocdtc1
+rdbms : hocdtc2
+rdbms : hocdtc3
+rdbms : hocdtc4
+rdbms : hocdtc5 
+rdbms : hocireg
+rdbms : hodmp 
+rdbms : hodpidc_InitDispatcherContext
+rdbms : hoifsev_SetEnvVar
+rdbms : holtrwread
+rdbms : holtrwunlock
+rdbms : holtrwwrite
+rdbms : homaal
+rdbms : homtiap_InitAgentProcess
+rdbms : horbset
+rdbms : horcciX_ExecCalloutCallbackIn
+rdbms : horcrrcm_RegisterCalloutModule
+rdbms : horeci2_ConveyAltSesCallbackIn
+rdbms : horfwt_WriteTraceFile
+rdbms : horsciQ_FetchRowCallbackIn
+rdbms : horsht_HoadaTransfer
+rdbms : horsr_RegisterSqlModule
+rdbms : hortciA_GetProductCallbackIn
+rdbms : hortrA_ReceiveGetProduct
+rdbms : horxts_TransferString
+rdbms : hoscgus
+rdbms : hoscsus
+rdbms : hoscgu2
+rdbms : hoscsu2
+rdbms : hosdaal
+rdbms : hosgmal
+rdbms : hosgmac
+rdbms : hosgmfr
+rdbms : hosherr
+rdbms : hosnslen
+rdbms : hospopn
+rdbms : hostfil
+rdbms : hostrc
+rdbms : hosvda
+rdbms : hotkec_EstablishConnection
+rdbms : hotspth_PostThread
+rdbms : hottcini
+rdbms : hovcbgt_BufferGet
+rdbms : hoxgprd
+rdbms : hssgini 
+rdbms : kmcroctx
+rdbms : shcotfls
+rdbms : shocgint
+rdbms : shofcli_CommandLineInvocation
+#
+# Any port-specific symbols should be added here with a note of the
+# bug and the platform it's specific to.
+#
+#PE : 6002047 (AIX)
+rdbms : gpctx
+rdbms : hocacf
+rdbms : hociodt
+rdbms : hocioit
+rdbms : hocoodt
+rdbms : hocooit
+rdbms : hodpcdc_CleanupDispatcherContext
+rdbms : hodpdep_DispatcherEntryPoint
+rdbms : hoiffpi_FreeParseInfo
+rdbms : homafr
+rdbms : homara
+rdbms : homtcap_CleanupAgentProcess
+rdbms : homtwfr_WaitForRPCs
+rdbms : horer_RegisterInternalModule
+rdbms : hortr_RegisterTransactionModule
+rdbms : hotkcpc_CleanupPFContext
+rdbms : hotkcsc_CleanupSessionContext
+rdbms : hotkctc_CleanupTaskContext
+rdbms : hotker_ExecuteRpcs
+rdbms : hotkipc_InitPFContext
+rdbms : hotkisc_InitSessionContext
+rdbms : hotkitc_InitTaskContext
+rdbms : hotkpep_PFEntryPoint
+rdbms : hotktep_TaskEntryPoint
+rdbms : hotscch_CleanupCommonHeader
+rdbms : hotsgpm_GetPostedMessage
+rdbms : hotsich_InitializeCommonHeader
+rdbms : shofngp_NoGtwPortChange
+#PE End
+#
+#PE : 6032848 (AIX)
+rdbms : peflinit
+rdbms : peflload
+#PE End
+#
+#PE : 6471726 (AIX)
+rdbms : peflcc_CloseCache
+rdbms : peflic_InitCache
+#PE End
+#
+#PE : 7601157 (AIX)
+rdbms : hocosts
+rdbms : hocontcnp
+#PE End

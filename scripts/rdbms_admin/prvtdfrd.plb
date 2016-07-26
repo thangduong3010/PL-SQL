@@ -1,0 +1,57 @@
+CREATE OR REPLACE PACKAGE BODY dbms_defer_sys wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+5a4 23f
+eVK6Go/NsUEwSS2Q1W1U6mlS3lgwg2PDAK5qfI6R/2SltPJ0Y37DdEpz7FQyiqV+HxXgvQ1+
+VvUGmguwLt7sllwwwBramhK/sImJeRE5FD00ZpjQZNaazST+mvmlx8oVFL2obCc5aKgvMB2L
+VkdXBNWODebVwHrm92Lpp15xGUkawQQKDGSNW6Lwsmw9o+FcXSlY2CYhUK4NWo1rVuVC6JDC
+Kip9C0MCwsj71B9vc4qGR/f2qd6V1y8T0iWtWqOQJrC+avzLJnbMLiYBvngGpIVPhB+gxkN6
+Rf2pyL1cJGtuiQq4HZX9jOqz+Q1egbka9RtPbNdUsb3SB2klyhY1nl6guO8zQ2fZPF3riUhT
+hjq8UUuPhOJ0g9MdMAs+o+ph4HUEJv34L0M4UhsyakF3KafHorBjFGEvpqutDpxRLzI7jdUl
+JDCmcr3mES7Brwqbbmdt6Gct1bHNr3TskncsvKYT9iLCQ2xHnVev39fkTWNZak/vdY2UL8S8
+Fg8a1N8oxr/2n8Rbv/Yn6/cyDAXrtLUUbzTL95XarpmGrdiEglkBK7+d2m3c2A==
+
+/
+CREATE OR REPLACE PACKAGE BODY dbms_defer_import_internal wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+116 113
+F+ah3sMgh8W2uGWKh/j5oseNCwAwgzL/mMsVfHREaYvPAsbCwp/Atl5mgxRTvaz64Q1aWjTD
+zqo1+705BM32+FcOQQuhaTADQJ8SNPIFzUWHM8bZvp36+fUekuuLpmHMJ+xuSjzaVBTyFKCe
+QYx9iCmtfJXby6eFI0B6iIuZxTtepUplnOUnbtXAi8Y/4sNwZPoUG3yK1nqXqWxgclEtsxEW
+/ZI3XxpABIpb/ar2HU4J+W5CaWRTTf1/IWxvuiQkLdHT2tibs6RW5dwf
+
+/
+GRANT EXECUTE ON dbms_defer_import_internal TO SYSTEM;

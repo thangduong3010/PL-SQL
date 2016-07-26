@@ -1,0 +1,1571 @@
+REM   sanagara  07/18/11 - add spare columns to sqlerror$
+REM   yifeng    04/04/10 - add comments to opqtype$ flags
+REM   gravipat  10/15/09 - add sqlerror$
+REM   rmacnico  04/14/09 - add comments for seg$, ts$ flag bits 
+REM   shvenugo  03/19/09 - add comments to opqtype$ flags
+REM   mbastawa  04/06/08 - add result cache for tab$.property
+REM   schakrab  03/24/08 - add comments on obj$ flag
+Rem   mziauddi  01/25/08 - use spare2+spare3 of cdef$ for constraint ddl SCN
+REM   ramekuma  03/13/08 - bug-6865413: add comments on i_obj2 index
+REM   jaeblee   02/06/08 - add i_syn2
+REM   bvaranas  01/30/08 - project 25274: Add deferred_stg$
+REM   ssonawan  07/13/07 - bug-6020455: add comments on user$ table
+REM   achoi     04/20/07 - add i_obj5
+REM   sfeinste  04/09/07 - fix comments for type# column of obj$
+REM   wechen    01/22/07 - fix comments for type# column of obj$
+REM   krajaman  03/01/07 - add objerror$
+REM   achoi     11/07/06 - obj$.spare3 stores base user#
+REM   jaeblee   10/26/06 - moved edition$ creation from denv.bsq
+REM   jiyang    09/07/06 - add comments for audit vault trigger
+REM   akruglik  09/01/06 - replace CMV$ with EV$, CMVCOL$ with EVCOL$ + 
+REM                        rename app_edition# with edition_obj#
+REM   wechen    07/31/06 - add comments for type# column of obj$
+REM   akruglik  04/07/06 - add EV$ and EVCOL$
+REM   suelee    02/16/06 - bug 4956995 - moved objauth$ et al from dsec.bsq
+REM   achoi     12/15/05 - tab$.trigflag 0x200000 indicates read-only table
+REM   vmarwah   11/08/05 - Versioning Enabled flag in tab$
+REM   jklein    08/01/05 - creation
+create tablespace SYSTEM datafile "D_DBFN" 
+  "D_DSTG" online
+/
+create rollback segment SYSTEM tablespace SYSTEM
+  storage (initial 50K next 50K)
+/
+create cluster c_obj# (obj# number)
+  pctfree 5 size 800                           /* don't waste too much space */
+  /* A table of 32 cols, 2 index, 2 col per index requires about 2K.
+   * A table of 10 cols, 2 index, 2 col per index requires about 750.
+   */
+  storage (initial 130K next 200k maxextents unlimited pctincrease 0) 
+  /* avoid space management during IOR I */
+/
+create index i_obj# on cluster c_obj#
+/
+REM NOTE 
+REM Logminer/Streams uses contents of this table. 
+REM Please do not reuse any flags without verifying the impact of your 
+REM changes on inter-op.  
+create table tab$                                             /* table table */
+( obj#          number not null,                            /* object number */
+  /* DO NOT CREATE INDEX ON DATAOBJ#  AS IT WILL BE UPDATED IN A SPACE
+   * TRANSACTION DURING TRUNCATE */
+  dataobj#      number,                          /* data layer object number */
+  ts#           number not null,                        /* tablespace number */
+  file#         number not null,               /* segment header file number */
+  block#        number not null,              /* segment header block number */
+  bobj#         number,                /* base object number (cluster / iot) */
+  tab#          number,    /* table number in cluster, NULL if not clustered */
+  cols          number not null,                        /* number of columns */
+  clucols       number,/* number of clustered columns, NULL if not clustered */
+  pctfree$      number not null, /* minimum free space percentage in a block */
+  pctused$      number not null, /* minimum used space percentage in a block */
+  initrans      number not null,            /* initial number of transaction */
+  maxtrans      number not null,            /* maximum number of transaction */
+  flags         number not null, /* 0x00     = unmodified since last backup 
+                                    0x01     = modified since then 
+                                    0x02     = DML locks restricted to <= SX 
+                                    0x04     = DML locks <= SX not acquired
+                                    0x08     = CACHE  
+                                    0x10     = table has been analyzed
+                                    0x20     = table has no logging
+                                    0x40     = 7.3 -> 8.0 data object
+                                               migration required    
+                                    0x0080   = current summary dependency
+                                    0x0100   = user-specified stats
+                                    0x0200   = global stats           
+                                    0x0800   = table has security policy 
+                                    0x020000 = Move Partitioned Rows 
+                                   0x0400000 = table has sub tables
+                                  0x00800000 = row dependencies enabled */
+                /* 0x10000000 = this IOT has a  physical rowid mapping table */
+                /* 0x20000000 = mapping table of an IOT(with physical rowid) */
+  audit$        varchar2("S_OPFL") not null,             /* auditing options */
+  rowcnt        number,                                    /* number of rows */
+  blkcnt        number,                                  /* number of blocks */
+  empcnt        number,                            /* number of empty blocks */
+  avgspc        number,       /* average available free space/iot ovfl stats */
+  chncnt        number,                            /* number of chained rows */
+  avgrln        number,                                /* average row length */
+  avgspc_flb    number,       /* avg avail free space of blocks on free list */
+  flbcnt        number,                             /* free list block count */
+  analyzetime   date,                        /* timestamp when last analyzed */
+  samplesize    number,                 /* number of rows sampled by Analyze */
+/* 
+ * Legal values for degree, instances: 
+ *     NULL (used to represent 1 on disk/dictionary and implies noparallel), or
+ *     2 thru EB2MAXVAL-1 (user supplied values), or
+ *     EB2MAXVAL (implies use default value) 
+ */
+  degree        number,      /* number of parallel query slaves per instance */
+  instances     number,        /* number of OPS instances for parallel query */
+/* <intcols> => the number of dictionary columns => the number of columns 
+ * that have dictionary meta-data associated with them. This is a superset of 
+ * <usercols> and <kernelcols>. 
+ *    <intcols> = <kernelcols> + <number_of_virtual_columns>
+ */
+  intcols       number not null,               /* number of internal columns */
+/* <kernelcols> => the number of REAL columns (ie) columns that actually
+ * store data.
+ */
+  kernelcols    number not null,          /* number of REAL (kernel) columns */
+  property      number not null,            /* table properties (bit flags): */
+                              /* 0x01 = typed table, 0x02 = has ADT columns, */
+                 /* 0x04 = has nested-TABLE columns, 0x08 = has REF columns, */
+                      /* 0x10 = has array columns, 0x20 = partitioned table, */
+               /* 0x40 = index-only table (IOT), 0x80 = IOT w/ row OVerflow, */
+             /* 0x100 = IOT w/ row CLustering, 0x200 = IOT OVeRflow segment, */
+               /* 0x400 = clustered table, 0x800 = has internal LOB columns, */
+        /* 0x1000 = has primary key-based OID$ column, 0x2000 = nested table */
+                    /* 0x4000 = View is Read Only, 0x8000 = has FILE columns */
+       /* 0x10000 = obj view's OID is system-gen, 0x20000 = used as AQ table */
+                                   /* 0x40000 = has user-defined lob columns */
+                               /* 0x00080000 = table contains unused columns */
+                            /* 0x100000 = has an on-commit materialized view */
+                             /* 0x200000 = has system-generated column names */
+                                      /* 0x00400000 = global temporary table */
+                            /* 0x00800000 = session-specific temporary table */
+                                        /* 0x08000000 = table is a sub table */
+                                        /*   0x20000000 = pdml itl invariant */
+                                          /* 0x80000000 = table is external  */
+                          /* PFLAGS2: 0x400000000 = delayed segment creation */
+  /* PFLAGS2: 0x20000000000 = result cache mode FORCE enabled on this table  */
+  /* PFLAGS2: 0x40000000000 = result cache mode MANUAL enabled on this table */
+  /* PFLAGS2: 0x80000000000 = result cache mode AUTO enabled on this table   */
+  trigflag      number,   /* first two bytes for trigger flags, the rest for */
+                   /* general use, check tflags_kqldtvc in kqld.h for detail */
+                                            /* 0x00000001 deferred RPC Queue */
+                                                  /* 0x00000002 snapshot log */
+                                        /* 0x00000004 updatable snapshot log */
+                                             /* 0x00000008 = context trigger */
+                                    /* 0x00000010 = synchronous change table */
+                                             /* 0x00000020 = Streams trigger */
+                                        /* 0x00000040 = Content Size Trigger */
+                                         /* 0x00000080 = audit vault trigger */
+                           /* 0x00000100 = Streams Auxiliary Logging trigger */
+                     /* 0x00010000 = server-held key encrypted columns exist */
+                       /* 0x00020000 = user-held key encrypted columns exist */
+                                          /* 0x00200000 = table is read only */
+                                     /* 0x00400000 = lobs use shared segment */
+                                                 /* 0x00800000 = queue table */
+                                   /* 0x10000000 = streams unsupported table */
+                                            /* enabled at some point in past */
+                            /* 0x80000000 = Versioning enabled on this table */
+  spare1        number,                       /* used to store hakan_kqldtvc */
+  spare2        number,         /* committed partition # used by drop column */
+  spare3        number,                           /* summary sequence number */
+  spare4        varchar2(1000),         /* committed RID used by drop column */
+  spare5        varchar2(1000),      /* summary related information on table */
+  spare6        date                                  /* flashback timestamp */
+)
+cluster c_obj#(obj#)
+/  
+create table clu$                                           /* cluster table */
+( obj#          number not null,                            /* object number */
+  /* DO NOT CREATE INDEX ON DATAOBJ#  AS IT WILL BE UPDATED IN A SPACE
+   * TRANSACTION DURING TRUNCATE */
+  dataobj#      number,                          /* data layer object number */
+  ts#           number not null,                        /* tablespace number */
+  file#         number not null,               /* segment header file number */
+  block#        number not null,              /* segment header block number */
+  cols          number not null,                        /* number of columns */
+  pctfree$      number not null, /* minimum free space percentage in a block */
+  pctused$      number not null, /* minimum used space percentage in a block */
+  initrans      number not null,            /* initial number of transaction */
+  maxtrans      number not null,            /* maximum number of transaction */
+  size$         number,
+       /* if b-tree, estimated number of bytes for each cluster key and rows */
+  hashfunc      varchar2("M_IDEN"),        /* if hashed, function identifier */
+
+  /* Some of the spare columns may give the initial # bytes in the hash table
+   * and the # hash keys per block.  These are user-specified parameters.
+   * For extendible hash tables, two columns might include the # bits
+   * currently be used in the hash function and the number of the next
+   * bucket to split.
+   * Some spare columns may be used for hash table statistics
+   * such as # distinct keys, # distinct values of first key column, and
+   * average # blocks per key.  Some spare columns  may give the number of
+   * the cluster table for which the cluster key is unique or indicate
+   * whether the cluster is normal or referential.
+   * We can encode multiple pieces of info in a single column.
+   */
+  hashkeys      number,                                    /* hash key count */
+  func          number, /* function: 0 (key is function), 1 (system default) */
+  extind        number,             /* extent index value of fixed hash area */
+  flags         number,                                      /* 0x08 = CACHE */
+                                          /* 0x010000 = Single Table Cluster */
+                                                /* 0x00800000 = DEPENDENCIES */
+/* 
+ * Legal values for degree, instances: 
+ *     NULL (used to represent 1 on disk/dictionary and implies noparallel), or
+ *     2 thru EB2MAXVAL-1 (user supplied values), or
+ *     EB2MAXVAL (implies use default value) 
+ */
+  degree        number,      /* number of parallel query slaves per instance */
+  instances     number,       /*  number of OPS instances for parallel query */
+  avgchn        number,          /* average chain length - previously spare4 */
+  spare1        number,                /* used for trigger non-trigger flags */
+                                                          /* 0x1 replication */
+                                                         /* 0x2 snapshot log */
+                                                             /* 0x4 snapshot */
+                                             /* 0x8 context internal trigger */
+                                            /* 0x10 synchronous change table */
+                             /* 0x00010000 One or more columns are encrypted */
+                                   /*    0x00020000 All columns are encrypted*/
+                                           /* 0x00040000 needs to do logging */
+                                                   /* 0x00080000 MV Dataless */
+                                   /* 0x00100000 IOT transient table for PMO */
+                                                            /* 0x00200000 MPR*/
+                                        /* 0x00400000  QUEue organized table */
+  spare2        number,
+  spare3        number,
+  spare4        number,
+  spare5        varchar2(1000),
+  spare6        varchar2(1000),
+  spare7        date
+)
+cluster c_obj#(obj#)
+/
+create cluster c_ts#(ts# number)           /* use entire block for each ts# */
+/
+create index i_ts# on cluster c_ts#
+/
+create cluster c_file#_block#(ts# number, segfile# number, segblock# number) 
+  size 225    /* cluster key ~ 25, sizeof(seg$) ~ 50, 5 * sizeof(uet$) ~ 150 */
+  storage (initial 20K)               /* avoid space management during IOR I */
+/
+create index i_file#_block# on cluster c_file#_block#
+/
+create cluster c_user#(user# number) 
+  size  372 /* cluster key ~ 20, sizeof(user$) ~ 227, 5 * sizeof(tsq$) ~ 125 */
+/
+create index i_user# on cluster c_user#
+/
+create table fet$                                       /* free extent table */
+( ts#           number not null,        /* tablespace containing free extent */
+  file#         number not null,              /* file containing free extent */
+  block#        number not null,              /* starting dba of free extent */
+  length        number not null           /* length in blocks of free extent */
+)
+cluster c_ts#(ts#)
+/
+create table uet$                                       /* used extent table */
+( segfile#      number not null,               /* segment header file number */
+  segblock#     number not null,              /* segment header block number */
+  ext#          number not null,         /* extent number within the segment */
+  ts#           number not null,        /* tablespace containing this extent */
+  file#         number not null,              /* file containing this extent */
+  block#        number not null,              /* starting dba of this extent */
+  length        number not null           /* length in blocks of this extent */
+)
+cluster c_file#_block#(ts#, segfile#, segblock#)
+/
+create table seg$                                           /* segment table */
+( file#         number not null,               /* segment header file number */
+  block#        number not null,              /* segment header block number */
+  type#         number not null,                /* segment type (see KTS.H): */
+   /* 1 = UNDO, 2 = SAVE UNDO, 3 = TEMPORARY, 4 = CACHE, 5 = DATA, 6 = INDEX */
+   /* 7 = SORT  8 = LOB   9 = Space Header 10 = System Managed Undo          */
+  ts#           number not null,       /* tablespace containing this segment */
+  blocks        number not null,       /* blocks allocated to segment so far */
+                                           /* zero for bitmapped tablespaces */
+  extents       number not null,      /* extents allocated to segment so far */
+                                           /* zero for bitmapped tablespaces */
+  iniexts       number not null,                      /* initial extent size */
+  minexts       number not null,                /* minimum number of extents */
+  maxexts       number not null,                /* maximum number of extents */
+  extsize       number not null,                 /* current next extent size */
+                                           /* zero for bitmapped tablespaces */
+  extpct        number not null,                    /* percent size increase */
+  user#         number not null,               /* user who owns this segment */
+  lists         number,                        /* freelists for this segment */
+  /* For SECUREFILE LOBs, reuse as RETENTION attribute                       */
+  /* one of 1) AUTO - 1 2) NONE - 2 3) MIN - 3 4) MAX - 4                    */
+  groups        number,                  /* freelist groups for this segment */
+  /* For next gen lobs, reuse as MIN RETENTION */
+  bitmapranges  number not null,                 /* ranges per bit map entry */
+                             /* reuse as MAXSIZE for 11g compatible segments */
+  cachehint     number not null,                        /* hints for caching */
+  scanhint      number not null,                       /* hints for scanning */
+                                       /* Reuse it as inc# for ASSM segments */
+  hwmincr       number not null,             /* Amount by which HWM is moved */
+                                          /* Reuse it as object number/class */
+                                     /* for objects in bitmapped tablespaces */
+  spare1        number,                        /* Segment flags - NULL = 0x0 */
+                    /* 0x1 - bitmapped tablespace: KTSSEGM_FLAG_BITMAPPED_TS */
+                                 /* 0x2 - undo segment: KTSSEGM_FLAG_UNDOSEG */
+                           /* 0x4 - saveundo segment: KTSSEGM_FLAG_SVUNDOSEG */
+                       /* 0x8 - segment marked corrupt: KTSSEGM_FLAG_CORRUPT */
+                                     /* 0x0010 - KTSSEGM_FLAG_BEING_MIGRATED */
+                                     /* 0x0020 - KTSSEGM_FLAG_BMAPHDR_SEG    */
+                                     /* 0x0040 - KTSSEGM_FLAG_BLKSFILLED     */
+                                     /* 0x0080 - KTSSEGM_FLAG_NOQUOTA        */
+                                     /* 0x0100 - KTSSEGM_FLAG_PAGETABLE      */
+                                     /* 0x0200 - KTSSEGM_FLAG_TEMPOBJ        */
+                                     /* 0x0400 - KTSSEGM_FLAG_OBJDEFINED     */
+                                     /* 0x0800 - KTSSEGM_FLAG_COMPRESSED     */
+                                     /* 0x1000 - KTSSEGM_FLAG_HASCPRSSED     */
+                                     /* 0x2000 - KTSSEGM_FLAG_ROWMOVEMNT     */
+                                     /* 0x4000 - KTSSEGM_FLAG_HASMOVEMNT     */
+             /*0x10000 - segment flushed from cache: KTSSEGM_FLAG_RECYCLEBIN */
+            /* 0x40000 - 11gR1 HSC Compressed Segment:  KTSSEGM_FLAG_NEW_HSC */
+               /* 0x080000 - 11gR1 LZO Compressed Segment:  KTSSEGM_FLAG_LZO */
+               /* 0x100000 - 11gR1 ZLIB Compressed Segmnt: KTSSEGM_FLAG_ZLIB */
+               /* 0x200000 - Next generation LOB segment: KTSSEGM_FLAG_NGLOB */
+               /* 0x400000 - Segment has MAXSIZE set:  KTSSEGM_FLAG_MAXSZSET */
+               /* 0x800000 - Encrypted segment:             KTSSEGM_FLAG_ENC */
+              /* 0x1000000 - OLTP Compressed:             KTSSEGM_FLAG_OLTP  */
+              /* 0x2000000 - Columnar Compressed low:     KTSSEGM_FLAG_ARCH1 */
+              /* 0x4000000 - Columnar Compressed high:    KTSSEGM_FLAG_ARCH2 */
+              /* 0x8000000 - Columnar Compressed archive: KTSSEGM_FLAG_ARCH3 */
+             /* 0x10000000 - Read mostly segment:    KTSSEGM_FLAG_READMOSTLY */
+  spare2        number
+)
+cluster c_file#_block#(ts#, file#, block#)
+/
+create table undo$                                     /* undo segment table */
+( us#           number not null,                      /* undo segment number */
+  name          varchar2("M_IDEN") not null,    /* name of this undo segment */
+  user#         number not null,      /* owner: 0 = SYS(PRIVATE), 1 = PUBLIC */
+  file#         number not null,               /* segment header file number */
+  block#        number not null,              /* segment header block number */
+  scnbas        number,           /* highest commit time in rollback segment */
+  scnwrp        number,              /* scnbas - scn base, scnwrp - scn wrap */
+  xactsqn       number,               /* highest transaction sequence number */
+  undosqn       number,                /* highest undo block sequence number */
+  inst#         number,    /* parallel server instance that owns the segment */
+  status$       number not null,              /* segment status (see KTS.H): */
+  /* 1 = INVALID, 2 = AVAILABLE, 3 = IN USE, 4 = OFFLINE, 5 = NEED RECOVERY, 
+   * 6 = PARTLY AVAILABLE (contains in-doubt txs) 
+   */
+  ts#           number,                                 /* tablespace number */
+  ugrp#         number,                      /* The undo group it belongs to */
+  keep          number,
+  optimal       number,
+  flags         number,
+  spare1        number,
+  spare2        number,
+  spare3        number,
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        date
+)
+
+/
+REM NOTE 
+REM Logminer/Streams uses contents of this table. 
+REM Please do not reuse any flags without verifying the impact of your 
+REM changes on inter-op.  
+create table ts$                                         /* tablespace table */
+( ts#           number not null,             /* tablespace identifier number */
+  name          varchar2("M_IDEN") not null,           /* name of tablespace */
+  owner#        number not null,                      /* owner of tablespace */
+  online$       number not null,                      /* status (see KTT.H): */
+                                     /* 1 = ONLINE, 2 = OFFLINE, 3 = INVALID */
+  contents$     number not null,     /* TEMPORARY/PERMANENT                  */
+  undofile#     number,  /* undo_off segment file number (status is OFFLINE) */
+  undoblock#    number,               /* undo_off segment header file number */
+  blocksize     number not null,                   /* size of block in bytes */
+  inc#          number not null,             /* incarnation number of extent */
+  scnwrp        number,     /* clean offline scn - zero if not offline clean */
+  scnbas        number,              /* scnbas - scn base, scnwrp - scn wrap */
+  dflminext     number not null,       /*  default minimum number of extents */
+  dflmaxext     number not null,        /* default maximum number of extents */
+  dflinit       number not null,              /* default initial extent size */
+  dflincr       number not null,                 /* default next extent size */
+  dflminlen     number not null,              /* default minimum extent size */
+  dflextpct     number not null,     /* default percent extent size increase */
+  dflogging     number not null,
+      /* lowest bit: default logging attribute: clear=NOLOGGING, set=LOGGING */
+                                    /* second lowest bit: force logging mode */
+  affstrength   number not null,                        /* Affinity strength */
+  bitmapped     number not null,       /* If not bitmapped, 0 else unit size */
+                                                                /* in blocks */
+  plugged       number not null,                               /* If plugged */
+  directallowed number not null,   /* Operation which invalidate standby are */
+                                                                  /* allowed */
+  flags         number not null,                /* various flags: see ktt3.h */
+                                         /* 0x01 = system managed allocation */
+                                         /* 0x02 = uniform allocation        */
+                                /* if above 2 bits not set then user managed */
+                                         /* 0x04 = migrated tablespace       */
+                                         /* 0x08 = tablespace being migrated */
+                                         /* 0x10 = undo tablespace           */
+                                     /* 0x20 = auto segment space management */
+                       /* if above bit not set then freelist segment managed */
+                                                          /* 0x40 = COMPRESS */
+                                                      /* 0x80 = ROW MOVEMENT */
+                                                              /* 0x100 = SFT */
+                                         /* 0x200 = undo retention guarantee */
+                                    /* 0x400 = tablespace belongs to a group */
+                                  /* 0x800 = this actually describes a group */
+                                      /* 0x10000 = OLTP Compression          */
+                                      /* 0x20000 = Columnar Low Compression  */
+                                      /* 0x40000 = Columnar High Compression */
+                                      /* 0x80000 = Archive Compression       */
+  pitrscnwrp    number,                      /* scn wrap when ts was created */
+  pitrscnbas    number,                      /* scn base when ts was created */
+  ownerinstance varchar("M_IDEN"),                    /* Owner instance name */
+  backupowner   varchar("M_IDEN"),             /* Backup owner instance name */
+  groupname     varchar("M_IDEN"),                             /* Group name */
+  spare1        number,                                  /* plug-in SCN wrap */
+  spare2        number,                                  /* plug-in SCN base */
+  spare3        varchar2(1000),
+  spare4        date
+)
+cluster c_ts#(ts#)
+/
+create table file$                                             /* file table */
+( file#         number not null,                   /* file identifier number */
+  status$       number not null,                      /* status (see KTS.H): */
+                                               /* 1 = INVALID, 2 = AVAILABLE */
+  blocks        number not null,                   /* size of file in blocks */
+                                           /* zero for bitmapped tablespaces */
+  ts#           number,                         /* tablespace that owns file */
+  relfile#      number,                              /* relative file number */
+  maxextend     number,                                 /* maximum file size */
+  inc           number,                                  /* increment amount */
+  crscnwrp      number,                                 /* creation SCN wrap */
+  crscnbas      number,                                 /* creation SCN base */
+  ownerinstance varchar("M_IDEN"),                    /* Owner instance name */
+  spare1        number,      /* tablespace-relative DBA of space file header */
+                                   /* NULL for dictionary-mapped tablespaces */
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date
+)
+/
+REM NOTE 
+REM Logminer/Streams uses contents of this table. 
+REM Please do not reuse any flags without verifying the impact of your 
+REM changes on inter-op.  
+create table obj$                                            /* object table */
+( obj#          number not null,                            /* object number */
+  dataobj#      number,                          /* data layer object number */
+  owner#        number not null,                        /* owner user number */
+  name          varchar2("M_IDEN") not null,                  /* object name */
+  namespace     number not null,         /* namespace of object (see KQD.H): */
+ /* 1 = TABLE/PROCEDURE/TYPE, 2 = BODY, 3 = TRIGGER, 4 = INDEX, 5 = CLUSTER, */
+                                                  /* 8 = LOB, 9 = DIRECTORY, */
+  /* 10 = QUEUE, 11 = REPLICATION OBJECT GROUP, 12 = REPLICATION PROPAGATOR, */
+                                     /* 13 = JAVA SOURCE, 14 = JAVA RESOURCE */
+                                                 /* 58 = (Data Mining) MODEL */
+  subname       varchar2("M_IDEN"),               /* subordinate to the name */
+  type#         number not null,                 /* object type (see KQD.H): */
+  /* 1 = INDEX, 2 = TABLE, 3 = CLUSTER, 4 = VIEW, 5 = SYNONYM, 6 = SEQUENCE, */
+             /* 7 = PROCEDURE, 8 = FUNCTION, 9 = PACKAGE, 10 = NON-EXISTENT, */
+              /* 11 = PACKAGE BODY, 12 = TRIGGER, 13 = TYPE, 14 = TYPE BODY, */
+      /* 19 = TABLE PARTITION, 20 = INDEX PARTITION, 21 = LOB, 22 = LIBRARY, */
+                                             /* 23 = DIRECTORY , 24 = QUEUE, */
+    /* 25 = IOT, 26 = REPLICATION OBJECT GROUP, 27 = REPLICATION PROPAGATOR, */
+    /* 28 = JAVA SOURCE, 29 = JAVA CLASS, 30 = JAVA RESOURCE, 31 = JAVA JAR, */
+                 /* 32 = INDEXTYPE, 33 = OPERATOR , 34 = TABLE SUBPARTITION, */
+                                                  /* 35 = INDEX SUBPARTITION */
+                                                 /* 82 = (Data Mining) MODEL */
+                                /* 92 = OLAP CUBE DIMENSION,  93 = OLAP CUBE */
+                   /* 94 = OLAP MEASURE FOLDER, 95 = OLAP CUBE BUILD PROCESS */
+  ctime         date not null,                       /* object creation time */
+  mtime         date not null,                      /* DDL modification time */
+  stime         date not null,          /* specification timestamp (version) */
+  status        number not null,            /* status of object (see KQD.H): */
+                                     /* 1 = VALID/AUTHORIZED WITHOUT ERRORS, */
+                          /* 2 = VALID/AUTHORIZED WITH AUTHORIZATION ERRORS, */
+                            /* 3 = VALID/AUTHORIZED WITH COMPILATION ERRORS, */
+                         /* 4 = VALID/UNAUTHORIZED, 5 = INVALID/UNAUTHORIZED */
+  remoteowner   varchar2("M_IDEN"),     /* remote owner name (remote object) */
+  linkname      varchar2("M_XDBI"),             /* link name (remote object) */
+  flags         number,               /* 0x01 = extent map checking required */
+                                      /* 0x02 = temporary object             */
+                                      /* 0x04 = system generated object      */
+                                      /* 0x08 = unbound (invoker's rights)   */
+                                      /* 0x10 = secondary object             */
+                                      /* 0x20 = in-memory temp table         */
+                                      /* 0x80 = dropped table (RecycleBin)   */
+                                      /* 0x100 = synonym VPD policies        */
+                                      /* 0x200 = synonym VPD groups          */
+                                      /* 0x400 = synonym VPD context         */
+                                      /* 0x4000 = nested table partition     */
+  oid$          raw(16),        /* OID for typed table, typed view, and type */
+  spare1        number,                      /* sql version flag: see kpul.h */
+  spare2        number,                             /* object version number */
+  spare3        number,                                        /* base user# */
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        date
+)
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+REM NOTE 
+REM Logminer/Streams uses contents of this table. 
+REM Please do not reuse any flags without verifying the impact of your 
+REM changes on inter-op.  
+create table ind$                                             /* index table */
+( obj#          number not null,                            /* object number */
+  /* DO NOT CREATE INDEX ON DATAOBJ#  AS IT WILL BE UPDATED IN A SPACE
+   * TRANSACTION DURING TRUNCATE */
+  dataobj#      number,                          /* data layer object number */
+  ts#           number not null,                        /* tablespace number */
+  file#         number not null,               /* segment header file number */
+  block#        number not null,              /* segment header block number */
+  bo#           number not null,              /* object number of base table */
+  indmethod#    number not null,    /* object # for cooperative index method */
+  cols          number not null,                        /* number of columns */
+  pctfree$      number not null, /* minimum free space percentage in a block */
+  initrans      number not null,            /* initial number of transaction */
+  maxtrans      number not null,            /* maximum number of transaction */
+  pctthres$     number,           /* iot overflow threshold, null if not iot */
+  type#         number not null,              /* what kind of index is this? */
+                                                               /* normal : 1 */
+                                                               /* bitmap : 2 */
+                                                              /* cluster : 3 */
+                                                            /* iot - top : 4 */
+                                                         /* iot - nested : 5 */
+                                                            /* secondary : 6 */
+                                                                 /* ansi : 7 */
+                                                                  /* lob : 8 */
+                                             /* cooperative index method : 9 */
+  flags         number not null,      
+                /* mutable flags: anything permanent should go into property */
+                                                    /* unusable (dls) : 0x01 */
+                                                    /* analyzed       : 0x02 */
+                                                    /* no logging     : 0x04 */
+                                    /* index is currently being built : 0x08 */
+                                     /* index creation was incomplete : 0x10 */
+                                           /* key compression enabled : 0x20 */
+                                              /* user-specified stats : 0x40 */
+                                            /* secondary index on IOT : 0x80 */
+                                      /* index is being online built : 0x100 */
+                                    /* index is being online rebuilt : 0x200 */
+                                                /* index is disabled : 0x400 */
+                                                     /* global stats : 0x800 */
+                                            /* fake index(internal) : 0x1000 */
+                                       /* index on UROWID column(s) : 0x2000 */
+                                            /* index with large key : 0x4000 */
+                             /* move partitioned rows in base table : 0x8000 */
+                                 /* index usage monitoring enabled : 0x10000 */
+                      /* 4 bits reserved for bitmap index version : 0x1E0000 */
+                                      /* Delayed Segment Creation: 0x4000000 */
+  property      number not null,    /* immutable flags for life of the index */
+                                                            /* unique : 0x01 */
+                                                       /* partitioned : 0x02 */
+                                                           /* reverse : 0x04 */
+                                                        /* compressed : 0x08 */
+                                                        /* functional : 0x10 */
+                                              /* temporary table index: 0x20 */
+                             /* session-specific temporary table index: 0x40 */
+                                              /* index on embedded adt: 0x80 */
+                         /* user said to check max length at runtime: 0x0100 */
+                                              /* domain index on IOT: 0x0200 */
+                                                      /* join index : 0x0400 */
+                                     /* system managed domain index : 0x0800 */
+                           /* The index was created by a constraint : 0x1000 */
+                              /* The index was created by create MV : 0x2000 */
+                                          /* composite domain index : 0x8000 */
+  /* The following columns are used for index statistics such
+   * as # btree levels, # btree leaf blocks, # distinct keys, 
+   * # distinct values of first key column, average # leaf blocks per key,
+   * clustering info, and # blocks in index segment.
+   */
+  blevel        number,                                       /* btree level */
+  leafcnt       number,                                  /* # of leaf blocks */
+  distkey       number,                                   /* # distinct keys */
+  lblkkey       number,                          /* avg # of leaf blocks/key */
+  dblkkey       number,                          /* avg # of data blocks/key */
+  clufac        number,                                 /* clustering factor */
+  analyzetime   date,                        /* timestamp when last analyzed */
+  samplesize    number,                 /* number of rows sampled by Analyze */
+  rowcnt        number,                       /* number of rows in the index */
+  intcols       number not null,               /* number of internal columns */
+         /* The following two columns are only valid for partitioned indexes */
+/* 
+ * Legal values for degree, instances: 
+ *     NULL (used to represent 1 on disk/dictionary and implies noparallel), or
+ *     2 thru EB2MAXVAL-1 (user supplied values), or
+ *     EB2MAXVAL (implies use default value) 
+ */
+  degree        number,      /* number of parallel query slaves per instance */
+  instances     number,       /*  number of OPS instances for parallel query */
+
+  trunccnt      number,                        /* re-used for iots 'inclcol' */
+  spare1        number,         /* number of columns depended on, >= intcols */
+  spare2        number,        /* number of key columns in compressed prefix */
+  spare3        number,
+  spare4        varchar2(1000),     /* used for parameter str for domain idx */
+  spare5        varchar2(1000),
+  spare6        date                                  /* flashback timestamp */
+)
+cluster c_obj#(bo#)
+/
+REM NOTE 
+REM Logminer/Streams uses contents of this table. 
+REM Please do not reuse any flags without verifying the impact of your 
+REM changes on inter-op.  
+create table icol$                                     /* index column table */
+( obj#          number not null,                      /* index object number */
+  bo#           number not null,                       /* base object number */
+  col#          number not null,                            /* column number */
+  pos#          number not null,        /* column position number as created */
+  segcol#       number not null,                 /* column number in segment */
+  segcollength  number not null,             /* length of the segment column */
+  offset        number not null,                         /* offset of column */
+  intcol#       number not null,                   /* internal column number */
+  spare1        number,                                              /* flag */
+                                              /* 0x01: this is an expression */
+                                                  /* 0x02: desc index column */
+                                          /* 0x04: filter by col for dom idx */
+                                           /* 0x08: order by col for dom idx */
+  spare2        number,            /* dimension table internal column number */
+  spare3        number,           /* pos# of col in order by list of dom idx */
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        date
+)
+cluster c_obj#(bo#)
+/
+REM NOTE 
+REM Logminer/Streams uses contents of this table. 
+REM Please do not reuse any flags without verifying the impact of your 
+REM changes on inter-op.  
+create table col$                                            /* column table */
+( obj#          number not null,             /* object number of base object */
+  col#          number not null,                 /* column number as created */
+  segcol#       number not null,                 /* column number in segment */
+  segcollength  number not null,             /* length of the segment column */
+  offset        number not null,                         /* offset of column */
+  name          varchar2("M_IDEN") not null,               /* name of column */
+  type#         number  not null,                     /* data type of column */
+                                           /* for ADT column, type# = DTYADT */
+  length        number  not null,               /* length of column in bytes */
+  fixedstorage  number  not null,   /* flags: 0x01 = fixed, 0x02 = read-only */
+  precision#    number,                                         /* precision */
+  scale         number,                                             /* scale */
+  null$         number not null,                     /* 0 = NULLs permitted, */
+                                                /* > 0 = no NULLs permitted  */
+  deflength     number,              /* default value expression text length */
+  default$      long,                       /* default value expression text */
+
+  /*
+   * If a table T(c1, addr, c2) contains an ADT column addr which is stored 
+   * exploded, the table will be internally stored as 
+   *              T(c1, addr, C0003$, C0004$, C0005$, c2)
+   * Of these, only c1, addr and c2 are user visible columns. Thus, the 
+   * user visible column numbers for (c1, addr, C0003$, C0004$, C0005$, c2) 
+   * will be 1,2,0,0,0,3. And the corresponding internal column numbers will 
+   * be 1,2,3,4,5,6. 
+   *
+   * Some dictionary tables like icol$, ccol$ need to contain intcol# so 
+   * that we can have indexes and constraints on ADT attributes. Also, these
+   * tables also need to contain col# to maintain backward compatibility.
+   * Most of these tables will need to be accessed by col#, intcol# so 
+   * indexes are created on them based on (obj#, col#) and (obj#, intcol#).
+   * Indexes based on col# have to be non-unique if ADT attributes might
+   * appear in the table. Indexes based on intcol# can be unique.
+   */
+  intcol#       number not null,                   /* internal column number */
+  property      number not null,           /* column properties (bit flags): */
+                /* 0x0001 =       1 = ADT attribute column                   */
+                /* 0x0002 =       2 = OID column                             */
+                /* 0x0004 =       4 = nested table column                    */
+                /* 0x0008 =       8 = virtual column                         */
+                /* 0x0010 =      16 = nested table's SETID$ column           */
+                /* 0x0020 =      32 = hidden column                          */
+                /* 0x0040 =      64 = primary-key based OID column           */
+                /* 0x0080 =     128 = column is stored in a lob              */
+                /* 0x0100 =     256 = system-generated column                */
+                /* 0x0200 =     512 = rowinfo column of typed table/view     */
+                /* 0x0400 =    1024 = nested table columns setid             */
+                /* 0x0800 =    2048 = column not insertable                  */
+                /* 0x1000 =    4096 = column not updatable                   */
+                /* 0x2000 =    8192 = column not deletable                   */
+                /* 0x4000 =   16384 = dropped column                         */
+                /* 0x8000 =   32768 = unused column - data still in row      */
+            /* 0x00010000 =   65536 = virtual column                         */
+            /* 0x00020000 =  131072 = place DESCEND operator on top          */
+            /* 0x00040000 =  262144 = virtual column is NLS dependent        */
+            /* 0x00080000 =  524288 = ref column (present as oid col)        */
+            /* 0x00100000 = 1048576 = hidden snapshot base table column      */
+            /* 0x00200000 = 2097152 = attribute column of a user-defined ref */
+            /* 0x00400000 = 4194304 = export hidden column,RLS on hidden col */
+            /* 0x00800000 = 8388608 = string column measured in characters   */
+           /* 0x01000000 = 16777216 = virtual column expression specified    */
+           /* 0x02000000 = 33554432 = typeid column                          */
+           /* 0x04000000 = 67108864 = Column is encrypted                    */
+          /* 0x20000000 = 536870912 = Column is encrypted without salt       */
+
+  /* The spares may be used as the column's NLS character set, 
+   * the number of distinct column values, and the column's domain.
+   */
+  /* the universal character set id maintained by NLS group */
+  charsetid     number,                              /* NLS character set id */
+  /*
+   * charsetform
+   */
+  charsetform   number,
+  /* 1 = implicit: for CHAR, VARCHAR2, CLOB w/o a specified set */
+  /* 2 = nchar: for NCHAR, NCHAR VARYING, NCLOB */
+  /* 3 = explicit: for CHAR, etc. with "CHARACTER SET ..." clause */
+  /* 4 = flexible: for PL/SQL "flexible" parameters */
+  spare1        number,                      /* fractional seconds precision */
+  spare2        number,                  /* interval leading field precision */
+  spare3        number,            /* maximum number of characters in string */
+  spare4        varchar2(1000),          /* NLS settings for this expression */
+  spare5        varchar2(1000),
+  spare6        date
+)
+cluster c_obj#(obj#)
+/
+REM NOTE 
+REM Logminer/Streams uses contents of this table. 
+REM Please do not reuse any flags without verifying the impact of your 
+REM changes on inter-op.  
+create table user$                                             /* user table */
+( user#         number not null,                   /* user identifier number */
+  name          varchar2("M_IDEN") not null,                 /* name of user */
+               /* 0 = role, 1 = user, 2 = adjunct schema, 3 = schema synonym */
+  type#         number not null,
+  password      varchar2("M_IDEN"),                    /* encrypted password */
+  datats#       number not null, /* default tablespace for permanent objects */
+  tempts#       number not null,  /* default tablespace for temporary tables */
+  ctime         date not null,                 /* user account creation time */
+  ptime         date,                                /* password change time */
+  exptime       date,                     /* actual password expiration time */
+  ltime         date,                         /* time when account is locked */
+  resource$     number not null,                        /* resource profile# */
+  audit$        varchar2("S_OPFL"),                    /* user audit options */
+  defrole       number not null,                  /* default role indicator: */
+               /* 0 = no roles, 1 = all roles granted, 2 = roles in defrole$ */
+  defgrp#       number,                                /* default undo group */
+  defgrp_seq#   number,               /* global sequence number for  the grp *
+  spare         varchar2("M_IDEN"),                   /* reserved for future */
+  astatus       number default 0 not null,          /* status of the account */
+                /* 0x00 =       0 = Open                                     */
+                /* 0x01 =       1 = Locked                                   */
+                /* 0x02 =       2 = Expired                                  */
+                /* 0x03 =       3 = Locked and Expired                       */
+                /* 0x10 =      16 = Password matches a default value         */
+  lcount        number default 0 not null, /* count of failed login attempts */
+  defschclass   varchar2("M_IDEN"),                /* initial consumer group */
+  ext_username  varchar2("M_VCSZ"),                     /* external username */
+                             /* also as base schema name for adjunct schemas */
+  spare1        number, /* used for schema level supp. logging: see ktscts.h */
+  /* spare2 is used to store                                                 */
+  /* - edition id for adjunct schemas (type# = 2)                            */
+  /* - base schema id for schema synonyms (type# = 3)                        */
+  spare2        number,      
+  spare3        number,
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        date
+)
+cluster c_user#(user#)
+/
+create table proxy_data$
+( client#            NUMBER NOT NULL,                      /* client user ID */
+  proxy#             NUMBER NOT NULL,                       /* proxy user ID */
+  credential_type#   NUMBER NOT NULL,  /* Type of credential passed by proxy */
+                   /*
+                    * Values
+                    * 0 = No credential
+                    * 1 = Certificate
+                    * 2 = Distinguished Name
+                    * 4 = Oracle password
+                    */
+  credential_version# NUMBER NOT NULL,   /* Version number of the credential */
+                   /*
+                    * Values
+                    * 0 = no version
+                    * If certificate:
+                    * 1 = X.509 V3
+                    */
+  credential_minor# NUMBER NOT NULL,      /* Minor credential version number */
+                   /*
+                    * Values
+                    * 0 = no version
+                    * If certificate:
+                    * 1 = V3
+                    */
+  flags               NUMBER NOT NULL /* Mask flags of associated with entry */
+             /* Flags values:
+              * 1 = proxy can activate all client roles
+              * 2 = proxy can activate no client roles
+              * 4 = role can be activated by proxy,
+              * 8 = role cannot be activated by proxy
+              */
+)
+/
+create unique index i_proxy_data$ on proxy_data$(client#, proxy#)
+/
+create table proxy_role_data$
+( client#       NUMBER NOT NULL,                           /* client user ID */
+  proxy#        NUMBER NOT NULL,                            /* proxy user ID */
+  role#         NUMBER NOT NULL                                   /* role ID */
+)
+/
+create index i_proxy_role_data$_1 on 
+  proxy_role_data$(client#, proxy#)
+/
+create unique index i_proxy_role_data$_2 on 
+  proxy_role_data$(client#, proxy#, role#)
+/
+create table con$                                        /* constraint table */
+( owner#        number not null,                        /* owner user number */
+  name          varchar2("M_IDEN") not null,              /* constraint name */
+  con#          number not null,                        /* constraint number */
+  spare1        number,         /* used for online add constraint. see kqd.h */
+  spare2        number,
+  spare3        number,
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        date
+)
+/
+create cluster c_cobj# (obj# number)
+  pctfree 0 pctused 50
+  /* space for: update cdef$ set condition = 'col IS NOT NULL' at // */
+  size 300
+  storage (initial 50K)               /* avoid space management during IOR I */
+/
+create index i_cobj# on cluster c_cobj#
+/
+REM NOTE 
+REM Logminer/Streams uses contents of this table. 
+REM Please do not reuse any flags without verifying the impact of your 
+REM changes on inter-op.  
+create table cdef$                            /* constraint definition table */
+( con#          number not null,                        /* constraint number */
+  obj#          number not null,         /* object number of base table/view */
+  cols          number,                   /* number of columns in constraint */
+  type#         number not null,                         /* constraint type: */
+                 /* Note: If new types are added then please ensure that the */
+                 /* {....}_CONSTRAINTS family of views reflect the new type. */
+                            /* 1 = table check, 2 = primary key, 3 = unique, */
+                             /* 4 = referential, 5 = view with CHECK OPTION, */
+                                                 /* 6 = view READ ONLY check */
+               /* 7 - table check constraint associated with column NOT NULL */
+                                   /* 8 - hash expressions for hash clusters */
+                                         /* 9 - Scoped REF column constraint */
+                                    /* 10 - REF column WITH ROWID constraint */
+                                  /* 11 - REF/ADT column with NOT NULL const */
+                                 /* 12 - Log Groups for supplemental logging */
+                                 /* 13 - Allow PKref vals Storage in REF col */
+                                    /* 14 - Primary key supplemental logging */
+                                     /* 15 - Unique key supplemental logging */
+                                    /* 16 - Foreign key supplemental logging */
+                                     /* 17 - All column supplemental logging */
+  robj#         number,                 /* object number of referenced table */
+  rcon#         number,           /* constraint number of referenced columns */
+  rrules        varchar2(3),         /* future: use this columns for pendant */
+  match#        number,                /* referential constraint match type: */
+                                                 /* null = FULL, 1 = PARTIAL */
+        /* this column can also store information for other constraint types */
+  refact        number,                               /* referential action: */
+              /* null = RESTRICT, 1 = CASCADE, 2 = SET NULL, 3 = SET DEFAULT */
+  enabled        number,          /* is constraint enabled? NULL if disabled */
+  condlength    number,                 /* table check condition text length */
+  condition     long,                          /* table check condition text */
+  intcols       number,          /* number of internal columns in constraint */
+  mtime         date,      /* date this constraint was last enabled-disabled */
+  defer         number,                     /* 0x01 constraint is deferrable */
+                                              /* 0x02 constraint is deferred */
+                                /* 0x04 constraint has been system validated */
+                                 /* 0x08 constraint name is system generated */
+                       /* 0x10 constraint is BAD, depends on current century */
+                           /* 0x20, optimizer should RELY on this constraint */
+                                             /* 0x40 Log Group ALWAYS option */
+                                /* 0x80 (view related) constraint is invalid */
+                                       /* 0x100 constraint depends on a view */
+                            /* 0x200 constraint is a partitioning constraint */
+  spare1        number,                      /* sql version flag: see kpul.h */
+  spare2        number,            /* create/last modify constraint SCN wrap */
+  spare3        number,            /* create/last modify constraint SCN base */
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        date
+)
+cluster c_cobj#(obj#)
+/
+REM NOTE 
+REM Logminer/Streams uses contents of this table. 
+REM Please do not reuse any flags without verifying the impact of your 
+REM changes on inter-op.  
+create table ccol$                                /* constraint column table */
+( con#          number not null,                        /* constraint number */
+  obj#          number not null,                       /* base object number */
+  col#          number not null,                            /* column number */
+  pos#          number,                 /* column position number as created */
+  intcol#       number not null,                   /* internal column number */
+  spare1        number,                 /* Constarint specific column flags  */
+                                          /* 0x1  NO LOG Supplemental column */
+  spare2        number,
+  spare3        number,
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        date
+)
+cluster c_cobj#(obj#)
+/
+create index i_tab1 on tab$(bobj#)
+/
+create unique index i_undo1 on undo$(us#)
+/
+create index i_undo2 on undo$(name)
+/
+create unique index i_obj1 on obj$(obj#, owner#, type#)
+/
+REM NOTE 
+REM Partitioning uses this index critically. 
+REM Please don't modify this index without verifying the impact of your 
+REM changes on partitioning.
+create unique index i_obj2 on obj$(owner#, name, namespace, remoteowner,
+linkname, subname, type#, spare3, obj#)
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create index i_obj3 on obj$(oid$)
+/
+create index i_obj4 on obj$(dataobj#, type#, owner#)
+/
+create unique index i_obj5 on obj$(spare3, name, namespace, type#, owner#,
+remoteowner, linkname, subname, obj#)
+/
+create unique index i_ind1 on ind$(obj#)
+/
+create index i_icol1 on icol$(obj#)
+/
+create unique index i_file1 on file$(file#)
+/
+create unique index i_file2 on file$(ts#, relfile#)
+/
+create unique index i_ts1 on ts$(name)
+/
+create unique index i_user1 on user$(name)
+/
+create unique index i_user2 on user$(user#, type#, spare1, spare2)
+/
+create unique index i_col1 on col$(obj#, name)
+  storage (initial 30k next 100k maxextents unlimited pctincrease 0)
+/
+create index i_col2 on col$(obj#, col#)
+  storage (initial 30k next 100k maxextents unlimited pctincrease 0)
+/
+create unique index i_col3 on col$(obj#, intcol#)
+  storage (initial 30k next 100k maxextents unlimited pctincrease 0)
+/
+create unique index i_con1 on con$(owner#, name)
+/
+create unique index i_con2 on con$(con#)
+/
+create unique index i_cdef1 on cdef$(con#)
+/
+create index i_cdef2 on cdef$(obj#)
+/
+create index i_cdef3 on cdef$(robj#)
+/
+create index i_cdef4 on cdef$(enabled)
+/
+create index i_ccol1 on ccol$(con#, col#)
+/
+create unique index i_ccol2 on ccol$(con#, intcol#)
+/
+create table bootstrap$
+( line#         number not null,                       /* statement order id */
+  obj#          number not null,                            /* object number */
+  sql_text      varchar2("M_VCSZ") not null)                    /* statement */
+  storage (initial 50K)            /* to avoid space management during IOR I */
+//                                            /* "//" required for bootstrap */
+
+
+REM Create a table to track objects that compile with errors, i.e. status 2 or
+REM 3. Since the -ve dependencies are removed (KGLTNEXS) we have to invalidate
+REM all objects in status 2 or 3 because we don't why they are in that state.
+REM We ended up doing a FTS on obj$ for every object creation, which is very 
+REM expensive. To reduce this expense we are creating this table which will
+REM contain all objects that are compiled with errors.
+REM Name of the table - objerror$
+
+create table objerror$
+(
+  obj#          number not null                            /* object number */
+)
+/
+
+REM
+REM Create objauth$ and related tables early.  
+REM If tables or indicies are aged out of the shared pool before objauth$
+REM is created, then subsequent references to these objects result in ORA-942.
+REM See bugs 4956995 and 3477195.
+REM
+create table objauth$                           /* table authorization table */
+( obj#          number not null,                            /* object number */
+  grantor#      number not null,                      /* grantor user number */
+  grantee#      number not null,                      /* grantee user number */
+  privilege#    number not null,                   /* table privilege number */
+  sequence#     number not null,                    /* unique grant sequence */
+  parent        rowid,                                             /* parent */
+  option$       number,                                 /* null = no options */
+                                                      /* 0x01 = grant option */
+                                                  /* 0x02 = hierarchy option */
+  col#          number)     /* null = table level, column id if column grant */
+/
+create unique index i_objauth1 on 
+  objauth$(obj#, grantor#, grantee#, privilege#, col#)
+/
+create index i_objauth2 on objauth$(grantee#, obj#, col#)
+/
+create table ugroup$                         /* rollback segment group table */
+( ugrp#         number not null,                        /* undo group number */
+  name          varchar2("M_IDEN") not null,              /* undo group name */
+  seq#          number,
+  spare1        number,
+  spare2        varchar2("M_IDEN"),
+  spare3        number
+)
+/
+create index i_ugroup1 on ugroup$(name)
+/
+create index i_ugroup2 on ugroup$(ugrp#)
+/
+create table tsq$                                  /* tablespace quota table */
+( ts#           number not null,                        /* tablespace number */
+  user#         number not null,                              /* user number */
+  grantor#      number not null,                               /* grantor id */
+  blocks        number not null,         /* number of blocks charged to user */
+  maxblocks     number,     /* user's maximum number of blocks, NULL if none */
+  priv1         number not null,            /* reserved for future privilege */
+  priv2         number not null,            /* reserved for future privilege */
+  priv3         number not null)            /* reserved for future privilege */
+cluster c_user# (user#)
+/
+create table syn$                                           /* synonym table */
+( obj#          number not null,                            /* object number */
+  node          varchar2("M_XDBI"),                        /* node of object */
+  owner         varchar2("M_IDEN"),                          /* object owner */
+  name          varchar2("M_IDEN") not null)                  /* object name */
+/
+create table view$                                             /* view table */
+( obj#          number not null,                            /* object number */
+  audit$        varchar2("S_OPFL") not null,             /* auditing options */
+  cols          number not null,                        /* number of columns */
+  intcols       number not null,               /* number of internal columns */
+  property      number not null,             /* view properties (bit flags): */
+                /* 0x0001 =       1 = this is typed view                     */
+                /* 0x0002 =       2 = view has ADT column(s)                 */
+                /* 0x0004 =       4 = view has nested table column(s)        */
+                /* 0x0008 =       8 = view has REF column(s)                 */
+                /* 0x0010 =      16 = view has array column(s)               */
+                /* 0x0020 =      32 = Editioning View                        */
+                /* 0x1000 =    4096 = view has primary key-based oid         */
+                /* 0x4000 =   16384 = view is read-only                      */
+               /* 0x10000 =   65536 = OID is sytem generated                 */
+               /* 0x20000 =         = view is used by AQ                     */
+            /* 0x08000000 =         = view is a sub view                     */
+            /* 0x10000000 =         = view is packed object view             */
+  flags         number not null,                  /* view flags (bit flags): */
+                /* 0x0800 =    2048 = view/table has security policy         */
+                /* 0x1000 =    4096 = view is insertable via trigger         */
+                /* 0x2000 =    8192 = view is updatable via trigger          */
+                /* 0x4000 =   16384 = view is deletable via trigger          */
+             /* 0x0080000 =  524288 = view is referenced by MV (Summary)     */
+             /* 0x0100000 = 1048576 = view is referenced by query rewrite MV */
+             /* 0x0400000 = 4194304 = view has sub views defined under it    */
+  textlength    number,                               /* length of view text */
+  text          long)                                           /* view text */
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create table typed_view$                   /* additional info for typed view */
+( obj#            number not null,                          /* object number */
+  typeowner       varchar2("M_IDEN"),                   /* owner of row type */
+  typename        varchar2("M_IDEN"),                    /* name of row type */
+  typetextlength  number,                         /* length of row type text */
+  typetext        varchar2("M_VCSZ"),                           /* type text */
+  oidtextlength   number,                              /* length of oid text */
+  oidtext         varchar2("M_VCSZ"),                            /* oid text */
+  transtextlength number,                 /* length of transformed view text */
+  transtext       long,                             /* transformed view text */
+  undertextlength number,       /* length of under clause text for sub-views */
+  undertext       varchar2("M_VCSZ"))     /* under clause text for sub-views */
+/
+create table superobj$        /* stores info about table/view hierarchies */
+( subobj#         number not null,            /* object number of sub object */
+  superobj#       number not null)          /* object number of super object */
+/
+create unique index i_superobj1 on superobj$(subobj#)
+/
+create index i_superobj2 on superobj$(superobj#)
+/
+create table seq$
+( obj#          number not null,                            /* object number */
+  increment$    number not null,            /* the sequence number increment */
+  minvalue      number,                         /* minimum value of sequence */
+  maxvalue      number,                         /* maximum value of sequence */
+  cycle#        number not null,                      /* 0 = FALSE, 1 = TRUE */
+  order$        number not null,                      /* 0 = FALSE, 1 = TRUE */
+  cache         number not null,                 /* how many to cache in sga */
+  highwater     number not null,                     /* disk high water mark */
+  audit$        varchar2("S_OPFL") not null,             /* auditing options */
+  flags         number,                              /* 0x08 LOGICAL STANDBY */
+supplemental log group seq$_log_grp (obj#) always
+)
+/
+create unique index i_view1 on view$(obj#)
+/
+create unique index i_typed_view1 on typed_view$(obj#)
+/
+create unique index i_syn1 on syn$(obj#)
+/
+create index i_syn2 on syn$(owner,name)
+/
+create unique index i_seq1 on seq$(obj#)
+/
+rem NOTE 
+rem Logminer/Streams uses contents of this table. 
+rem Please do not reuse any flags without verifying the impact of your 
+rem changes on inter-op.  
+rem moved into core to remove dependencies on future files
+create table lob$                                   /* LOB information table */
+( obj#          number not null,          /* object number of the base table */
+  col#          number not null,                            /* column number */
+  intcol#       number not null,                   /* internal column number */
+  lobj#         number not null,                /* object number for the LOB */
+  part#         number not null,                  /* this column is not used */
+  ind#          number not null,                  /* LOB index object number */
+  ts#           number not null,         /* segment header tablespace number */
+  file#         number not null,               /* segment header file number */
+  block#        number not null,              /* segment header block number */
+  chunk         number not null,           /* oracle blocks in one lob chunk */
+  pctversion$   number not null,                             /* version pool */
+  flags         number not null,                           /* 0x0000 = CACHE */
+                                                 /* 0x0001 = NOCACHE LOGGING */
+                                               /* 0x0002 = NOCACHE NOLOGGING */
+                                             /* 0x0008 = CACHE READS LOGGING */
+                                           /* 0x0010 = CACHE READS NOLOGGING */
+                                          /* 0x0020 = retention is specified */
+                                       /* 0x0040 = Index key holds timestamp */
+                                      /* 0x0080 = need to drop the freelists */
+                                                 /* 0x0100 = CACHE NOLOGGING */
+                                                   /* 0x0200 = CACHE LOGGING */
+                                                            /* 0x0400 = SYNC */
+                                                           /* 0x0800 = ASYNC */
+                                                      /* 0x1000 = Encryption */
+                                               /* 0x2000 = Compression - Low */
+                                            /* 0x4000 = Compression - Medium */
+                                              /* 0x8000 = Compression - High */
+                                             /* 0x10000 = Sharing: LOB level */
+                                          /* 0x20000 = Sharing: Object level */
+                                              /* 0x40000 = Sharing: Validate */
+  property      number not null,           /* 0x00 = user defined lob column */
+                                    /* 0x01 = kernel column(s) stored as lob */
+                                     /* 0x02 = user lob column with row data */
+                                            /* 0x04 = partitioned LOB column */
+                                   /* 0x0008 = LOB In Global Temporary Table */
+                                          /* 0x0010 = Session-specific table */
+                                      /* 0x0020 = lob with compressed header */ 
+                                        /* 0x0040 = lob using shared segment */
+                                  /* 0x0080 = first lob using shared segment */
+                                   /* 0x0100 = klob and inline image coexist */
+                                /* 0x0200 = LOB data in little endian format */
+                                                   /* 0x0800 = 11g LOCAL lob */
+                                        /* 0x1000 = Delayed Segment Creation */
+  retention     number not null,         /* retention value = UNDO_RETENTION */
+  freepools     number not null,      /* number of freepools for LOB segment */
+  spare1        number,
+  spare2        number,
+  spare3        varchar2(255)
+)
+cluster c_obj#(obj#)
+/
+create index i_lob1 on lob$(obj#, intcol#)
+/
+create unique index i_lob2 on lob$(lobj#)
+/
+rem NOTE 
+rem Logminer/Streams uses contents of this table. 
+rem Please do not reuse any flags without verifying the impact of your 
+rem changes on inter-op.  
+create table coltype$                        /* additional column info table */
+( obj#          number not null,             /* object number of base object */
+  col#          number not null,                            /* column number */
+  intcol#       number not null,                   /* internal column number */
+  toid          raw(16) not null,                   /* column's ADT type OID */
+  version#      number not null,             /* internal type version number */
+  packed        number not null,                 /* 0 = unpacked, 1 = packed */
+  intcols       number,                        /* number of internal columns */
+                                          /* storing the exploded ADT column */
+  intcol#s      raw("M_CSIZ"),        /* list of intcol#s of columns storing */
+                          /* the unpacked ADT column; stored in packed form; */
+                                          /* each intcol# is stored as a ub2 */
+  flags         number,
+                     /* flags to indicate whether column type is ADT, Array, */
+                                                      /* REF or Nested table */
+                           /* 0x02 - adt column                              */
+                           /* 0x04 - nested table column                     */
+                           /* 0x08 - varray column                           */
+                           /* 0x10 - ref column                              */
+                           /* 0x20 - retrieve collection out-of-line         */
+                           /* 0x20 - don't strip the null image              */
+                           /* 0x40 - don't chop null image                   */
+                           /* 0x40 - collection storage specified            */
+                           /* 0x80 - column stores an old (8.0) format image */
+                          /* 0x100 - data for this column not yet upgraded   */
+                          /* 0x200 - ADT column is substitutable             */
+                          /* 0x400 - NOT SUBSTITUTABLE specified explicitly  */
+                          /* 0x800 - SUBSTITUTABLE specified explicitly      */
+                         /* 0x1000 - implicitly not substitutable            */
+                         /* 0x2000 - The typeid column stores the toid       */
+                         /* 0x4000 - The column is an opaque type column     */ 
+                         /* 0x8000 - nested table name is system generated   */
+  typidcol#     number,           /* intcol# of the type discriminant column */
+  synobj#       number)              /* obj# of type synonym of the col type */
+cluster c_obj#(obj#)
+/
+create index i_coltype1 on coltype$(obj#, col#)
+/
+create unique index i_coltype2 on coltype$(obj#, intcol#)
+/
+create table subcoltype$
+( obj#          number not null,             /* object number of base object */
+  intcol#       number not null,                   /* internal column number */
+  toid          raw(16) not null,                   /* column's ADT type OID */
+  version#      number not null,             /* internal type version number */
+        
+  intcols       number,                        /* number of internal columns */
+                                          /* storing the exploded ADT column */
+  intcol#s      raw("M_CSIZ"),        /* list of intcol#s of columns storing */
+                          /* the unpacked ADT column; stored in packed form; */
+                                          /* each intcol# is stored as a ub2 */
+  flags         number,
+                          /* 0x01 - This type was stated in the IS OF clause */
+                          /* 0x02 - This type has ONLY in the IS OF clause   */
+  synobj#       number)  /* obj# of synonym specified for substitutable type */
+cluster c_obj#(obj#)
+/
+create index i_subcoltype1 on subcoltype$(obj#, intcol#)
+/
+create table ntab$                         /* nested table information table */
+( obj#          number not null,             /* object number of base object */
+  col#          number not null,                            /* column number */
+  intcol#       number not null,                   /* internal column number */
+  ntab#         number not null,     /* object number of nested table object */
+  name          varchar2("M_VCSZ") default 'NT$' not null 
+                                    /* qualified name of the nested table col*/
+)
+cluster c_obj#(obj#)
+/
+create index i_ntab1 on ntab$(obj#, col#)
+/
+create unique index i_ntab2 on ntab$(obj#, intcol#)
+/
+create index i_ntab3 on ntab$(ntab#)
+/
+create table refcon$                                /* REF CONstraints table */
+( obj#          number not null,             /* object number of base object */
+  col#          number not null,                            /* column number */
+  intcol#       number not null,                   /* internal column number */
+  reftyp        number not null,                            /* REF type flag */
+                                                     /* 0x01 = REF is scoped */
+                                             /* 0x02 = REF stored with rowid */
+                                             /* 0x04 = Primary key based ref */
+           /* 0x08 = Primary key based ref allowed in an unscoped ref column */
+  stabid        raw(16),                   /* OID of scope table (if scoped) */
+  expctoid      raw(16) /* TOID of exploded columns when ref is user-defined */
+)
+cluster c_obj#(obj#)
+/
+create index i_refcon1 on refcon$(obj#, col#)
+/
+create unique index i_refcon2 on refcon$(obj#, intcol#)
+/
+
+rem Logminer/Streams uses contents of this table. 
+rem Please do not reuse any flags without verifying the impact of your 
+rem changes on inter-op.  
+/* The opqtype$ stores extra information for the xmltype */
+create table opqtype$                         /* extra info for opaque types */
+(
+  obj#        number not null,                /* object number of base table */
+  intcol#     number not null,                     /* internal column number */
+  type        number,                              /* The opaque type - type */
+                                                       /* 0x01 - XMLType */
+  flags       number,                          /* flags for the opaque type */
+                              /* -------------- XMLType flags ---------
+                               * 0x0001 (1) -- XMLType stored as object
+                               * 0x0002 (2) -- XMLType schema is specified
+                               * 0x0004 (4) -- XMLType stored as lob 
+                               * 0x0008 (8) -- XMLType stores extra column
+                               * 
+                               * 0x0020 (32)-- XMLType table is out-of-line 
+                               * 0x0040 (64)-- XMLType stored as binary
+                               * 0x0080 (128)- XMLType binary ANYSCHEMA
+                               * 0x0100 (256)- XMLType binary NO non-schema
+                               * 0x0200 (512)- Table is hierarchy enabled
+                               * 0x0400 (1024)- XMLType table
+                               * 0x0800 (2048)- Varray stored as LOB
+                               * 0x1000 (4096)- Varray stored as Table
+                               * 0x2000 (8192)- Doc fidelity
+                               * 0x4000 (16384)- Has XML tree index
+                               */
+  /* Flags for XMLType (type == 0x01). Override them when necessary  */
+  lobcol      number,                                          /* lob column */
+  objcol      number,                                      /* obj rel column */
+  extracol    number,                                      /* extra info col */
+  schemaoid   raw(16),                                     /* schema oid col */
+  elemnum     number,                                      /* element number */
+  schemaurl   varchar2(4000)                       /* The name of the schema */
+)
+cluster c_obj#(obj#)
+/
+create unique index i_opqtype1 on opqtype$(obj#, intcol#)
+/
+
+create sequence ugroup_sequence   /* sequence for undo group    cache (lab$) */
+  increment by 1
+  start with 1
+  minvalue 0
+  nomaxvalue
+  cache 10
+  order
+  nocycle
+/
+create table props$
+( name          varchar2("M_IDEN") not null,                /* property name */
+  value$        varchar2("M_VCSZ"),                        /* property value */
+  comment$      varchar2("M_VCSZ"))               /* description of property */
+/
+insert into props$ 
+values('DICT.BASE', '2', 'dictionary base tables version #')
+/
+insert into props$
+values('DEFAULT_TEMP_TABLESPACE', 'SYSTEM',
+       'Name of default temporary tablespace')
+/
+insert into props$
+values('DEFAULT_PERMANENT_TABLESPACE', 'SYSTEM',
+       'Name of default permanent tablespace')
+/
+rem Application Edition
+create table edition$
+(
+  obj#      number not null,                                 /* edition obj# */
+  p_obj#    number,                                   /* parent edition obj# */
+  flags     number,
+  code      raw("M_CSIZ"),
+  audit$    varchar2("S_OPFL") not null,                 /* auditing options */
+  spare1    number,
+  spare2    varchar2("M_IDEN")
+)
+/
+create edition ora$base
+/
+insert into props$
+values('DEFAULT_EDITION', 'ORA$BASE',
+       'Name of the database default edition')
+/
+rem fixed object (X$...) information
+create table fixed_obj$            
+( obj#          number not null,                            /* object number */
+  timestamp     date not null,             /* object specification timestamp */
+  flags         number,                    /* 0x00000001 = analyzed
+                                              0x00000002 = locked            */
+  spare1        number,
+  spare2        number,
+  spare3        number,
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        date          
+)
+  storage (maxextents unlimited)
+/
+create unique index i_fixed_obj$_obj# on fixed_obj$(obj#)
+  storage (maxextents unlimited)
+/
+create table migrate$
+( version#   varchar2("M_IDEN"),                    /* version migrated from */
+  migdate    date,              /* date the migration from v7->v8 took place */
+  migrated   number not null     /* 0=not migrated, 1=migrated from v7 to v8 */
+)
+/
+insert into migrate$ values (NULL, NULL, 0)
+/
+create table dependency$                                 /* dependency table */
+( d_obj#        number not null,                  /* dependent object number */
+  d_timestamp   date not null,   /* dependent object specification timestamp */
+  order#        number not null,                             /* order number */
+  p_obj#        number not null,                     /* parent object number */
+  p_timestamp   date not null,      /* parent object specification timestamp */
+  d_owner#      number,                           /*  dependent owner number */
+  property      number not null,                   /* 0x01 = HARD dependency */
+                                                   /* 0x02 = REF  dependency */
+                                          /* 0x04 = FINER GRAINED dependency */
+  d_attrs       raw("M_CSIZ"), /* Finer grain attr. numbers if finer grained */
+  d_reason      raw("M_CSIZ"))  /* Reason mask of attrs causing invalidation */
+storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create table access$                                         /* access table */
+( d_obj#        number not null,                  /* dependent object number */
+  order#        number not null,                  /* dependency order number */
+  columns       raw("M_BVCO"),                /* list of cols for this entry */
+  types         number not null)                             /* access types */
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create unique index i_dependency1 on
+  dependency$(d_obj#, d_timestamp, order#) 
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create index i_dependency2 on
+  dependency$(p_obj#, p_timestamp)
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create index i_access1 on
+  access$(d_obj#, order#) 
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+REM
+REM viewcon$ stores the view constraint text: one row per constraint and 
+REM   the text is stored for the revalidation of view constraints in future
+REM   release (stored but never used in 8.2). 
+REM
+create table viewcon$                            /* constraint text for view */
+( obj#            number not null,                     /* view object number */
+  con#            number,                               /* constraint number */
+  conname         varchar2("M_IDEN"),                     /* constraint name */
+  type#           number,                                 /* constraint type */
+                              /* 2 = primary key, 3 = unique, 4= referential */
+  con_text        clob,                                   /* constraint text */
+  robj#           number,                        /* referenced object number */
+  property        number                         /* view constraint property */
+                                                   /* 0x00040000 set RELY on */
+                                                 /* 0x00080000 /* Reset RELY */
+)
+/
+create index i_viewcon1 on viewcon$(obj#)
+/
+create index i_viewcon2 on viewcon$(robj#)
+/
+/* if icoldep$ is empty for an index, the index depends on the cols in icol$ */
+create table icoldep$                   /* which columns an index depends on */
+( obj#          number not null,                                 /* index id */
+  bo#           number not null,                                 /* table id */
+  intcol#       number not null    /* intcol# in table that index depends on */
+)
+cluster c_obj#(bo#)
+/
+create index i_icoldep$_obj on icoldep$ (obj#)
+/
+create table dual                   /* pl/sql's standard pckg requires dual. */
+  (dummy varchar2(1))    /* note, the optimizer knows sys.dual is single row */
+  storage (initial 1)
+/
+insert into dual values('X')
+/
+create public synonym dual for dual
+/
+create table sysauth$                          /* system authorization table */
+( grantee#      number not null,          /* grantee number (user# or role#) */
+  privilege#    number not null,                      /* role or privilege # */
+  sequence#     number not null,                    /* unique grant sequence */
+  option$       number)                     /* null = none, 1 = admin option */
+/
+create table objpriv$                       /* privileges granted to objects */
+( obj#          number not null,                            /* object number */
+  privilege#    number not null)                         /* privilege number */
+/
+create table defrole$                                  /* default role table */
+( user#         number not null,                                  /* user id */
+  role#         number not null)                          /* default role id */
+/
+create unique index i_sysauth1 on sysauth$(grantee#, privilege#)
+/
+create unique index i_defrole1 on defrole$(user#, role#)
+/
+
+REM This table is an extension to col$ and is used (for now) to store the 
+REM default value with which a column was added
+create table ecol$
+(
+  tabobj#      number,
+  colnum       number, 
+  binaryDefVal blob)
+tablespace system
+/
+
+REM index on ecol$
+create index ecol_ix1 on ecol$(tabobj#, colnum);
+
+REM Additional info pertaining to Editioning Views (EVs):
+REM   mapping between EVs and their underlying base tables.
+CREATE TABLE ev$ 
+(
+  ev_obj# NUMBER NOT NULL, /* id of an EV */
+      /* id of the schema to which EV's base table belongs */
+  base_tbl_owner# NUMBER NOT NULL, 
+  base_tbl_name VARCHAR2("M_IDEN") NOT NULL, /* EV's base table name */
+                     /* id of an Edition in which this EV was defined */
+  edition_obj# NUMBER NOT NULL)
+tablespace system
+/
+
+CREATE UNIQUE INDEX i_ev1 ON ev$(ev_obj#)
+/
+
+CREATE UNIQUE INDEX i_ev2 
+    ON ev$(base_tbl_owner#, base_tbl_name, edition_obj#)
+/
+
+REM Additional info for EV columns:
+REM mapping between EV columns and their corresponding base table columns
+CREATE TABLE evcol$ 
+(
+  ev_obj# NUMBER NOT NULL, /* id of an EV */
+  ev_col_id NUMBER NOT NULL, /* column id of an EV column */
+  /* name of a corresponding base table column */
+  base_tbl_col_name VARCHAR2("M_IDEN") NOT NULL)
+tablespace system
+/
+
+CREATE UNIQUE INDEX i_evcol1 ON evcol$(ev_obj#, ev_col_id)
+/
+REM Create table deferred_stg$ for deferred segment creation.
+REM For objects with deferred segment creation, a row will be inserted
+REM into deferred_stg$ instead of seg$. This row will contain storage
+REM attributes which will be used during the first insert.
+create table deferred_stg$                           /* shadow segment table */
+( 
+  obj#          number not null,                            /* object number */
+  pctfree_stg   number,                                           /* PCTFREE */
+  pctused_stg   number,                                           /* PCTUSED */
+  size_stg      number,                                              /* SIZE */   
+  initial_stg   number,                                           /* INITIAL */
+  next_stg      number,                                              /* NEXT */
+  minext_stg    number,                                        /* MINEXTENTS */
+  maxext_stg    number,                                        /* MAXEXTENTS */
+  maxsiz_stg    number,                                           /* MAXSIZE */
+  lobret_stg    number,                                      /* LOBRETENTION */
+  mintim_stg    number,                                           /* MIN tim */
+  pctinc_stg    number,                                       /* PCTINCREASE */
+  initra_stg    number,                                          /* INITRANS */
+  maxtra_stg    number,                                          /* MAXTRANS */
+  optimal_stg   number,                                           /* OPTIMAL */
+  maxins_stg    number,                                      /* MAXINSTANCES */
+  frlins_stg    number,                                    /* LISTS/instance */
+  flags_stg     number,                                             /* flags */
+  bfp_stg       number,                                       /* BUFFER_POOL */
+  enc_stg       number,                                        /* encryption */
+  cmpflag_stg   number,                                  /* compression type */
+  cmplvl_stg    number)                                 /* compression level */
+/
+CREATE UNIQUE INDEX i_deferred_stg1 ON deferred_stg$(obj#)
+/
+
+REM create a table to store the sql errors that occur during parsing so that
+REM the next time the same bad sql is issued we can look up from this table
+REM and throw the same error instead of doing a hard parse
+
+create table sqlerror$
+(
+  sqlhash   varchar(32)      not null,                /* sql stmt hash value */
+  error#    number           not null,                              /* error */
+  errpos#   number           not null,                     /* error position */
+  flags     number           not null,                /* Flags - 0 - InValid */
+                                                              /* 1 - InValid */
+  spare1    number default 0 not null,                              /* spare */
+  spare2    number default 0 not null,                              /* spare */
+  spare3    number default 0 not null)                              /* spare */
+/

@@ -1,0 +1,32 @@
+CREATE or replace PACKAGE dbms_prvt_trace wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+f4a 2b9
+6NCCoAuK9PrEq3OkyOEDfF91XGswg82cDPaGfC/G/m6uf4Bbp2dFxCoAX83exeVayRQT16HS
+MlaJSDFyD76fC0ncBoADeRaU55H3OvaLHwDJCV9kuDW4v06lsQAicxKfcq6xxP7KdFmm30X6
+ZpjyvVYLWdwJ3CXt3M6aYOaoZG5pp2/b3U00i8/f+JRICvWB6JICi3XTEQ1U1QvMMWHVnXI4
+HDP33H2sdQUGW2NyFRDAGVbzKxECwp1ouFfXQcIzuGUbfJFMJrtDc6M3aRV711QQmUTFumDb
+JEm4S0Pb999dZjhtcg2kMKN1oZlO3rTN3EMYmp6K/DFwAPWenMPjwYUIbJuTnLoB9i/YbgXJ
+gww5PK+KOrU5Rs5JAWXUujVp0Nml5YvtiizJhO+AWLME8BtjzOOfs0LaVuu4zovkuMP3PPFp
+kOEmrhpQTttPygKoH2rLphl6NQyQ6Pl5k1FVdSfYNMsMAQnLrFT2ELKnsyVTR54+iienoglN
+1QdHU5JACTU+KIP6NTFEYCcNV5Js9aCwHlf+s+OA2O2qz5J3hXFKjUJf3HrLrdkWWe7AWd6o
+tlqkC38EbnBzchbZoj+S4s/ElsiJEJSblKl+RDNhKPCB+9FFjIjNP7VqXhLOq9AK/Fvn7ALb
++cVRYrcmsmsjLb0mGjSfXv8KJ0lubgn4COEssW+S
+
+/

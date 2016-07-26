@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+
+<!--  $Header: rdbms/admin/bundledata_PSU.xml fball_extra_22502456_stuff/1 2016/03/04 05:29:47 fball Exp $ -->
+
+<!--
+ Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+
+   NAME
+     bundledata_PSU.xml - <one-line expansion of the name>
+
+   DESCRIPTION
+     <short description of component this file declares/defines>
+
+   NOTES
+     <other useful comments, qualifications, etc.>
+
+   MODIFIED   (MM/DD/YY)
+   fball       02/08/16 - PSU 11.2.0.4.160419 creation
+   fball       11/11/15 - PSU 11.2.0.4.160119 creation
+   fball       08/10/15 - PSU 11.2.0.4.8 creation
+   fball       03/03/15 - Resolve Final INVALID in 11.2.0.4.6
+   fball       02/18/15 - 112046DBPSU: add plb calls to resolve INVALIDS from
+                          apfwkr_ci_backport_16194160_11.2.0.4.6dbpsu
+   fball       02/17/15 - 112046DBPSU need to remove catlsby.sql as it does not 
+                          get exxcuted here
+   fball       02/09/15 - 11.2.0.4.6DBPSU fix typo
+   SVHIREMA    11/18/13 - PSU 11.2.0.4.1 creation
+   lmandali    02/10/14 - PSU 11.2.0.4.2 creation 
+   lmandali    05/11/14 - PSU 11.2.0.4.3 creation
+   lmandali    08/14/14 - PSU 11.2.0.4.4 creation
+   lmandali    11/06/14 - PSU 11.2.0.4.5 creation
+   fball       02/09/15 - PSU 11.2.0.4.6 creation
+-->
+
+<!--
+This XML file contains the details of the files used for the CPU bundle
+patches.  Here is a sample format:
+-->
+
+<bundledata version="11.2.0.4" series="Patch Set Update">
+  <bundle id="1" description="PSU 11.2.0.4.1">
+    <component id="SDO" name="Spatial" schema="sys">
+      <file>?/patch/scripts/bug17088068.sql</file>
+    </component>
+  </bundle>
+  <bundle id="2" description="PSU 11.2.0.4.2">
+    <component id="CATPROC" name="Oracle Database Packages and Types" schema="sys">
+      <file>?/rdbms/admin/prvtdadv.plb</file>
+      <file>?/rdbms/admin/prvtadv.plb</file>
+    </component>
+  </bundle>
+  <bundle id="3" description="PSU 11.2.0.4.3">
+    <component id="CATPROC" name="Oracle Database Packages and Types" schema="sys">
+      <file>?/patch/scripts/bug17381384.sql</file>
+      <file>?/rdbms/admin/prvtredacta.plb</file>
+    </component>
+  </bundle>
+  <bundle id="4" description="PSU 11.2.0.4.4">
+    <component id="CATPROC" name="Oracle Database Packages and Types" schema="sys">
+      <file>?/rdbms/admin/prvtpckl.plb</file>
+    </component>
+  </bundle>
+  <bundle id="5" description="PSU 11.2.0.4.5">
+    <component id="CATPROC" name="Oracle Database Packages and Types" schema="sys">
+      <file>?/patch/scripts/bug16595641.sql</file>
+      <file>?/patch/scripts/bug19289642.sql</file>
+      <file>?/rdbms/admin/prvthstr.plb</file>
+      <file>?/rdbms/admin/prvtbstr.plb</file>
+      <file>?/rdbms/admin/prvtlmd.plb</file>      
+      <file>?/rdbms/admin/prvtutil.plb</file>
+      <file>?/rdbms/admin/prvthsmt.plb</file>
+      <file>?/rdbms/admin/prvtbsmt.plb</file>
+      <file>?/rdbms/admin/prvthapp.plb</file>
+      <file>?/rdbms/admin/prvtbapp.plb</file>
+      <file>?/rdbms/admin/prvthsdp.plb</file>
+      <file>?/rdbms/admin/prvtbsdp.plb</file>
+      <file>?/rdbms/admin/prvthlin.plb</file>
+      <file>?/rdbms/admin/prvtblin.plb</file>
+      <file>?/rdbms/admin/prvthxstr.plb</file>
+      <file>?/rdbms/admin/prvtbxstr.plb</file>
+      <file>?/rdbms/admin/prvtbsts.plb</file>
+    </component>
+    <component id="OWM" name="Oracle Workspace Manager" schema="sys">
+      <file>?/rdbms/admin/owmadms.plb</file>
+      <file>?/rdbms/admin/owmadmb.plb</file>
+      <file>?/rdbms/admin/owmdtrgb.plb</file>
+      <file>?/rdbms/admin/owmmigb.plb</file>
+      <file>?/rdbms/admin/owmltb.plb</file>
+      <file>?/rdbms/admin/owmreplb.plb</file>
+      <file>?/rdbms/admin/owmricb.plb</file>
+      <file>?/rdbms/admin/owmutrgb.plb</file>
+    </component>
+  </bundle>
+  <bundle id="6" description="PSU 11.2.0.4.6">
+    <component id="CATPROC" name="Oracle Database Packages and Types" schema="sys">
+      <file>?/rdbms/admin/dbmsrman.sql</file>
+      <file>?/rdbms/admin/prvtrmns.plb</file>
+      <file>?/rdbms/admin/prvthsmt.plb</file>
+      <file>?/rdbms/admin/prvthsdp.plb</file>
+      <file>?/rdbms/admin/prvtbsdp.plb</file>
+      <file>?/rdbms/admin/prvtlmcb.plb</file>
+      <file>?/rdbms/admin/prvtbsmt.plb</file>
+      <file>?/rdbms/admin/prvtblin.plb</file>
+      <file>?/rdbms/admin/prvtaqxe.plb</file>
+      <file>?/rdbms/admin/prvtbsrp.plb</file>
+      <file>?/rdbms/admin/prvtaqme.plb</file>
+      <file>?/rdbms/admin/prvtaqds.plb</file>
+    </component>
+  </bundle>
+  <bundle id="7" description="PSU 11.2.0.4.7">
+    <component id="APS" name="OLAP Analytic Workspace" schema="sys">
+      <file>?/rdbms/admin/bug20558005.sql</file>
+    </component>
+    <component id="CATPROC" name="Oracle Database Packages and Types" schema="sys">
+      <file>?/rdbms/admin/bug20876312_apply.sql</file>
+    </component>
+  </bundle>
+  <bundle id="8" description="PSU 11.2.0.4.8">
+  </bundle>
+  <bundle id="160119" description="PSU 11.2.0.4.160119">
+    <component id="OWM" name="Oracle Workspace Manager" schema="sys">
+      <file>?/rdbms/admin/owmadmb.plb</file>
+    </component>
+  </bundle>
+  <bundle id="160419" description="PSU 11.2.0.4.160419">
+    <component id="APS" name="OLAP Analytic Workspace" schema="sys">
+      <file>?/rdbms/admin/bug20596234.sql</file>
+    </component>
+    <component id="CATPROC" name="Oracle Database Packages and Types" schema="sys">
+      <file>?/rdbms/admin/prvtawrs.plb</file>
+    </component>
+  </bundle>
+</bundledata>

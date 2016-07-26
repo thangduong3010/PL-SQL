@@ -1,0 +1,27 @@
+{
+global:
+	odm_discover;
+	odm_init;
+	odm_fini;
+	odm_error;
+	odm_create;
+	odm_commit;
+	odm_abort;
+	odm_delete;
+	odm_identify;
+	odm_reidentify;
+	odm_unidentify;
+	odm_cleanup;
+	odm_io;
+	odm_ioerror;
+	odm_cancel;
+	odm_resize;
+	odm_mname;
+	odm_destroy;
+	odm_registernic;
+	odm_deregisternic;
+	odm_registermem;
+	odm_deregistermem;
+local:
+	*;
+};

@@ -105,7 +105,7 @@ FROM dba_free_space fs,
         FROM dba_data_files
         GROUP BY tablespace_name) df
 WHERE fs.tablespace_name (+)  = df.tablespace_name
- AND fs.tablespace_name = 'SYSTEM'
+ AND fs.tablespace_name = 'DM_AUDITTRAIL_S_IDX'
 GROUP BY df.tablespace_name,df.bytes;
 
 /* High Watermark on Temp */

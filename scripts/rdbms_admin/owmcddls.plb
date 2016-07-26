@@ -1,0 +1,36 @@
+create or replace package wmsys.owm_ddl_pkg wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+c8c 3ed
+aPHf+N/yLocb9Mxfijw0CdpI8r8wgzunLiBoyi9AEhkPr2slSBpNgxTlwwE9HUAtH2I5H9QZ
+1/QMGhyD5e2Bux9LePnjzbTMECFORx+WHUQBSez7OnP+nBI/+Sn55M7cTVUv4K7K+w3AdVdT
+yt4i6I3p5cjDd0vvKv6YmHOyQuTyYdxRVRw5FI2sg0QUpA5FfdSQKPLvxVLIKaxN89gr1lyy
+o9KTm3F7IWb2pEepby5hAC9yG3esCjZu+DcXtGfbSzqtiKjBaa4hXQRXrmB8VNjZ31bp0hZW
+4oQdUvDs4krsYIlt9Wyr46OA7JA8azfjTTfmnmDMNvuwJkT1FwU1AuaF3XfLAJKt8jhfJZ/s
+RW3D3JbcjULh1JQ5dUscSYItHLx235Bw3aTBZQ4mU8hIzPj9uySgUH1RpclZ2YumxCso/vhw
+wTsWwRATzApQ3AVXftjTO2xplLfFX8ndDB0UN1kWT7TL3mavKQObgUIHltwgoe1REcvtAhM3
+SYxjWeR++Jb/df/HNwviIw8ev4RgnTVTjaCFid+PFIFJnl+zAFsuJCBJVGkm33RxJtvE0wYI
+ooTtWorAPOfJD2LfiksLOAOG4v7a37OSYQiRU/DddDC+Ss78eV2i/AsuDzZsAeysOOyEZFkV
+qGNjoqzoNmVYO6VVPd5Tb4rj4G9sfGx1lLhM1vZtBDsGMy4kseUE1Bis0xPuwIEDqgX0Sz9Z
+Cd5EFWe7lodhrgWjYN4mVAQHXVrVL3aOkvdsc8g+xwG/P2fdYwVQlGItSYsnItKgBf94zNEO
+/C07ybJw3nfZ0B2o7cVlnUdXypTA0fj6dIMOhPt5izIDxZfVJi6xsQr/ctSsq+OhkrdpqTX7
+nx9PdLvDEE6PBI1zCQRPGL+vt3lU4eqPe/j4h1P3i27dObFeekE/enLcaNcV5fpdKn0C2HM2
+LxiXr0xXe7HaJGq6auC5IP1r49H3tEn4KcM/dNAv/dQWFj/OpSiXNXdh
+
+/

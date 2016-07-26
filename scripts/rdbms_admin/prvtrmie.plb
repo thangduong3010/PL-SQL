@@ -1,0 +1,37 @@
+CREATE OR REPLACE PACKAGE dbms_prvtrmie wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+11f9 42a
+HNAmBpYBW0WgBrxul/qAv6+OJ2Awgzvq+kgFfC/NrQ9rjB3S8fVEwFFN9EdAukAa/f7mDhEo
+ADYWJVGamrOL40p2bcJEHUB0ncZ40APIpwjaK4QIhviGT874KZqasMYPJJmL0dEYUfhUIXbl
+qWl3j+94g0REBPag1V4/81x/euYfe03Tpc3pCINegNeOdCAbzuBqyGSIhyxExejVi7JIEo9H
+gcM7z8OPseiXumThxsxUll//HcCLa7n1G93ZE4TUZle2yISg8SkAFxe6urTbBXbXNqSY2pqH
+4UVpYcJtcY8wC8KVRWNpuvqkZbZ73ONZfRCpKVwowaKG3tg24f7gHUgNTs6Vt+8Cm7YuS7Nw
+A1I+FxyuBtS9I4MhS+pbBuycWR3ZgZNUGZACQ3OTVCJuAkOGk1QikAJDTiZWiqjCYRtRHcFR
+F7Sn2VxvbQGFGjah6UzvZ4nm9NGyx1TUe9h/m63Qx1RNrTYvRT+TRK1WuQqlz6QFmyJjHBIc
+lmCMkS2ruNuEhrjQYxRkqSlCEy528xypsPHA2zZMWJ+q3Nx6zKEw3tdmpwmrP4AXJqQF4RIg
+JvDHl4ZjMzMhFVC45ZO+gY+nuyotymiYXl+9h1oI8CqCYwqFfqdMTMTpPewF3cfvm97/Gwct
+92qYKXN6Ra1zSvdKuMP0WRJ4CCjUsXySxuVzURx3TxkR9L6A1zlaPsiydqRdE0j3vuAhandJ
+Do3RnvEPHdxTs/WLavf/SFkSN//UzZVYxBnHdbJIjsEKUO13reyW8IRV91l/9t6eU5ROHOmI
+Oewiqhe/pbK3+yWrRzeuMKcdD9OqLEKgFnSenUyv1o2s/kOdTROOOYiN4HTLuOxRPVJWBN3w
+j8gZCtPxhnZxnhHx+myjwuApPoUh8lkqiNnPqBiD0FBLielYxYUQgJsViMygSb654ffpf35Z
+gA1a6fJ/55PClobZI1Hgz76YskW6NVN9YeK+IAOr5YvCmiOt/K+cRKwoTQflWASo9o+/9/0B
+3iunIYImyUB4wu9cpkXF5QmzvZR4HI2pE3i1+wj3Iz8=
+
+/

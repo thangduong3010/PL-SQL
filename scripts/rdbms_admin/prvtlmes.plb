@@ -1,0 +1,29 @@
+CREATE OR REPLACE PACKAGE logmnr_em_support wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+344 181
+Vxneryz0lnk9TFBT9d2UYsylZx0wg43xJK5qfC+VWE4+SDYmHeDXXbSx1BWtsBcsrPq24Gug
+xaVzUqu98m4J/AhVT5qYSf7ymgqUFR4zAU5hrnIT0vm+BXn+LA4UYTypb8kadRTK1rI90oGK
+Kqs4NgFZGOVSdVbeSa8j8lbLZNXnRZXcbAmk4VSsW5VFXM/ETXBuBNXGYxOSdCd8w/HL/HbB
+aeOuc1TKKatdA1+A9vKib2xQs+yVNZnRp4Ps3IY/aTmkYDQhNHphw/EmFP9z911kvCn6AvQM
+4JB7ddnOmMFhWphwtZa5Pg2FP+I4EMBqcPY+GgvJi9luKsW6iD8kfGA4rNQSBxj8nvqpTgpK
+VzicrNLtwVQPEPuIYkeJ
+
+/
+show errors

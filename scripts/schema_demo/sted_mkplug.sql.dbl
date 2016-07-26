@@ -1,0 +1,573 @@
+Rem
+Rem $Header: rdbms/demo/schema/sted_mkplug.sql /st_rdbms_11.2.0/2 2010/07/28 12:49:03 celsbern Exp $
+Rem
+Rem sted_mkplug.sql
+Rem
+Rem Copyright (c) 2001, 2010, Oracle and/or its affiliates. 
+Rem All rights reserved. 
+Rem
+Rem    NAME
+Rem      sted_mkplug.sql - plug in transportable tablespace EXAMPLE
+Rem
+Rem    DESCRIPTION
+Rem      Sample Schemas import for Standard Edition database
+Rem
+Rem    NOTES
+Rem      The EXAMPLE tablespace only contains the Sample Schemas
+Rem      - CAUTION: Never use the Sample Schemas for
+Rem        anything other than demos and examples
+Rem      - USAGE: use this only for a Standard Edition database
+Rem      - LOG FILES: The log files are written
+Rem        to the equivalent of $ORACLE_HOME/demo/schema/log
+Rem        If you edit the log file location further down in this
+Rem        script, use absolute pathnames
+Rem
+Rem    MODIFIED   (MM/DD/YY)
+Rem      celsbern  07/21/10 - updating comments and adding filter of SH schema
+Rem      celsbern  07/12/10 - added dump_path parameter
+Rem      celsbern  07/07/10 - removing call to mk_expdp_do.sql script
+Rem      celsbern  06/28/10 - fixing path for backup dfb file
+Rem      celsbern  06/22/10 - removing mention of paths in prompts
+Rem      celsbern  06/03/10 - converted to use expdp & impdp
+Rem      cbauwens  05/02/05 - bug4054905 Date & Time format 
+Rem      cbauwens  10/29/04 - updating privs after deprication of CONNECT 
+Rem      cbauwens  07/26/04 - remove stylesheet tab 
+Rem      jcjeon    03/30/04 - fix lrg1628995 
+Rem      huzhao    01/28/04 - validate certain AQ within IX schema after TTS import
+Rem      huzhao    12/09/03 - analyzing recreated tables 
+Rem      huzhao    11/13/03 - some modification 
+Rem      cbauwens  10/29/03 - cbauwens_db_sted_schema 
+Rem      cbauwens  10/28/03 - 
+Rem      cbauwens  10/07/03 - Created
+Rem      
+Rem
+
+SET FEEDBACK 1
+SET NUMWIDTH 10
+SET LINESIZE 80
+SET TRIMSPOOL ON
+SET TAB OFF
+SET PAGESIZE 999
+SET ECHO OFF
+SET CONCAT '.'
+SET SHOWMODE OFF
+
+PROMPT
+PROMPT specify password for SYS as parameter 1:
+DEFINE password_sys        = &1
+PROMPT
+PROMPT specify password for HR as parameter 2:
+DEFINE password_hr         = &2
+PROMPT
+PROMPT specify password for OE as parameter 3:
+DEFINE password_oe         = &3
+PROMPT
+PROMPT specify password for PM as parameter 4:
+DEFINE password_pm         = &4
+PROMPT
+PROMPT specify password for IX as parameter 5:
+DEFINE password_ix         = &5
+PROMPT
+PROMPT specify password for  SH as parameter 6:
+DEFINE password_sh         = &6
+PROMPT
+PROMPT specify password for  BI as parameter 7:
+DEFINE password_bi         = &7
+PROMPT
+PROMPT specify INPUT metadata import file as parameter 8:
+DEFINE imp_file            = &8
+PROMPT &imp_file
+PROMPT specify INPUT database backup file for tablespace EXAMPLE as parameter 9:
+DEFINE data_file_backup    = &9
+PROMPT &data_file_backup
+PROMPT specify OUTPUT database file for tablespace EXAMPLE as parameter 10:
+DEFINE data_file_name      = &10
+PROMPT &data_file_name
+PROMPT specify OUTPUT log directory as parameter 11:
+DEFINE log_path            = &11
+PROMPT &log_path
+PROMPT specify OUTPUT dump file directory as parameter 12:
+DEFINE dump_path           = &12
+PROMPT &dump_path
+PROMPT
+PROMPT Sample Schemas are being plugged in  ...
+PROMPT
+DEFINE vrs = v3
+
+SPOOL &log_path.stdmkplug_&vrs._@.log 
+
+--
+-- Running the instantiated mk_dir.sql, thus connecting
+-- the DIRECTORY objects with the appropriate file system
+-- paths on this specific system
+--
+
+CONNECT sys/&&password_sys AS SYSDBA;
+
+SELECT TO_CHAR(systimestamp, 'YYYYMMDD HH:MI:SS')  FROM dual;
+
+--
+-- Creating users and granting system privileges
+--
+
+CREATE USER hr IDENTIFIED BY &&password_hr ;
+CREATE USER oe IDENTIFIED BY &&password_oe ;
+CREATE USER ix IDENTIFIED BY &&password_ix ;
+CREATE USER sh IDENTIFIED BY &&password_sh ;
+CREATE USER pm IDENTIFIED BY &&password_pm ;
+CREATE USER bi IDENTIFIED BY &&password_bi ;
+
+@?/demo/schema/mk_dir
+
+GRANT CREATE SESSION			TO hr;
+GRANT ALTER SESSION			TO hr;
+GRANT CREATE DATABASE LINK		TO hr; 
+GRANT CREATE SEQUENCE			TO hr;
+GRANT CREATE SYNONYM			TO hr;
+GRANT CREATE VIEW			TO hr;
+GRANT RESOURCE 				TO hr;
+GRANT execute ON sys.dbms_stats 	TO hr;
+
+GRANT CREATE SESSION 			TO oe;
+GRANT CREATE DATABASE LINK		TO oe;
+GRANT CREATE SYNONYM			TO oe;
+GRANT CREATE VIEW			TO oe;
+GRANT RESOURCE 				TO oe;
+GRANT CREATE MATERIALIZED VIEW  	TO oe;
+GRANT QUERY REWRITE             	TO oe;
+GRANT execute ON sys.dbms_stats 	TO oe;
+
+GRANT CONNECT 				TO pm;
+GRANT RESOURCE 				TO pm;
+GRANT execute ON sys.dbms_stats         TO pm;
+GRANT READ ON DIRECTORY media_dir       TO pm; 
+
+GRANT CONNECT 				TO ix;
+GRANT RESOURCE 				TO ix;
+
+GRANT aq_administrator_role 		TO ix;
+GRANT aq_user_role 			TO ix;
+
+GRANT ALTER SESSION TO ix;
+GRANT CREATE CLUSTER TO ix;
+GRANT CREATE DATABASE LINK TO ix;
+GRANT CREATE SEQUENCE TO ix;
+GRANT CREATE SESSION TO ix;
+GRANT CREATE SYNONYM TO ix;
+GRANT CREATE TABLE TO ix;
+GRANT CREATE VIEW TO ix;
+GRANT CREATE CLUSTER TO ix;
+GRANT CREATE INDEXTYPE TO ix;
+GRANT CREATE OPERATOR TO ix;
+GRANT CREATE PROCEDURE TO ix;
+GRANT CREATE SEQUENCE TO ix;
+GRANT CREATE TABLE TO ix;
+GRANT CREATE TRIGGER TO ix;
+GRANT CREATE TYPE TO ix;
+GRANT CREATE SESSION TO ix;
+
+GRANT CONNECT, RESOURCE, SELECT_CATALOG_ROLE TO ix; 
+
+GRANT EXECUTE ON sys.dbms_stats         TO ix;
+GRANT EXECUTE ON DBMS_AQ                TO ix;
+GRANT EXECUTE ON DBMS_AQADM             TO ix;
+GRANT EXECUTE ON DBMS_APPLY_ADM 	TO ix;
+GRANT EXECUTE ON DBMS_CAPTURE_ADM 	TO ix;
+GRANT EXECUTE ON DBMS_FLASHBACK 	TO ix;
+GRANT EXECUTE ON DBMS_PROPAGATION_ADM 	TO ix;
+GRANT EXECUTE ON DBMS_STREAMS_ADM 	TO ix;
+GRANT SELECT ANY DICTIONARY 		TO ix;
+
+EXECUTE DBMS_RULE_ADM.GRANT_SYSTEM_PRIVILEGE( -	
+    privilege    => DBMS_RULE_ADM.CREATE_RULE_SET_OBJ,  -
+    grantee      => 'ix', - 
+    grant_option => FALSE);
+
+EXECUTE DBMS_RULE_ADM.GRANT_SYSTEM_PRIVILEGE( -
+    privilege    => DBMS_RULE_ADM.CREATE_RULE_OBJ,  -
+    grantee      => 'ix', - 
+    grant_option => FALSE);
+
+--
+-- Restoring database file backup
+-- (Using RMAN works in OMF, OCFS, raw devices and in normal file systems)
+--
+
+
+set echo off;
+set serveroutput on;
+SELECT TO_CHAR(systimestamp, 'YYYYMMDD HH:MI:SS')  FROM dual;
+variable new_datafile varchar2(512)
+declare
+  done boolean;
+  v_db_create_file_dest VARCHAR2(512);
+  devicename varchar2(255);
+  data_file_id number;
+  rec_id number;
+  stamp number;
+  resetlogs_change number;
+  creation_change number;
+  checkpoint_change number;
+  blksize number; 
+  omfname varchar2(512);
+  real_file_name varchar2(512);
+
+  begin
+    dbms_output.put_line(' ');
+    dbms_output.put_line(' Allocating device.... ');
+    dbms_output.put_line(' Specifying datafiles... ');
+       devicename := dbms_backup_restore.deviceAllocate;
+    dbms_output.put_line(' Specifing datafiles... ');
+    SELECT MAX(file_id)+1 INTO data_file_id FROM dba_data_files;
+    SELECT value INTO v_db_create_file_dest FROM v$parameter WHERE name ='db_create_file_dest';
+    IF v_db_create_file_dest IS NOT NULL
+     THEN
+      dbms_backup_restore.restoreSetDataFile;
+      dbms_backup_restore.getOMFFileName('EXAMPLE',omfname);
+      dbms_backup_restore.restoreDataFileTo(data_file_id, omfname, 0,'EXAMPLE');
+     ELSE
+      dbms_backup_restore.restoreSetDataFile; 
+      dbms_backup_restore.restoreDataFileTo(data_file_id,'&data_file_name');
+     END IF;
+    dbms_output.put_line(' Restoring ... ');
+    dbms_backup_restore.restoreBackupPiece('&dump_path'||'&data_file_backup', done);
+    SELECT max(recid) INTO rec_id FROM v$datafile_copy;
+
+    -- Now get the real file name. It could be also OMF filename
+    SELECT name, stamp, resetlogs_change#, creation_change#, checkpoint_change#,block_size
+    INTO real_file_name, stamp,resetlogs_change, creation_change, checkpoint_change, blksize
+    FROM V$DATAFILE_COPY
+     WHERE recid = rec_id and file# = data_file_id;
+    
+    -- Uncatalog the file from V$DATAFILE_COPY. This important.
+    dbms_backup_restore.deleteDataFileCopy(recid => rec_id, 
+                                           stamp => stamp, 
+                                           fname => real_file_name,
+                                           dfnumber => data_file_id, 
+                                           resetlogs_change => resetlogs_change, 
+                                           creation_change => creation_change, 
+                                           checkpoint_change => checkpoint_change, 
+                                           blksize => blksize,
+                                           no_delete => 1, 
+                                           force => 1);
+    -- Set the bindvariable to the real filename                                       
+    :new_datafile := real_file_name;
+    
+    if done then
+        dbms_output.put_line(' Restore done.');
+    else
+        dbms_output.put_line(' ORA-XXXX: Restore failed ');
+    end if;
+  end;
+/
+rem Transfer the value from the bind variable to the substitution variable
+rem so it can be used in the imp command
+col subnew_datafile new_value datafile noprint
+select :new_datafile subnew_datafile from dual;
+
+SELECT TO_CHAR(systimestamp, 'YYYYMMDD HH:MI:SS')  FROM dual;
+
+-- create the 'SS_IMPEXP_DIR' directory object for imp/exp
+-- this will be explicitly dropped at the end.
+create or replace directory SS_IMPEXP_DIR as '&dump_path';
+grant read,write on directory SS_IMPEXP_DIR to public;
+create or replace directory SS_LOGPATH_DIR as '&log_path';
+grant read,write on directory SS_LOGPATH_DIR to public;
+
+-- create the parameter file to filter out the 'SH' schema
+-- this is done using utl_file for portability.
+ declare fh utl_file.file_type;
+ begin
+   fh:=utl_file.fopen('SS_LOGPATH_DIR','excldimp.par','W');
+   utl_file.put_line(fh,'EXCLUDE=SCHEMA:"in (''SH'')"');
+   utl_file.fclose(fh);
+  end;
+ /
+
+-- build the name of the parameter file so that we can pass it to impdp
+col subnew_parmfile new_value parmfile noprint
+select '&log_path'||'excldimp.par' subnew_parmfile from dual;
+
+--
+-- Importing the metadata and plugging in the tablespace at the same
+-- time, using the restored database file 
+--
+
+
+-- When importing use filename got after restore is finished
+host impdp "'sys/&&password_sys AS SYSDBA'" directory=SS_IMPEXP_DIR logfile=SS_LOGPATH_DIR:tts_example_imp.log dumpfile=&imp_file transport_datafiles='&datafile' parfile='&parmfile'
+
+CONNECT sys/&&password_sys AS SYSDBA;
+SELECT TO_CHAR(systimestamp, 'YYYYMMDD HH:MI:SS')  FROM dual;
+
+ALTER TABLESPACE example READ WRITE;
+
+COLUMN tablespace_name FORMAT A15
+COLUMN file_name       FORMAT A46
+ 
+SELECT    tablespace_name, file_name, status
+ FROM     dba_data_files
+ ORDER BY file_id;
+
+REM	
+REM   Now we rebuild the objects that cannot 
+REM   be part of a transportable tablespace set
+REM   ==========================================
+REM
+
+PROMPT
+PROMPT Creating sequences, views, procedures and objects privileges for HR ...
+SELECT TO_CHAR(systimestamp, 'YYYYMMDD HH:MI:SS')  FROM dual;
+
+CONNECT hr/&&password_hr;
+
+--
+-- Sequences
+--
+
+CREATE SEQUENCE locations_seq
+ START WITH     3300
+ INCREMENT BY   100
+ MAXVALUE       9900
+ NOCACHE
+ NOCYCLE;
+
+CREATE SEQUENCE departments_seq
+ START WITH     280
+ INCREMENT BY   10
+ MAXVALUE       9990
+ NOCACHE
+ NOCYCLE;
+
+CREATE SEQUENCE employees_seq
+ START WITH     207
+ INCREMENT BY   1
+ NOCACHE
+ NOCYCLE;
+
+--
+-- Views
+--
+
+CREATE OR REPLACE VIEW emp_details_view
+  (employee_id,
+   job_id,
+   manager_id,
+   department_id,
+   location_id,
+   country_id,
+   first_name,
+   last_name,
+   salary,
+   commission_pct,
+   department_name,
+   job_title,
+   city,
+   state_province,
+   country_name,
+   region_name)
+AS SELECT
+  e.employee_id, 
+  e.job_id, 
+  e.manager_id, 
+  e.department_id,
+  d.location_id,
+  l.country_id,
+  e.first_name,
+  e.last_name,
+  e.salary,
+  e.commission_pct,
+  d.department_name,
+  j.job_title,
+  l.city,
+  l.state_province,
+  c.country_name,
+  r.region_name
+FROM
+  employees e,
+  departments d,
+  jobs j,
+  locations l,
+  countries c,
+  regions r
+WHERE e.department_id = d.department_id
+  AND d.location_id = l.location_id
+  AND l.country_id = c.country_id
+  AND c.region_id = r.region_id
+  AND j.job_id = e.job_id 
+WITH READ ONLY;
+
+--
+-- Rebuilding procedural objects
+--
+
+@?/demo/schema/human_resources/hr_code
+
+--
+-- Object privileges
+--
+
+GRANT REFERENCES, SELECT ON employees 	TO oe;
+GRANT REFERENCES, SELECT ON countries 	TO oe;
+GRANT REFERENCES, SELECT ON locations 	TO oe;
+GRANT SELECT ON jobs 			TO oe;
+GRANT SELECT ON job_history 		TO oe;
+GRANT SELECT ON departments 		TO oe;
+
+
+PROMPT
+PROMPT Creating synonyms, sequences, views and functions for OE ...
+SELECT TO_CHAR(systimestamp, 'YYYYMMDD HH:MI:SS')  FROM dual;
+
+CONNECT oe/&&password_oe;
+
+--
+-- Create cross-schema synonyms
+--
+
+CREATE SYNONYM countries	FOR hr.countries;
+CREATE SYNONYM locations	FOR hr.locations;
+CREATE SYNONYM departments	FOR hr.departments;
+CREATE SYNONYM jobs		FOR hr.jobs;
+CREATE SYNONYM employees	FOR hr.employees;
+CREATE SYNONYM job_history	FOR hr.job_history;
+
+--
+-- Create sequences
+--
+
+CREATE SEQUENCE orders_seq
+ START WITH     1000
+ INCREMENT BY   1
+ NOCACHE
+ NOCYCLE;
+
+--
+-- Views
+--
+
+@?/demo/schema/order_entry/oe_views
+
+CREATE OR REPLACE VIEW account_managers AS
+SELECT          c.account_mgr_id                ACCT_MGR,
+                cr.region_id                    REGION, 
+                c.cust_address.country_id       COUNTRY, 
+                c.cust_address.state_province   PROVINCE, 
+                count(*)                        NUM_CUSTOMERS
+FROM            customers c, countries cr
+WHERE           c.cust_address.country_id = cr.country_id
+GROUP BY ROLLUP (c.account_mgr_id, 
+                 cr.region_id, 
+                 c.cust_address.country_id, 
+                 c.cust_address.state_province);
+
+CREATE OR REPLACE FUNCTION get_phone_number_f
+  (p_in INTEGER, p_phonelist phone_list_typ) 
+RETURN VARCHAR2 AS
+  TYPE phone_list IS VARRAY(5) OF VARCHAR2(25);
+  phone_out varchar2(25) := null;
+  v_size INTEGER;
+BEGIN
+    IF p_phonelist.FIRST IS NULL OR
+       p_in > (p_phonelist.LAST + 1) - p_phonelist.FIRST THEN
+      RETURN phone_out;
+    ELSE
+      phone_out := p_phonelist(p_in);
+      RETURN phone_out;
+    END IF;
+END;
+/
+
+CREATE OR REPLACE VIEW customers_view
+AS SELECT 
+  c.customer_id,
+  c.cust_first_name,
+  c.cust_last_name,
+  c.cust_address.street_address street_address,
+  c.cust_address.postal_code postal_code,
+  c.cust_address.city city,
+  c.cust_address.state_province state_province,
+  co.country_id,
+  co.country_name,
+  co.region_id,
+  c.nls_language,
+  c.nls_territory,
+  c.credit_limit,
+  c.cust_email,
+  substr(get_phone_number_f(1,phone_numbers),1,25) Primary_Phone_number,
+  substr(get_phone_number_f(2,phone_numbers),1,25) Phone_number_2,
+  substr(get_phone_number_f(3,phone_numbers),1,25) Phone_number_3,
+  substr(get_phone_number_f(4,phone_numbers),1,25) Phone_number_4,
+  substr(get_phone_number_f(5,phone_numbers),1,25) Phone_number_5,
+  c.account_mgr_id,
+  c.cust_geo_location.sdo_gtype location_gtype,
+  c.cust_geo_location.sdo_srid location_srid,
+  c.cust_geo_location.sdo_point.x location_x,
+  c.cust_geo_location.sdo_point.y location_y,
+  c.cust_geo_location.sdo_point.z location_z
+FROM 
+  countries co, 
+  customers c
+WHERE 
+  c.cust_address.country_id = co.country_id(+) 
+;
+
+CREATE OR REPLACE VIEW orders_view
+AS SELECT
+  order_id,
+  TO_DATE(TO_CHAR(order_date,'DD-MON-YY HH:MI:SS'),'DD-MON-YY HH:MI:SS') ORDER_DATE,
+  order_mode,
+  customer_id,
+  order_status,
+  order_total,
+  sales_rep_id,
+  promotion_id
+FROM orders;
+
+PROMPT
+PROMPT Creating XML schema, XML folders, OC subschema and objects privileges for OE ...
+SELECT TO_CHAR(systimestamp, 'YYYYMMDD HH:MI:SS')  FROM dual;
+
+--
+-- Call XML schema script
+--
+
+@?/demo/schema/order_entry/coe_xml.sql &&password_oe &&password_sys
+
+--
+-- OC subschema (was dropped using oc_drop.sql in mkunplug.sql)
+--
+
+@?/demo/schema/order_entry/oc_main.sql
+
+--
+-- Object privileges
+--
+
+GRANT REFERENCES, SELECT ON product_information TO pm;
+GRANT SELECT ON order_items 			TO pm;
+GRANT SELECT ON orders 				TO pm;
+GRANT SELECT ON product_descriptions 		TO pm;
+GRANT SELECT ON inventories 			TO pm;
+GRANT SELECT ON customers 			TO pm;
+GRANT SELECT ON warehouses 			TO pm;
+
+
+REM Validate certain AQ within IX schema after TTS import
+
+CONNECT sys/&&password_sys AS SYSDBA;
+EXECUTE dbms_aqadm_sys.validate_Queue('IX', 'AQ$_ORDERS_QUEUETABLE_E');
+EXECUTE dbms_aqadm_sys.validate_Queue('IX', 'AQ$_STREAMS_QUEUE_TABLE_E');
+EXECUTE dbms_aqadm_sys.validate_Queue('IX', 'ORDERS_QUEUE');
+EXECUTE dbms_aqadm_sys.validate_Queue('IX', 'STREAMS_QUEUE');
+
+-- remove the parameter file we created for the import
+exec utl_file.fremove('SS_LOGPATH_DIR','excldimp.par');
+   
+-- clean up the directory object now that we're done with it.
+drop directory SS_IMPEXP_DIR;
+drop directory SS_LOGPATH_DIR;
+
+PROMPT
+PROMPT sted_mkplug.sql DONE
+SELECT TO_CHAR(systimestamp, 'YYYYMMDD HH:MI:SS')  FROM dual;

@@ -1,0 +1,35 @@
+CREATE OR REPLACE PACKAGE dbms_repcat_validate wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+861 291
+Om2cyQx2FYQRYpzQZ4QuhAiUETUwg9fDLtDrfC9DaA/uhivlL1Z4xcu2EgYqMtSztDW4wp6Y
+WxTIL9jOc1cytiUhLgNxb9mtV0HBOjAg6Dm+HfAG+U7+DwjBatCW+MbOErXNHnP5CDWpDztG
+VzEp1f3xr1fTLN2rRPsgITUC4FN09PXXm8vOn+vhcpw0hL5tqyagDhBbxW4D5xQZvLZsVNAD
+j4Sms5S7c0SldDyrgzp96zVz/Z/IKRUO9zFS2DRKYEMk4r2s7OVnGUfK8ZU24JAvX2s40wKo
+j66zaWfwNKTHPM3skKI9fDNHlWEzCI9DyTL1BB2Ob9AmDbnDzDqFVAznlhJwIHUdsH863pBg
+DSkZJAP9b8qCox2EQ667BQa8l2DdkoHO99x+O4gqPBw+WujE2S6acYJMrj2fRcKrhBTkBNQ9
+LtIs5YO/gKq3m3YlmO2Dv8zHVeUsAaWze73fmPdnSuBI8oTtsIivcQlHlIGgrUHoxKIdoFTF
+4raGZWzJHFyzYcEh8J4MEX7O2UO2hSHDRfqSSk13PJRwTqJ6SUUIhVWgdhnigBRxXdqyWV31
+aest51Li2LCNUmJv/F3g4wcIzoru12CcW7WqLwudH/WPDYilXynKJu7vLRKR+AYo4MQZgw==
+
+
+/
+CREATE OR REPLACE PUBLIC SYNONYM dbms_repcat_validate
+   FOR sys.dbms_repcat_validate
+/

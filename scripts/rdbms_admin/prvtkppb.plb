@@ -1,0 +1,35 @@
+CREATE or REPLACE PACKAGE BODY DBMS_CONNECTION_POOL wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+9a5 2da
+PG+tJXDIYLZG0Nl6e0OyxypMsN4wgz1cLtDrfC9Dig9/gwxFCSjePuctBo9XSCcqLe+qiWIf
+mTs25rhNqbWW1N5hLrZJmFpE3sfj8UcSTtSGH64uMadvdmWNu6hyxYZY8fGC1YnSDQlsaR1G
+yKPV1MewrQQMDQBAyTbKejCh1cvtDFq0zNffw5buc1taRxnObmQm1XkP76jEynSlEtkNGmze
+JVXPJHY/z/iB+MFq7jkinpj7kZPbpj7p6CZKsR5/5xroq8dwe4L2k8fKkAb/XP0KAlaLCHD6
+ATcV0bpfpkZHRIwr3nwx5R2+7R6BWT21oAG4MQNqbc2TsN5U26OOzvVD/wLCxajwziFa6xTl
+DIZE4p2Pe12jKjAjtX7Pq+fmZaQBdL3ZqXhodWmojH5qx3Ju3/ITV7yUDlPokEsSIOmVjQOM
+4WTroEzWxP2oxLI4whqVm9u4QPhhUz7UEyFx0BoJ2EIvvnDLobsZ4iX1FYUoD7y8BO8PcBzN
+Q5Kauv2BnU9oJShftOCFLHWoZlVVc1RTmD0tznDqVXdYgAxo+5qKlTK1VRsBVl5Js4jEjGOG
+jFO9ThD5rrAWeikizrr4MnuOlK0HgFz/yLCRSrIcsa3UsAJKdRfLXtdSbgbDEQDg4gBeodSZ
+qH/BQ6bskBRLHH2DEqcUx1oaCnrZoIMG2WbLr08WWkFwCrjJZonZdpzj/k1kuYdz+xGnomg=
+
+
+/
+show errors;
+/

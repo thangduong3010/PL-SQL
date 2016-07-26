@@ -1,0 +1,27 @@
+CREATE OR REPLACE PACKAGE dbms_logrep_def_proc_utl wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+3a6 12c
+QoNZgzWzWX23NkT3XprMDWjFA4kwgzv3ACisfC9AkDqUeCcGXZfDg07v5qjqyAjTREx8L3e1
+ljZbf3/KDSm4nNKhmsHR08CW3+cxCCOGUTR3QpWTP4vl0a7kUx/KX4am9XhRaVHy55iXBN8U
+kwuX9DXsxPCboOcvn6vLrF0rUCcxqR2wRGrD76/QDgki/SYFwvsy0zBambGI8tgWX1bvrnLk
+YvW71+P3xhVOCEymVo4bLWQPeTmlLcTz9vgDYY3EjTCadg3hQ0RAc7iEBC0VKsS5btu82hLh
+p3Td0A==
+
+/

@@ -1,0 +1,36 @@
+CREATE OR REPLACE PACKAGE dbms_server_alert_prvt wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+c2d 3d5
+FUwl25Gvh6uTFzgV9eRql3SORAkwg+0r2UgFfC+KMQ+vhJ5XqfbbvW7blCNUXvbqYum9FEPG
+9BGzaKMOuKzPqpx3aiMb3gnqfH6EaDFYTBgD8jeqAirCLJqqVQX4mGqGVa8/+EK/MEudKNAo
+dNIR21R02hNWneeJX0kJ/chA+laHUeAsJC06isW4zHu67BAYX2b3/dWoYPZUMunseWcIcg7R
+xjatKCcvks2E86K7gYmn/+iOBjwZmM4O2ad+bOWrRanJqz0xoB91rKzOY+GUrNwa8BXTZ6/u
+ZTynmyDjBDbFgjvprbjwOYmsEO3i8J2CQU8DkVzyCEz1zWCMZkihna+0myHvWj3+wxH9odYe
+NDqcH3hO08QroadvS8JNNXFnbS52XNNSzzm/zbhsaYw885Rx5584Jx3gL3oTW4B+voFac21H
+GZ6S703p7ZB5gI1sSZ7YBQvZNcCO4YRA2komqJNImQlEHgRK/loukdRMd0YQdUzOAElpFCbn
+g6KdYsbBjJZS+CfzKmWtSgqVioMkVPCUbeRYYcFaZNEuoC3V43E7ii78J1ieeXjB+/YJdmMA
+77mLFtwbRtxliLyTcY0mUL+66+o7XNNPd78egcyF8qJoosCQxIedKw94XmtS9/aK4hKQridx
+yGCWyu4EyZ5O5nO9BOoZCYJW+vzUIYgt+QwS6sPKKrjqZ/tMG/RnyNZ8RPdgmERsJjlMf298
+bwaeZTi0nkbUOLnUrzvx9dwQWHkWct09Mhh6OGsjaSt5g3eYMQTmqtVjTWfJ5nTEjH99Ss0R
+151eabFbAcRdkuR6qBL4CNeaZtwFKRhOoEaVodIXpN4v/G5Lf7WurxNPKbVy2ZCZUBIdreyv
+kCZ0vWEgcE4DCJrP7NzsY6gEVjR3qsTDV835vDJkbLfuqyNo0umf8nIcSHkFKPhHpfSOAEF6
+fpdkEYsRRiFh2uInXg1/r5gkJo0Tpg==
+
+/

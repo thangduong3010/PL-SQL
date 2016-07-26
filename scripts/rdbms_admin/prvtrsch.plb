@@ -1,0 +1,487 @@
+SET FEEDBACK 1
+SET NUMWIDTH 10
+SET LINESIZE 80
+SET TRIMSPOOL ON
+SET TAB OFF
+SET PAGESIZE 100
+WHENEVER SQLERROR EXIT;
+DECLARE
+  host_port                  NUMBER;
+BEGIN
+  host_port := dbms_xdb.gethttpport();
+END;
+/
+DECLARE
+  epg_attrib                 VARCHAR2(100);
+BEGIN
+  epg_attrib := dbms_epg.get_global_attribute('log-level');
+END;
+/
+SELECT TO_NUMBER('MUST_BE_AS_SYSDBA') FROM DUAL
+WHERE USER != 'SYS';
+WHENEVER SQLERROR CONTINUE;
+CREATE OR REPLACE LIBRARY dbms_scheduler_lib wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+2f 65
+Jw/l1EsF2sFb/ylJR0WW92dbiqgwg04I9Z7AdBjDWqGXYkqW3P9aLj7XoWIYcvpZCee9nrLL
+UjLMpXQr58tSdAj1K0vJpqaqq8uD
+
+/
+CREATE OR REPLACE PACKAGE dbms_isched_remote_access wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+4f6 26c
+vlyoI6WZNMIYft373YdZiu35wvwwg/Ber0gFfHRVMQ9rC1uO2tKDt1Z/DSsT0hblk5/zYSHd
+nxaeIfiqWRiQVDJu9SIxI65dhhL1ZNeMP6aB5B4BLLWKxJ2/cgh5/puSvx+qSMSYc4etD1xc
+cpHdOTlDhFWt9A8mSnQioAYgxWObSfzLd8563t/wi5gF8wzE3KV2jCrhlmhOUZNRPWUrlLE1
+ex4jDZ8ldiI9KOaFccsEt3piSnzHpJ6lt0iNPf1sGnoE5hNY6Ch/MEuAY5xY3Vl2f/WByiAw
+Ey83u8Di7KzSNRtL2wS8AiHm9Qv+JlFh33txs2id/E5zMk67wvg+Z4m0yJwB/oC5iEBGi44x
+dII3reoAkg/ghJ0+u+9hFp9Do1T2fy6+ljpId0f6TmoLHv/GyuIywjol3BG5pxW9bDrTeL8P
+RCEHpBaYy+iwuakzG5j1abm4JZDx991NJ1FvIbz974CCdH6plTtu+kpdqNxjb2jVTbHwYmuH
+Ep0bYS2zvFg128CoJpMYbDYRBu9+pw71emHMLNsSOB8dZXpXT/lBrxwNS/S1zIEdDOJ06k0k
+t1jxHDPbQuupLu6/FN6uX/u7uyRzHQ9LKuQ=
+
+/
+CREATE OR REPLACE PACKAGE BODY dbms_isched_remote_access wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+7b2f 2268
+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
+
+/
+show errors
+begin
+  
+  dbms_epg.create_dad('REMOTE_SCHEDULER_AGENT_DAD',
+    '/remote_scheduler_agent/*');
+  dbms_epg.set_dad_attribute('REMOTE_SCHEDULER_AGENT_DAD',
+    'database-username', 'REMOTE_SCHEDULER_AGENT');
+  dbms_epg.set_dad_attribute('REMOTE_SCHEDULER_AGENT_DAD',
+    'request-validation-function', 'remote_scheduler_agent.restrict_access');
+end;
+/
+alter user anonymous account unlock;
+begin
+  execute immediate 
+    'create user remote_scheduler_agent identified by remote_scheduler_agent';
+exception
+  when others then
+    if sqlcode = -1920 then NULL;
+    else raise;
+    end if;
+end;
+/
+alter user remote_scheduler_agent account lock ;
+alter user remote_scheduler_agent password expire ;
+update user$ set password=null,spare4=null where name='REMOTE_SCHEDULER_AGENT';
+commit;
+grant execute on dbms_isched_remote_access to remote_scheduler_agent;
+CREATE OR REPLACE FUNCTION remote_scheduler_agent.restrict_access wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+1a1 134
+t7sl5UY2U9HAnI7dxwyw7OVlDo0wgwLILiisfHRAAE7VI4TT3IetLhZFom1YjzL7bhjMX37b
+nbsUJ3Q/gSUazfigIIZfFYlJNvAl6Cby707Cw6PapmoCWuZfZTfxtHY4laJXAeBdN90htjaG
+FFio748MF1+23Csd3Qt9KVevUD15UthfaE+e3ngNW4xMLGhgedV5w+9OO+XwHr9GcgjKfuXW
+RV3oaBDBXz/Wh73BPIO898PtvDcZcuQd9h5BW2QT3LBarjFzTCaFfH0YV7rgnf2CujTEPsIg
+dHYT1q+UX2y45g==
+
+/
+CREATE OR REPLACE PROCEDURE remote_scheduler_agent.submit_job_results wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+489 2bd
+mlRhaqOarVmnZd7aStQ5YBE1StEwgxDxBUiDZy9AEtdeWWR0GGsbGMONTR9tv6yk7kwXKK24
+A55LeU104n7PnAe75t3o7kvCz+w6F7WQOgmvhBqjyok99b5UEyQ6d45h2MIyMUg3uv7PEc62
+hC06qXX7etPzYKJx+DJu9zbu5nH87tFDV9GU85dpUaWghxHJbjVR4P/clWrD/WL3QQUsAo8V
+fJB0eIBXH+rO2NwevismK/hGtvmlNYzDG+iwgUYJtgPaP/9PHi7T1amGMFvgKQlAVxgx3yoJ
+3paUf1550B9kA0esbu0xQo0x4UZMi/aZ/jqOog2sfA/514oj92Q0/3n2Ckj8Uy4PkdDLtt7g
+iGBa8N1G1SEUdMyXGQdsA1huZybG8mH+XjMowSnEM2H2WuwPGP2USeKCFKHw7KDtDprtSdgF
+tQgAqcoEfpZTg2jtYIFCQomftv9Flkg1jkyadPEwymxNoSFpt13x8fBDb9WCG34a+ueqgz27
+fsy8QqRT5QHLdJUm9S7pCFrUzTnGIHPK58+l8trZ6sdkhk89dmYjGuX7gbWELSY8pn0sFYss
+yEOxjr44P03LVFdBrYUn3wMBOgqXvCPavSIHdUh2uZ566YWpCucCHugSZHNx4s/+RYWKNOKS
+oanp9x8dpY9zpF1qtKRiMSByfaeE/kYLvEid5B2RKSyj
+
+/
+CREATE OR REPLACE PROCEDURE remote_scheduler_agent.submit_job_results2 wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+283 1be
+aBZhb7Y3aa4JzGwDm1hEcyBnzrwwgxBp2UgVfC+KWGS0QeEJ2zcLrWz/pzbz2oF7EG5W5+Ly
+lFqNxvDQZKiyGmz8HORQiopH3GZEasqN51wDMbsnc5N+9d7lG2QKMTA2YTREwGOENfzSbVfd
+A0mTffpYEtScFbHTPkw+q9u+j3RrCrpuYwlBjuGu7i8Z/MeW1DgiYz92Jms6tuOFYc5T486+
+KsP6Iffz6guAiR5WeGcxBzHfvj417BDM/VRv/cjX+1QttZcu7dXL/5EiewNkx9h9/S4dJBuk
+85l/S/vb5mszBIRR3vah/vFY8GR/RYz/fmSvecfAqpXuM6fE0aMJIPS6A2cup1jlIyCbEsEH
+rGR0tpT0//gM43ZGnszTtLcPiuQkOlLt2dczZYEo+9nCFizdN4bzfd4CCdSQeijcKBKvZ9FO
+mCALu+i3
+
+/
+CREATE OR REPLACE PROCEDURE remote_scheduler_agent.submit_filewatch_results wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+1fb 199
+HcrTeYJ0/yTnDfDUfPx9AvradG4wgwLQ19xGZy9GAE6Ozb3ff3qpbnARkdP5bhyi3DYxMVa9
+4+5JhzPukEw84/T9wVAHJuLiZGX3ZdLHN3xiIBDa6gdhXk+BaHYKzC4MeK5wiKb0/QtDnu6n
+uEK8H16NDBxSk4Oz0JIOvw9oFprRmoNV+0lqaklBEV4Wgtq2evenWEoy6z4Oi00zDLBgL+Us
+yUQ3G9YGXzl+fSR7KsRqmL7HdHm1Ih1nbDGcotxWop3TBLAJSWVAot9Dh0cBlKXnmerCadmJ
+gPFfDacN3sLNa4T/mzmbrgQOY953IaSnuRk0MKWNOBtCRcKUqBvIly9EN0H6KoGaAzU7nf6L
+jQac+8ZSBCyvRuu9fa3mqAYqVwikhChTPbS++OFUDNAx
+
+/
+CREATE OR REPLACE PROCEDURE remote_scheduler_agent.filewatch_request_resend wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+23f 1c2
+2R065p0Kovm07Sd273ZjjceHgYcwg43ILUjWfC9A2k6OxPdaXEBKNaTndpXTtNvBifXm81fy
+FKvDdCcHes+yvXl7kX31PDrkEJ2Wt2bduO/zM8ajqrlFm2mgkoyx6AM9fV5EglvKbxpTT2am
+hqX82cozQ+t2BDGYFpa42Vrz2EZaUMFBAxUf1AcXxbqR8VIqx+mY1faywxz1PbFFRCaaE9yE
+kQ3IKIcFiO1hy4e/ua1vf2tIANkXBNqm0mBtuI0Jrxbjf1YU6OY47lv702Jmp3C5Csphc4E5
+oTHyhWox0qQKBBZWRTcKBDqNP7aql8mSwnfUiviSUmgEX9UdczIhkFJkelnntfBNq3mPd/Uf
+PCgYB98ZuNR5qVjgBtPRxD41tNib8QS5+JLrZFIV+YjbYXmDbFO4Ih07tollpMbYBcdApv4z
+fQDPHbm8jNA=
+
+/
+CREATE OR REPLACE PROCEDURE remote_scheduler_agent.unregister_agent wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+24b 1a9
+g/etB8gZUbUrSlEuFcEBhqfrgvUwgwLIDCAVfC9GEv9ktEHhCY70HNn6V7p2Ji1eZOvGPhis
+a1rzWkBozgjXHea9jfzWEM6fPIK3J5V/lyHm7cefAwB2O9lt8FWkSRymulEhvmmRDgC7Wcev
+0l58yvrTNIR660UC84JX5gmhGZm5w6z3qRJdLqjoOZa4iAxkbBUaOOUL3hu8wOmTkw6bBeL8
+l3twO8eF/8xxUmi5v0sZ2nXXFZOucyloHjNxeOFQHwKzZmt6G9F8lyobl3D/V4BRfLdFWGzW
+e7vgruLtNhmPzoNauF41ULDLRUbXwXPSZI6q7OhFVs3uS+IKgLVWFa5KJvQ9ldIHZ72X53c2
+12Jb1bXNPz5hjUyyEoDT9Ui7Qa8H6719zZQN3NE5kXcysTR8uZH5pR12Wexi
+
+/
+CREATE OR REPLACE PROCEDURE remote_scheduler_agent.register_agent wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+245 1b6
+La4FizLO5XplELKl9UwTuuNiubgwgxDIACAVfC9A2sHqcbCpjuljC1hfEI9a26G7Wd6wFp5A
+ZunKiLTOCLJGuyuBuByHOgj4cdxYoiqoNrtv2dc8OlFxUz1htqZ9XzvzPuYSIjahYn0qJ2b0
+kbc4ZgKVD7NG5/BiwxNVYL5wQckanmJUD4wOmb14CKaA9L3LenlOV7DbtNx1OsLlpLiBzcmY
+g0IvByNnxmG8aNGx1XVkANIjUmTXFUgkVwnieqb5BlSyCdHTp6tcNXXJb5mobGXG5ibmX8s7
+INt7F7V926nau33/IUWcbY9s4YKI0K5OZexIYilgCCjvGVyNBX6LmJKtegCvrvS+LsIDs8OM
+N0cnFEDJ7Az6tfpqwJOYMQKSpabtD/h45zidWz8s78wj+RlNhqMT/U2TVroanxdzsCyWjezF
+
+
+/
+CREATE OR REPLACE PROCEDURE remote_scheduler_agent.register_agent2 wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+3ac 268
+j/+mTBDl+kdHETD64k7v7HiGVEAwgxDxryATfI7Uv4tkMNr38nQ7cXs7g68qlkQ7LVjN4h69
+a9uOIY4UhKBclywkHahSPE27j9aqm/68/joBrF5fLESss5Yysfa3H5YjBYCZKMruCX/C5nX8
+SfMhqGaeVlEWw0VZPszOOQCeN1lDCNtxifM+T1PjTkaFXSTbAqxevuNSYAhl5mBOu87PvTEe
+hBN442go+Uq314WYrMOjzwf+Pk458U1WR6KXdxXB6FR4q11FJRNMjLLIqBsvCyfofR6fmQH2
+j5J7XxuLD1UjjJehKGci2Xy8uvp6jSGvVx9TBp7H5j7yiPFX/0nH3LxtOv3hu3U31tYD3dZO
+X9Z/sXAYfHWGwEaLieFJjh4SrP/OH+iNmIGjv0y+9iKSB0nObeDoCSKu+InKHeLTjtOK+koQ
+muqHbzKMeIA9ayVshSwoicbnmo9e0kOLi06+Blgbq+vsZGdheQ8xZKt4qxjUfeBOnpJkzXc3
+zevqMltcBYGPu/5KJSbkJDIPNfsTRVYNiFw5O6XEPwIl7PViBtbbv83OS5ooXg4v1f6kbc0w
+B6aTetHXuEmKg1oC4IPjfTNqJJvZu5g=
+
+/
+begin
+  dbms_epg.deauthorize_dad('REMOTE_SCHEDULER_AGENT_DAD');
+  dbms_epg.authorize_dad('REMOTE_SCHEDULER_AGENT_DAD',
+    'REMOTE_SCHEDULER_AGENT');
+end;
+/
+commit;

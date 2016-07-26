@@ -1,0 +1,34 @@
+create or replace package dbms_streams_auto_int wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+917 35b
+eeMucvHAuNI0rfRMFu/3Ie9aDDUwg2MrLtDrfC9DaA/uumElHKdDYJU4Blle1gsXebB+rjxm
+V7imFGHkqhuf8clOs5GvwonFWHgg5ItqYjeqrHYxsZYkQXNOOv7ESSMic621m5qqQYjDucpl
+p+6HFiF0islqBHnibdNfS6M65hd9efsJUQi5puX55dgdQ3XlGIlwUu213bmftlTPTWcjsIw9
+VjPNjt9450hY/j+x2y6YIewLK4iRcWbILDg7ab6xYF3mzBR28oBPIN+odmnbPTSbnp5f3AKe
+0O8EP6bHnXm9M40G3BGVwPWH7ozv3lrdU3TxHz2iePQR9KIze5L2NtYQrSTFWmwjly0zYYkV
+OtB77RUMGmI4TPNp+qPePiASyAee1dKSAxib/qj9YaCjsDORAEMl9894oQGzDnsbxL1kdHPA
+vD+3fsbYkHrHN8J7LoQxa1ZDPkGaRACjEQ/0ESElqt8dzR5YdtianH4xxWIW6X/MROxuRf/M
+Oh+fqHmGwPQl6a65cFAcoEdFViHUnByrwXsltbZ3bzJTvKmAlhZqi+fAYsNUe38EgFWSUX6r
+EeUyVVAAfRwalchO6WMXISjTc09Hs1PNZGF/YNScTbbFtZHhEu5YxjzgeZNXCOXhulJ+n3NH
+DFvBCdVHYGfmfZcuDD2FcydKqLjxjCrAsNOAHX3p82D4fKTqPRJTHTlqAlPCt7uL9uenHQ/R
+jIE7gyif3N2BZXenENCRbO1Gz013lUgF/zTotUWf/Yeg7RIbfYjpyOCulxgzrCkbZ7qzu7lh
+mOJpB9GywBCittRhQ2CJSDvruJQOUZ3f3jjalebjIaefIPnh68K2LA==
+
+/

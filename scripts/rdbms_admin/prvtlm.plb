@@ -1,0 +1,33 @@
+create or replace PACKAGE BODY dbms_logmnr wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+926 31a
+K8n/nBuXWKGb+bw3c6i/DPH0gCswg+1cr0oTfI6KMk6UvAJah/TYRQl4ra3UafYta9TKzb0m
+5XcMxI2DtZySfoapLnApa23A+53+eoIzWSfmT6GvUGOXh1DEZGSqkiydvJ355PAwAwOuO8WX
+wit/0thFYLZjtqCEiy2Wso0Rz1c0hStxdeaI2aG6J4lmipdYR1kIVVU7ZnqIJr5w7oVfEZ87
+VbvGNzgpo1LUJv9C+hRSpG/pgI5zWXdqNDTlKmSRht2HUxT8Y8EJA2Zwn1fWehovNlgqjbaX
+aeYIXD5U0DYUxa5oywFcWQgw0rdyqIl1i+EW8QHoqkSIZ3WG4WJyES1EK8FioBx1IQ+Xhy3Y
+/LpYXNn+cA6ECsKUwtBCliyVUGnVPHwmkBQ7Ss5kpWOBdph9GZQSgJc8vwSKvDhEDX2LTY2S
+BwUDZQVHLevWsorwzTisyCevBtUldLlgIOpgHJqKu9cZGYuKeM82ixk1NodUr2whhwNy1axb
+1DBd1gDgdsoVPwzIdp7hkHLu86lC+O7nVa3Gxnpji85+GoYLqAaRBhHsV+/DkS3cpulpODKP
+L/BGApFwezy0izSNd1nQdhAF9AVMU7hoWxp1SI1fjn8RF1jTp26w9cpD4ZEwRQBKOfsgXcSy
+6m7KCMQmFqwMi6wGqpkGseE+z6I6lV0L7OgHZ57n17IJtDV4RkuakHTvPX0JPhvlSnnEZ8+Q
+eWc5iH3iUlexQ+XwYIYrpYxNt3MIKSnrEJLnnesIMCMwemMpGUYaOhfkpR/jcZb0
+
+/

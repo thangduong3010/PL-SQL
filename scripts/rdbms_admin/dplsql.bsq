@@ -1,0 +1,302 @@
+REM   rdecker   08/09/06 - Add plscope obj# index
+REM   rdecker   05/31/06 - Add plscope tables
+REM   gviswana  05/19/06 - Add diana_version$
+REM   jklein    08/01/05 - creation
+rem
+rem procedure$ contains information about packages and standalone 
+rem    procedures, functions. There is one row for a top-level object.
+rem procedureinfo$ holds information about procedures/functions defined
+rem    standalone or in packages or types. There is one row per procedure
+rem    or function. 
+rem method$ holds information about each procedure/function (method) defined
+rem    in a type. In particular, it holds information specific to methods 
+rem    for example, is this a map/order method.
+rem
+create table procedure$                                   /* procedure table */
+( obj#          number not null,                            /* object number */
+  audit$        varchar2("S_OPFL") not null,             /* auditing options */
+  storagesize   number,                         /* storage size of procedure */
+  options       number                                    /* compile options */
+)
+/
+create table procedureinfo$               /* function/procedure/method table */
+( obj#          number not null,                            /* object number */
+                     /* for types, packages - object number of specification */
+  procedure#    number not null,               /* procedure or method number */
+                     /* 0 = standalone proc/func, n = unique id of procedure */
+  overload#      number not null,
+                /* 0 - not overloaded, n - unique id of overloaded procedure */
+  procedurename varchar2("M_IDEN"),                        /* procedure name */
+  properties    number not null,                     /* procedure properties */
+                /* 0x00001 =     1 = HIDDEN (internally generated) procedure */
+                /* 0x00002 =     2 = C implementation (in spec)              */
+                /* 0x00004 =     4 = Java implementation (in spec)           */
+                /* 0x00008 =     8 = Aggregate function                      */
+                /* 0x00010 =    16 = Pipelined function                      */
+                /* 0x00020 =    32 = Parallel enabled                        */
+                /* 0x00040 =    64 = Retrun Self as result (SQLJ)            */
+                /* 0x00080 =   128 = Constructor function (SQLJ)             */
+                /* 0x00100 =   256 = deterministic                           */
+                /* 0x00200 =   512 = Pipelined func; interface impl          */
+                /* 0x00400 =  1024 = Function with invokers rights           */
+                /* 0x00800 =  2048 = Func with partitioned argument(s)       */
+                /* 0x01000 =  4096 = Func with clustered argument(s)         */
+                /* 0x02000 =  8192 = Func with ordered i/p argument(s)       */
+                /* 0x04000 =  16384 = Partitioned arg: Hash partitioning     */
+                /* 0x08000 = 32768 = Partitioned arg: Range partitioning     */
+                /* 0x10000 = 65536 = Partitioned using any partitioning      */
+  /* The following field is relevant only for aggregate and pipelined        */
+  /*  functions that are implemented using an implementation type            */
+  itypeobj#     number,                 /* implementation type object number */
+  spare1        number,
+  spare2        number,
+  spare3        number,
+  spare4        number
+)
+/
+create table argument$                     /* procedure argument description */
+( obj#           number not null,                           /* object number */
+  procedure$     varchar2("M_IDEN"), /* procedure name (if within a package) */
+  overload#      number not null,
+                /* 0 - not overloaded, n - unique id of overloaded procedure */
+  procedure#     number,                       /* procedure or method number */
+  position#      number not null,  /* argument position (0 for return value) */
+  sequence#      number not null,
+  level#         number not null,
+  argument       varchar2("M_IDEN"),/* argument name (null for return value) */
+  type#          number not null,                           /* argument type */
+  charsetid      number,                                 /* character set id */
+  charsetform    number,                               /* character set form */
+  /* 1 = implicit: for CHAR, VARCHAR2, CLOB w/o a specified set */
+  /* 2 = nchar: for NCHAR, NCHAR VARYING, NCLOB */
+  /* 3 = explicit: for CHAR, etc. with "CHARACTER SET ..." clause */
+  /* 4 = flexible: for PL/SQL "flexible" parameters */
+  default#       number,   /* null - no default value, 1 - has default value */
+  in_out         number,                   /* null - IN, 1 - OUT, 2 - IN/OUT */
+  properties     number,                           /* argument's properties: */
+  /* 0x0100 =     256 = IN parameter (pass by value, default) */
+  /* 0x0200 =     512 = OUT parameter */
+  /* 0x0400 =    1024 = pass by reference parameter */
+  /* 0x0800 =    2048 = required parameter (no default) */
+  /* 0x4000 =   16384 = is a PONTER parameter */
+  /* 0x8000 =   32768 = is a REF parameter */
+  length         number,                                      /* data length */
+  precision#     number,                                /* numeric precision */
+  scale          number,                                    /* numeric scale */
+  radix          number,                                    /* numeric radix */
+  deflength      number,             /* default value expression text length */
+  default$       long,                      /* default value expression text */
+  type_owner     varchar2("M_IDEN"),    /* owner name component of type name */
+  type_name      varchar2("M_IDEN"),                            /* type name */
+  type_subname   varchar2("M_IDEN"),       /* subname component of type name */
+  type_linkname  varchar2("M_XDBI"),       /* db link component of type name */
+  pls_type       varchar2("M_IDEN"))                     /* pl/sql type name */
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create table source$                                         /* source table */
+( obj#          number not null,                            /* object number */
+  line          number not null,                              /* line number */
+  source        varchar2("M_VCSZ"))                           /* source line */
+  storage (initial 10k next 200k maxextents unlimited pctincrease 0)
+/
+create table idl_ub1$                            /* idl table for ub1 pieces */
+( obj#          number not null,                            /* object number */
+  part          number not null,
+         /* part: 0 = diana, 1 = portable pcode, 2 = machine-dependent pcode */
+  version       number,                                    /* version number */
+  piece#        number not null,                             /* piece number */
+  length        number not null,                             /* piece length */
+  piece         long raw not null)                              /* ub1 piece */
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create table idl_char$                          /* idl table for char pieces */
+( obj#          number not null,                            /* object number */
+  part          number not null,
+         /* part: 0 = diana, 1 = portable pcode, 2 = machine-dependent pcode */
+  version       number,                                    /* version number */
+  piece#        number not null,                             /* piece number */
+  length        number not null,                             /* piece length */
+  piece         long not null)                                 /* char piece */
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create table idl_ub2$                            /* idl table for ub2 pieces */
+( obj#          number not null,                            /* object number */
+  part          number not null,
+         /* part: 0 = diana, 1 = portable pcode, 2 = machine-dependent pcode */
+  version       number,                                    /* version number */
+  piece#        number not null,                             /* piece number */
+  length        number not null,                             /* piece length */
+  piece         long ub2 not null)                              /* ub2 piece */
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create table idl_sb4$                            /* idl table for sb4 pieces */
+( obj#          number not null,                            /* object number */
+  part          number not null,
+         /* part: 0 = diana, 1 = portable pcode, 2 = machine-dependent pcode */
+  version       number,                                    /* version number */
+  piece#        number not null,                             /* piece number */
+  length        number not null,                             /* piece length */
+  piece         long sb4 not null)                              /* sb4 piece */
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create table error$                                           /* error table */
+( obj#          number not null,                            /* object number */
+  sequence#     number default 0 not null,
+                                  /* sequence number (for ordering purposes) */
+  line          number not null,                       /* source line number */
+  position#     number not null,                  /* position in source line */
+  textlength    number not null,                 /* length of the error text */
+  text          varchar2("M_VCSZ") not null,                   /* error text */
+  property      number,                                  /* error or warning */
+  error#         number)                                     /* error number */
+/
+create table settings$ (
+  obj#          number not null,                            /* object number */
+  param         varchar2("M_IDEN") not null,               /* parameter name */
+  value         varchar2("M_VCSZ"))                       /* parameter value */
+/
+create unique index i_procedure1 on procedure$(obj#)
+/
+create unique index i_procedureinfo1 on 
+  procedureinfo$(obj#, procedurename, overload#)
+/
+create unique index i_argument1 on 
+  argument$(obj#, procedure$, overload#, sequence#)
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create index i_argument2 on 
+  argument$(obj#, procedure#, sequence#)
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create unique index i_source1 on source$(obj#, line)
+  storage (initial 10k next 200k maxextents unlimited pctincrease 0)
+/
+create unique index i_idl_ub11 on
+  idl_ub1$(obj#, part, version, piece#)
+/
+create unique index i_idl_char1 on
+  idl_char$(obj#, part, version, piece#)
+/
+create unique index i_idl_ub21 on
+  idl_ub2$(obj#, part, version, piece#)
+/
+create unique index i_idl_sb41 on
+  idl_sb4$(obj#, part, version, piece#)
+/
+create index i_error1 on error$(obj#, sequence#)
+/
+create index i_settings1 on settings$(obj#)
+/
+create table ncomp_dll$                              /* table for ncomp dlls */
+( obj#          number not null,                            /* object number */
+  version       number,                                    /* version number */
+  dll           blob,                                          /* dll object */
+  dllname       raw(1024))                      /* os base file name for dll */
+  lob (dll) store as native_comp_shared_objects 
+	(storage (initial 1m next 1m maxextents unlimited pctincrease 0))
+  storage (initial 10k next 100k maxextents unlimited pctincrease 0)
+/
+create unique index i_ncomp_dll1 on
+  ncomp_dll$(obj#, version)
+/
+create table procedurejava$
+( obj#          number not null,                 /* spec/body object number */
+  procedure#    number not null,                  /* procedure# or position */
+  ownername     varchar2("M_IDEN") not null,            /* class owner name */
+  ownerlength   number not null,              /* length of class owner name */
+  usersignature varchar2("M_VCSZ"),              /* User signature for java */
+  usersiglen    number,                /* Length of user signature for java */
+  classname     varchar2("M_VCSZ") not null,           /* method class name */
+  classlength   number not null,             /* length of method class name */
+  methodname    varchar2("M_VCSZ") not null,            /* java method name */
+  methodlength  number not null,              /* length of java method name */
+  signature     long not null,                        /* internal signature */
+  siglength     number not null,            /* length of internal signature */
+  flags         varchar2("M_VCSZ") not null,              /* internal flags */
+              /* WE MIGHT BE ABLE TO USE M_CSIZ here, check max# parameters */
+  flagslength   number not null,                /* length of internal flags */
+  cookiesize    number)                                      /* cookie size */
+/
+create unique index i_procedurejava$ on procedurejava$ (obj#, procedure#)
+/
+create table procedurec$
+( obj#          number not null,                 /* spec/body object number */
+  procedure#    number not null,                  /* procedure# or position */
+  entrypoint#   number not null)                 /* entrypoint table entry# */
+/
+create unique index i_procedurec$ on procedurec$ (obj#, procedure#)
+/
+create table procedureplsql$
+( obj#          number not null,                 /* spec/body object number */
+  procedure#    number not null,                  /* procedure# or position */
+  entrypoint#   number not null)                 /* entrypoint table entry# */
+/
+create unique index i_procedureplsql$ on procedureplsql$ (obj#, procedure#)
+/
+create table library$
+( obj#          number not null,             /* object number of the library */
+  filespec      varchar2(2000),
+                        /* the actual file spec - NULL if property is STATIC */
+  property      number,                     /* 0x01 = STATIC, 0x02 = TRUSTED */
+  audit$        varchar2("S_OPFL") not null              /* auditing options */
+)
+cluster c_obj#(obj#)
+/
+create table assembly$
+( obj#          number not null,            /* object number of the assembly */
+  filespec      varchar2("M_VCSZ"),              /* filename of the assembly */
+  security_level number,                          /* assembly security level */
+  identity      varchar2("M_VCSZ"),                     /* assembly identity */
+  property      number,                                  /* Currently unused */
+  audit$        varchar2("S_OPFL") not null              /* auditing options */
+)
+cluster c_obj#(obj#)
+/
+create table warning_settings$ (
+  obj#          number not null,                           /* object number */
+  warning_num   number not null,                          /* warning number */
+  global_mod    number,                                  /* global modifier */
+  property      number)                                         /* property */
+/
+create index i_warning_settings on warning_settings$(obj#)
+/
+
+create table diana_version$ (
+  obj#          number not null,                           /* object number */
+  stime         date not null,    /* spec timestamp for older-version Diana */
+  flags         number)
+                                   /* 0x01 = Old-version Diana is obsolete */
+/
+create unique index i_diana_version on diana_version$(obj#)
+/
+
+create table plscope_identifier$ (
+  signature  varchar2(32),                           /* identifier signature */
+  symrep     varchar2("M_IDEN"),                    /* symbol representation */
+  obj#       number,
+  type#      number)
+  tablespace sysaux
+/
+create unique index i_plscope_sig_identifier$ on plscope_identifier$(signature)
+tablespace sysaux
+/
+create index i_plscope_obj_identifier$ on plscope_identifier$(obj#)
+tablespace sysaux
+/
+
+create table plscope_action$ (
+  obj#       number,                                        /* object number */
+  action#    number,                                        /* action number */
+  signature  varchar2(32),                           /* identifier signature */
+  action     number,                                       /* type of action */
+  line       number,  
+  col        number,
+  context#   number)                        /* context number of this action */
+  tablespace sysaux
+/
+create index i_plscope_sig_action$ on plscope_action$(signature)
+tablespace sysaux
+/
+create index i_plscope_obj_action$ on plscope_action$(obj#)
+tablespace sysaux
+/

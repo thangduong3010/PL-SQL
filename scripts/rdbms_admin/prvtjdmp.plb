@@ -1,0 +1,27 @@
+create or replace package body dbms_java_dump wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+268 154
+TFYFocJFnD9mlBW9vDyFSW8QLEMwg433rxjhf3RA/miwhVJGrUeHjQDb36cnzV/XX0uwUTDT
+NjXSOsRiRfVcn1UlXVBdrp0UpJdEJ6zeCiI4xABuFT/HMUZVOrg2auamkdVIwbqhJ6U2bZTs
+KpjFq/Wn1lIA3puMof/m7aJarj9A8cWTD+vHV6GRHlOAsZyjBKrdEushts7441sEJOqNq6dM
+paCr4/h8A02+2A9tF411dS4erMxkwWVC1jM9vO+TdG0SfTa6c1szrd7s7P3Yc+ml4xK28FEW
+SKtw8oNTcWtUfkievLD41g3RuPyYT8JKbhguSbUzREEtyNw=
+
+/

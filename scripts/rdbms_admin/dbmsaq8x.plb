@@ -1,0 +1,35 @@
+CREATE OR REPLACE PACKAGE dbms_aq_import_internal wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+b03 2e6
+2GH+e25xB7eu5bKbh668+7wskIgwg82Nr8AFyi9AEg1BrIyC615kIjtQg2vzymLIou18KaAH
+RyHeE4tzsFr0CzgLiK0Ap7M1aqW7wpr5Zx3knt+FvBAQzoa7P/j4Bw8kT0Fzc4ZO/rDGmCxZ
+dawt0h9zKhqtK0rIUuZLfQhh+0gAxQxVCZxP7bzMWn4E5i32yj+90ikLr9xfhwpnZgwRHzjY
+kAa8rqpgfssyzSpcZP2Zo2tWSMjcDDff3ED8z2Jf8CWH2Bh/sKSI5iZkSfo0HUdWJoJaP7qv
+GRmM/0q6aNZh5tU5O8RpPIRs7NjBnIVktGXbEjd/Snh+AlB7gy7iGIxAq8GF4/+LRnI6UT/t
+PZPuo0Kxw6+xDKepBaMgFd9sX4vc0u9aYOj/8VPILDOLrKKtkzNATFZATR6r38ng9Ih1/IMa
+nHboeVpaDv+ZAVYWSmSsCU2cMYzBlcqx5Rhjk+biQ4/ZiH7YyM7p1XpmOGvWjyfZ5cCYmwZ6
+E+R4hWifc+9Q79t+JumUSe9TWLyBg037+NCFqKWKHqDwgyGEyZg5A865QEa6LNHa0xGb6e0O
+mc4nfZvpeZG35FmvW3PNAISOmEkpE9KYyqAAhvoxxI3IIK8Yla+IVbneBAfwLpCzJoGoDKzd
++ZLbN6G2fOIhbqJnepmif0Tgjsfq6IQH9PLQH6tRGoVuacMRinrpTcqZSeXFcXMlzszGaviE
+nvw9B52KLxt/
+
+/
+CREATE OR REPLACE PUBLIC SYNONYM dbms_aqadm FOR sys.dbms_aqadm
+/

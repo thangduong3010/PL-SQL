@@ -1,0 +1,20 @@
+REM   jklein    08/01/05 - creation
+rem
+rem javaobj$ contains information about java objects (java class, java source 
+rem java resource, java data and etc). 
+rem
+create table javaobj$                                   /* java object table */
+( obj#          number not null,                            /* object number */
+  audit$        varchar2("S_OPFL") not null              /* auditing options */
+)
+/
+create unique index i_javaobj1 on javaobj$(obj#)
+/
+create table javasnm$
+( short         varchar2("M_IDEN") not null,       /* shortened form of name */
+  longname      long raw not null,                      /* long form of name */
+  longdbcs      varchar2(4000)
+)
+/
+create unique index i_javasnm1 on javasnm$ (short)
+/

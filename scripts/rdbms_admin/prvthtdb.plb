@@ -1,0 +1,62 @@
+SET ECHO ON
+SET FEEDBACK 1
+SET NUMWIDTH 10
+SET LINESIZE 80
+SET TRIMSPOOL ON
+SET TAB OFF
+SET PAGESIZE 100
+create or replace library SYS.WWV_FLOW_VAL_LIB wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+2b 61
+bqHGARDb67dDGevzTyWzj1rAEPYwg04I9Z7AdBjD5ygobb9OCCjQKMfS9P4I9QnnvZ6yy1Iy
+zKV0K+fLUnQI9cmmpgQ2dFc=
+
+/
+create or replace package body sys.htmldb_system wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+47b 26c
+dPaOUhCNpDSaHUGx1FAih3944d8wgzsJr0gFfHRVrQ810vEEhalWBanhr8vCWdrmlPqMXVci
+vQTs4ISxDOuyHprQCWgUuYOKCaQ29yPPI9DDYl2NTS/AuvWlc+65wYHESxJoAH67Z77zZzEE
+KY0qS2AJAR+rB46JCFpgfaFfX1SoFjnn8Qw1x+OYyF+mBxxGKaz1Xuh7nSfucfYmzpZcOfRt
+UHiRDjzR+iYEakLuZ5leKrPxXVf0mFPtc+u6+O3ttVJOBD/NYf4fjM4Wf6k6jD30oFmgCKEe
+r1hOGlkqRz5eFj40bCLN7luBSaW2gHLu7c6GAtkkkIdnosluUMVJNaSgzXuJg2E4YvWPFA8N
+l5ZrnDQE7WXleHVQ/XQbcxp21QHT5o2hKxRuX5w/Y2169KSuxrOMmQM6X7FX2d2Ws9IVMzS3
+A7W4I2kTAW3DB4Putjdp0TM3uk0YygI8WgCFS5hlQVLvLUouWTqnD6orfGnSxTjFoHRsv6Pd
+1FXqYnk3pUQZqm5yIg/LVkGMWStANk4MuSVtNubyBQQsoI3qVG5szqVmr179HUgn6R2e5ICK
+P+f79IrMii1jQAqAf7mAzXvBUg0w/h9jpm+a
+
+/

@@ -1,0 +1,113 @@
+SET ECHO ON
+SET FEEDBACK 1
+SET NUMWIDTH 10
+SET LINESIZE 80
+SET TRIMSPOOL ON
+SET TAB OFF
+SET PAGESIZE 100
+CREATE OR REPLACE PACKAGE xdb.dbms_xmlindex0 wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+367 138
+mvgCgH3kfFgM54mF4Qu/1LK+0wwwg2PxLZ4VfC9AkPiOeMVXjrHcsV2glRRinGD8ji+kNjJS
+KYb9bY9puoOr50a4JJpD2Y0WM1PvV0+5rppoILHGOiXbqeKXwL0Vf7cmNAPbqd/Fvi8UpLbn
+G9iFV5DTwWAJ7dgNm836uvf3YIWydsjpQDSTgHxLvKHW7BWVfZGPtZCOnmpOGzK6pAySprB8
+6Wtu3/kXwI31XZdLEndKAZ9HSrK8MQNHn4pHytz490o9hztZ5WcpeZAS6VOQAC2ETqupkRSF
+w7os/IPCV5M0purs7XY=
+
+/
+show errors;
+CREATE OR REPLACE PACKAGE BODY xdb.dbms_xmlindex0 wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+867 260
+dnrUuPUHTtfz8YrO8J3/YNjH/QMwg+2Nr67WfI7UAE7qNIqgbPCTX3iuYxDC1AlLYpfcFMkc
+WW4flvhOYgvWk5dwgveRvdVzzhy7/gCFPhJRveZuCCp+GWGaPUj4OggNQppiN+wWsYiEhxE2
+6Pejw+mrjG8YC62WXpPNcsVqK3UJL56HTcnV5btaNhdK3CYRGEg4wiU6tZP6FGJ0h8M7TMEw
+fDTbtwHCWlyUw9FuCQTIw2zpsqmvPwWKrZS57kXfcmcYVF7tQPHGxOKni6ho4AtzxYqXiD5t
+Y3krwOVVkFYnHU5NO5Gda2KxF4DKZ7eZYHnoHVFFw9M5KW0/tu84QGpROW+97pmJv12iOfo6
+UbaikS+DNXcL7TDjI7YVVSBwIug5sLE9JhWD+OUIfSr8nsbZ1OWxQ/oDs9/OnRsd5srGF+/j
+s5xC24Wm2whNW/NBUtr/XOePzl82CC4T0/BljDRlY00UJcYKnWbBvKiZnBxJMlTM1cVVKaE/
+NOHJuScfoJJyuE00opDU+tCzZ+zdVP6jrmDEDVU2tprQuadN0+oxMTsH0fA6+PcT9ev/ncnw
+GB3QXl6kmMTPUzr7NG38PQ==
+
+/
+show errors;
+grant execute on xdb.dbms_xmlindex0 to public;
+CREATE OR REPLACE PACKAGE BODY xdb.dbms_xmlindex wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+1d14 60d
+FgJ7ltO2ATGj741KMLy16P+gveowg82TDCCG3y+5KpKURpZh+3haJVFneMj7GFGU4GwJbCbw
+ENNpfihERe3SwiSdhAChoTwKUph5eFrhkwZ6vFggyVqtlV0AShaeojA1LKr50oD5Ousgnfn5
+CJxy59VyDGPKIUcU6aIJ2D5y8any1IQjGZC3V5biwOmHEazzhn0dp11E2UnS/4BYUZuPa/dP
+Kx3GvQL9p0BSoaWG5Rot1wNXQQo32wRxTOL7NLGciSvL2Ag341cMMCLlONB1m+Grf0gKewev
+EAQUxVtJno4o/uu9q7/Jeq3ZkVXS2I1itgO0Hns+2TY7cYpPAJdqwSL4hM6YFXNjXbvMqtH+
+8Ciq9JIAg9FccEJL4vUjoKodGQ+u19Or2MHPSWKZ8OJrfpayDEYHtEizTExXWLNdhCMVk9iA
+hbw0arBUJ+hYj4TS4rKndJiYguHCRxIK+zbhqOAYQgP5RgvpmWCoonLs8koLU1ZWfj/yBA4d
+22Ow/TAvCxwByVbTTjdE09kMr+3sn61oRoBkWZ1nVr45Y4XVbluNDg9rTDKYbcIfaWNrTIC3
+2Y8d71SZ9MOlc138dZvncf1Mo5W/lz+3QJMzCj2xzf6b2n6qqTnvMxIKefi/Q+wcrsKPLQoX
+qQw7PbDtgtMU0htEJkjAvNXinluLS3ZJqTQa1fTpqTmx8MBhM8qWoFV1xLJTHcJSK+6IcbLO
+y2IlyTv91KJGivU6waxUg7XqB3yJZpDnjxHnX+QfL6Yd/IlS4PwE6cOu5vHDFyXsyxxep/7f
+5lAr+3aERnFphx7HRNnHGxEsBqw26ryZFZf5sSlidT7sXj4CaK+qtNOMqVK4/UXY6PNZuolN
+EWWYGPFZZRD6YhD9ZAfAFsdNZfZ7ETgKgXdR6QumSFemZtgPDn/edtsh6qv2DbZkaIMIYq2K
+qGkDK3dZOYAzkp/gwyhc7GzJxo0JoRaxYK5CPCegellN5+A1GcGeSd5Z9upv5eMUOQ8tvToy
+Ibpu3i07V/vVIo91AmduIetsiYJrJj7CF056jVdlwR+ZJ3N2kXUZrZ7LfQUsT0fK2L+Lpdnc
+EeoX58VQNrav3dggOhGYManaZ+Mn1Q9LszJHU+GYaVBEIcVcM2a5jFsMbZMGoncQdPgLx1kW
+Tb+qkPD5LUV1xELifDrG/OBBw9c1tVQP17cDws0sOyj4ZlLjFUEzJNY93Gx1iTH9lU0GiZQ7
+tftSRWOGLJi/vNOlK3+YAPce3zHS3oKzN7xadd0Kp5cz0QaYxgcsHCgRHjR6iIU9n49D6loL
+tKRfdE4Nt8/NBA+tar0rNgd3ijYNq3W80KrrRzSz3fXuvkzX5XIeMXHDT/blx0x5e1PkCzrR
+xt4pD8VFc7qx9ixMumSLsK0ilJUKjqDRVxClhXb9YA9DLo/9EvCxbmrlJ6utEZ80kpLozegg
+g4PvyVhY7fhKxLdf7mQhyfORpZhfk/EqAGMw1/SFcLeWDu5FgEzBbam83dqqbzEopJYTwn9D
+KY4xTniq4a34aYg=
+
+/
+show errors;

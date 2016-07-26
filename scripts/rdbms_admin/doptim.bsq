@@ -1,0 +1,747 @@
+Rem   schakkap  05/17/12   #(13898075) Increase size of 
+Rem                        optstat_user_prefs$.valchar
+Rem   schakkap  05/23/10 - #(9577300) add table to record column group usage
+Rem   hosu      02/10/10 - 9038395: partition wri$_optstat_synopsis$; move
+Rem                        synopsis related tables to catost.sql
+Rem   schakkap  08/01/06 - move contents of catost.sql
+Rem   jklein    08/01/05 - creation
+
+Rem =========================================================================
+Rem BEGIN  Tables that store statistics and associated metadata
+Rem =========================================================================
+
+Rem Cluster for Histograms 
+Rem This is to make access to histogram for a column faster.
+create cluster c_obj#_intcol#
+( obj#            number,                                   /* object number */
+  intcol#         number)                          /* internal column number */
+  pctfree 5
+  storage (initial 2m next 200k maxextents unlimited pctincrease 0)
+/
+create index i_obj#_intcol# on cluster c_obj#_intcol#
+  storage (maxextents unlimited)
+/
+
+Rem Histograms
+create table histgrm$                                     /* histogram table */
+( obj#            number not null,                          /* object number */
+  col#            number not null,                          /* column number */
+  row#            number,                       /* row number (in row cache) */
+  bucket          number not null,                          /* bucket number */
+  endpoint        number not null,                  /* endpoint hashed value */
+  intcol#         number not null,                 /* internal column number */
+  epvalue         varchar2(1000),              /* endpoint value information */
+  spare1          number,
+  spare2          number)
+cluster c_obj#_intcol#(obj#, intcol#)
+/
+create index i_h_obj#_col# on histgrm$(obj#, col#)
+  storage (maxextents unlimited)
+/
+
+Rem Base column statistics
+create table hist_head$                            /* histogram header table */
+ (obj#            number not null,                          /* object number */
+  col#            number not null,                          /* column number */
+  bucket_cnt      number not null,                      /* number of buckets */
+  row_cnt         number not null,             /* number of rows in histgrm$ */
+  cache_cnt       number,                     /* number of rows in row cache */
+  null_cnt        number,                  /* number of nulls in this column */
+  timestamp#      date,                   /* date of histogram's last update */
+  sample_size     number,             /* for estimated stats, size of sample */
+  minimum         number,           /* minimum value (if 1-bucket histogram) */
+  maximum         number,           /* minimum value (if 1-bucket histogram) */
+  distcnt         number,                            /* # of distinct values */
+  lowval          raw(32),
+                        /* lowest value of column (second lowest if default) */
+  hival           raw(32),
+                      /* highest value of column (second highest if default) */
+  density         number,                                   /* density value */
+  intcol#         number not null,                 /* internal column number */
+  spare1          number,                /* sample number of distinct values */
+  spare2          number,                                           /* flags */
+                    /* 0x01 = user-specified stats                           */
+                    /* 0x02 = global stats                                   */
+                    /* 0x04 = endpoint actual values in histogram            */
+  avgcln          number,                           /* average column length */
+  spare3          number,                                           /* spare */
+  spare4          number                                            /* spare */
+  )
+  storage (initial 350k next 100k maxextents unlimited pctincrease 0)
+/
+create index i_hh_obj#_col# on hist_head$(obj#, col#)
+  storage (maxextents unlimited)
+/
+create index i_hh_obj#_intcol# on hist_head$(obj#, intcol#)
+  storage (maxextents unlimited)
+/
+
+Rem The aux_stats$ table contains auxiliary statistics used by optimizer.
+Rem sname and pname maintain primary key where sname stores name of set
+Rem of parameters and pname is name of parameter. pval1 or pval2 store 
+Rem parameter value in character or number format. 
+create table aux_stats$ (
+  sname varchar2("M_IDEN") not null, /* Name of set */
+  pname varchar2("M_IDEN") not null, /* Name of parameters*/
+  pval1 number,                      /* NUMBER parameter value */
+  pval2 varchar2(255)                /* VARCHAR2 parameter value */ 
+) 
+/
+create unique index i_aux_stats$ on aux_stats$(sname, pname)
+/
+
+Rem Table to store optimizer statistics for table and table partition objects
+create table tab_stats$
+( obj#          number not null,                            /* object number */
+  cachedblk     number,                            /* blocks in buffer cache */
+  cachehit      number,                                   /* cache hit ratio */
+  logicalread   number,                           /* number of logical reads */
+  rowcnt        number,                                    /* number of rows */
+  blkcnt        number,                                  /* number of blocks */
+  empcnt        number,                            /* number of empty blocks */
+  avgspc        number,       /* average available free space/iot ovfl stats */
+  chncnt        number,                            /* number of chained rows */
+  avgrln        number,                                /* average row length */
+  avgspc_flb    number,       /* avg avail free space of blocks on free list */
+  flbcnt        number,                             /* free list block count */
+  analyzetime   date,                        /* timestamp when last analyzed */
+  samplesize    number,                 /* number of rows sampled by Analyze */
+  flags         number,                 /* 0x00000001 = user-specified stats */
+  spare1        number,
+  spare2        number,
+  spare3        number,
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        date
+)
+  storage (initial 32k next 100k maxextents unlimited pctincrease 0)
+/
+create unique index i_tab_stats$_obj# on tab_stats$(obj#)
+  storage (maxextents unlimited)
+/
+
+Rem Table to store optimizer statistics for index and index partition objects
+create table ind_stats$   
+( obj#          number not null,                            /* object number */
+  cachedblk     number,                            /* blocks in buffer cache */
+  cachehit      number,                                   /* cache hit ratio */
+  logicalread   number,                           /* number of logical reads */
+  rowcnt        number,                       /* number of rows in the index */
+  blevel        number,                                       /* btree level */
+  leafcnt       number,                                  /* # of leaf blocks */
+  distkey       number,                                   /* # distinct keys */
+  lblkkey       number,                          /* avg # of leaf blocks/key */
+  dblkkey       number,                          /* avg # of data blocks/key */
+  clufac        number,                                 /* clustering factor */
+  analyzetime   date,                        /* timestamp when last analyzed */
+  samplesize    number,                 /* number of rows sampled by Analyze */
+  flags         number,
+  spare1        number,
+  spare2        number,
+  spare3        number,
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        date
+)
+  storage (initial 32k next 100k maxextents unlimited pctincrease 0)
+/
+create unique index i_ind_stats$_obj# on ind_stats$(obj#)
+  storage (maxextents unlimited)
+/
+
+Rem Cache statistics
+create table cache_stats_1$ (
+dataobj# number not null,
+inst_id number not null,
+cached_avg number,
+cached_sqr_avg number,
+cached_no integer,
+cached_seq_no integer,
+chr_avg number,
+chr_sqr_avg number,
+chr_no integer,
+chr_seq_no integer,
+lgr_sum number,
+lgr_last number,
+phr_last number,
+spare1 number,
+spare2 number,
+spare3 number,
+spare4 number,
+spare5 number
+)
+  storage (maxextents unlimited)
+/
+create index i_cache_stats_1 on cache_stats_1$(dataobj#, inst_id)
+  storage (maxextents unlimited)
+/
+create sequence cache_stats_seq_1 start with 1 increment by 1
+/
+
+create table cache_stats_0$ (
+dataobj# number not null,
+inst_id number not null,
+cached_avg number,
+cached_sqr_avg number,
+cached_no integer,
+cached_seq_no integer,
+chr_avg number,
+chr_sqr_avg number,
+chr_no integer,
+chr_seq_no integer,
+lgr_sum number,
+lgr_last number,
+phr_last number,
+spare1 number,
+spare2 number,
+spare3 number,
+spare4 number,
+spare5 number
+)
+  storage (maxextents unlimited)
+/
+create index i_cache_stats_0 on cache_stats_0$(dataobj#, inst_id)
+  storage (maxextents unlimited)
+/
+create sequence cache_stats_seq_0 start with 1 increment by 1
+/
+
+Rem User defined stats associations
+create table association$
+(
+  obj#            number not null,    /* obj# of table, type, pkg or func */
+  property        number not null,     /* 1-column, 2-type, 3-pkg, 4-func */
+                                                      /* 5-idx, 6-idxtype */
+  intcol#         number,            /* intcol# if association for column */
+  statstype#      number,        /* object number for the statistics type */
+  default_selectivity  number,                     /* default selectivity */
+  default_cpu_cost     number,                       /* defaault CPU cost */
+  default_io_cost      number,                        /* default i/o cost */
+  default_net_cost     number,                    /* default network cost */
+  interface_version#   number,     /* version# of the statstype interface */
+  spare2               number           
+                               /* 0x01 WITH SYSTEM MANAGED STORAGE TABLES */ 
+)
+/
+create unique index assoc1 on association$(obj#, intcol#)
+/
+create index assoc2 on association$(statstype#)
+/
+
+Rem User defined stats
+create table ustats$
+(
+  obj#            number  not null,    /* obj# for table(column) or index */
+  intcol#         number,                  /* intcol# if stats for column */
+  statstype#      number,                  /* obj# of the statistics type */
+  property        number,      /* 1-index, 2-column, 3-implicit, 4-direct */
+  statistics      raw("M_CSIZ"),              /* uninterpreted statistics */
+  spare1          number,
+  spare2          number
+)
+/
+create unique index ustats1 on ustats$(obj#, intcol#)
+/
+
+Rem Target list for automated stats collection 
+create table stats_target$ (
+  staleness number not null,
+         /* -100 = no stats, -1.0 ... +1.0 = staleness factor on a log scale */
+  osize number not null,                   /* roughly calculated object size */
+  obj#  number not null,                               /* target object obj# */
+  type# number not null,                   /* target object type# as in obj$ */
+  flags number not null, /* 0x0001 = failed with timeout last time           */
+                         /* 0x0002 = non-segment level of partitioned object */
+  status number not null,
+        /* 0 = pending, 1 = gathering in progress, 2 = completed, 3 = failed */
+  sid     number, /* session id of the session working/worked on this object */
+  serial# number,    /* serial# of the session working/worked on this object */
+  part#  number,                  /* [sub]partition# if applicable else null */
+  bo# number                                          /* base or parent obj# */
+   /* table partition: obj# of the parent table                              */
+   /* table subpartition: obj# of the parent table partition                 */
+   /* non-partitioned or global index: obj# of the base table                */
+   /* local index partition: obj# of the corresponding table partition       */
+   /* local index subpartition: obj# of the corresponding table subpartition */
+   /* else: null                                                             */
+)
+  storage (maxextents unlimited)
+  tablespace sysaux
+/
+create index i_stats_target1 on stats_target$ (staleness, osize, obj#, status)
+  storage (maxextents unlimited)
+  tablespace sysaux
+/
+create unique index i_stats_target2 on stats_target$ (obj#)
+  storage (maxextents unlimited)
+  tablespace sysaux
+/
+
+Rem =========================================================================
+Rem END  Tables that store statistics and associated metadata
+Rem =========================================================================
+
+
+Rem =========================================================================
+Rem Begin Outline tables
+Rem =========================================================================
+
+Rem create outln user
+Rem #(14385981): create outln account status as specified by the documents
+create user outln identified by outln PASSWORD EXPIRE ACCOUNT LOCK
+/
+grant create session to outln
+/
+grant resource to outln
+/
+grant execute any procedure to outln
+/
+
+Rem create the tables
+create table outln.ol$
+(
+  ol_name           varchar2("M_IDEN"),   /* named is potentially generated */
+  sql_text          long,                    /* the SQL stmt being outlined */
+  textlen           number,                           /* length of SQL stmt */
+  signature         raw(16),                       /* signature of sql_text */
+  hash_value        number,                  /* KGL's calculated hash value */
+  hash_value2       number,/* hash value on sql_text stripped of whitespace */
+  category          varchar2("M_IDEN"),                    /* category name */
+  version           varchar2(64),          /* db version @ outline creation */
+  creator           varchar2("M_IDEN"),   /* user from whom outline created */
+  timestamp         date,                               /* time of creation */
+  flags             number,              /* e.g. everUsed, bindVars, dynSql */
+  hintcount         number,               /* number of hints on the outline */
+  spare1            number,                                 /* spare column */
+  spare2            varchar2(1000)                          /* spare column */
+)
+/
+create unique index outln.ol$name on outln.ol$(ol_name)
+/
+create unique index outln.ol$signature on outln.ol$(signature,category)
+/
+
+create table outln.ol$hints
+(
+  ol_name           varchar2("M_IDEN"),                     /* outline name */
+  hint#             number,               /* which hint for a given outline */
+  category          varchar2("M_IDEN"),         /* collection/grouping name */
+  hint_type         number,                                 /* type of hint */
+  hint_text         varchar2(512),             /* hint specific information */
+  stage#            number,            /* stage of hint generation/applic'n */
+  node#             number,                                  /* QBC node id */
+  table_name        varchar2("M_IDEN"),                 /* for ORDERED hint */
+  table_tin         number,                        /* table instance number */
+  table_pos         number,                             /* for ORDERED hint */
+  ref_id            number,        /* node id that this hint is referencing */
+  user_table_name   varchar2(64),  /* table name to which this hint applies */
+  cost              double precision,    /* optimizer estimated cost of the */
+                                                        /* hinted operation */
+  cardinality       double precision,    /* optimizer estimated cardinality */
+                                                 /* of the hinted operation */
+  bytes             double precision,     /* optimizer estimated byte count */
+                                                 /* of the hinted operation */
+  hint_textoff      number,             /* offset into the SQL statement to */
+                                                 /* which this hint applies */
+  hint_textlen      number,     /* length of SQL to which this hint applies */
+  join_pred         varchar2("M_CSIZ"), /* join predicate (applies only for */
+                                                      /* join method hints) */
+  spare1            number,         /* spare number for future enhancements */
+  spare2            number,         /* spare number for future enhancements */
+  hint_string       clob           /* hint text (replaces hint_text column) */
+)
+/
+create unique index outln.ol$hnt_num on outln.ol$hints(ol_name, hint#)
+/
+
+create table outln.ol$nodes
+(
+  ol_name       varchar2("M_IDEN"),                         /* outline name */
+  category      varchar2("M_IDEN"),                     /* outline category */
+  node_id       number,                              /* qbc node identifier */
+  parent_id     number,      /* node id of the parent node for current node */ 
+  node_type     number,                                    /* qbc node type */
+  node_textlen  number,         /* length of SQL to which this node applies */ 
+  node_textoff  number,      /* offset into the SQL statement to which this */
+                                                            /* node applies */
+  node_name     varchar2(64)                               /* qbc node name */
+)
+/
+create index outln.ol$node_ol_name on outln.ol$nodes(ol_name)
+/
+
+Rem =========================================================================
+Rem End Outline tables
+Rem =========================================================================
+
+
+Rem =========================================================================
+Rem Begin Usage monitoring tables
+Rem =========================================================================
+
+Rem Column usage
+create table col_usage$
+(
+  obj#              number,                                 /* object number */
+  intcol#           number,                        /* internal column number */
+  equality_preds    number,                           /* equality predicates */
+  equijoin_preds    number,                           /* equijoin predicates */
+  nonequijoin_preds number,                        /* nonequijoin predicates */
+  range_preds       number,                              /* range predicates */
+  like_preds        number,                         /* (not) like predicates */
+  null_preds        number,                         /* (not) null predicates */
+  timestamp         date      /* timestamp of last time this row was changed */
+)
+  storage (initial 200K next 100k maxextents unlimited pctincrease 0) 
+/
+create unique index i_col_usage$ on col_usage$(obj#,intcol#)
+  storage (maxextents unlimited) 
+/
+
+Rem Column group usage
+create table col_group_usage$
+(
+  obj#              number,                                 /* object number */
+  /*
+   * We store intcol# separated by comma in the following column.
+   * We allow upto 32 (CKYMAX) columns in the group. intcol# can be 
+   * upto 1000 (or can be 64K in future or with some xml virtual columns?). 
+   * Assume 5 digits for intcol# and one byte for comma. 
+   * So max length would be 32 * (5+1) = 192
+   */
+  cols              varchar2(192 char),              /* columns in the group */
+  timestamp         date,     /* timestamp of last time this row was changed */
+  flags             number,                                 /* various flags */
+  constraint        pk_col_group_usage$
+  primary key       (obj#, cols))
+  storage (initial 200K next 100k maxextents unlimited pctincrease 0)
+/
+
+Rem DML monitoring
+create table mon_mods$
+(
+  obj#              number,                                 /* object number */
+  inserts           number,  /* approx. number of inserts since last analyze */
+  updates           number,  /* approx. number of updates since last analyze */
+  deletes           number,  /* approx. number of deletes since last analyze */
+  timestamp         date,     /* timestamp of last time this row was changed */
+  flags             number,                                         /* flags */
+                                           /* 0x01 object has been truncated */
+  drop_segments     number   /* number of segemnt in part/subpartition table */
+)
+  storage (initial 200K next 100k maxextents unlimited pctincrease 0) 
+/
+create unique index i_mon_mods$_obj on mon_mods$(obj#)
+  storage (maxextents unlimited)
+/
+
+Rem DML monitoring, has info aggregated to global level for paritioned objects
+create table mon_mods_all$
+(
+  obj#              number,                                 /* object number */
+  inserts           number,  /* approx. number of inserts since last analyze */
+  updates           number,  /* approx. number of updates since last analyze */
+  deletes           number,  /* approx. number of deletes since last analyze */
+  timestamp         date,     /* timestamp of last time this row was changed */
+  flags             number,                                         /* flags */
+                                           /* 0x01 object has been truncated */
+  drop_segments     number   /* number of segemnt in part/subpartition table */
+)
+  storage (initial 200K next 100k maxextents unlimited pctincrease 0) 
+/
+create unique index i_mon_mods_all$_obj on mon_mods_all$(obj#)
+  storage (maxextents unlimited)
+/
+
+Rem =========================================================================
+Rem End Usage monitoring tables
+Rem =========================================================================
+
+
+Rem =========================================================================
+Rem BEGIN Optimizer statistics history tables.
+Rem These tables are created in sysaux tablespace.
+Rem SWRF purging mechanism is used to purge these tables.
+Rem =========================================================================
+
+Rem Table to store optimizer statistics history 
+Rem for table and table partition objects
+create table wri$_optstat_tab_history
+( obj#          number not null,                            /* object number */
+  savtime       timestamp with time zone,      /* timestamp when stats saved */
+  flags         number,
+  rowcnt        number,                                    /* number of rows */
+  blkcnt        number,                                  /* number of blocks */
+  avgrln        number,                                /* average row length */
+  samplesize    number,                 /* number of rows sampled by Analyze */
+  analyzetime   date,                        /* timestamp when last analyzed */
+  cachedblk     number,                            /* blocks in buffer cache */
+  cachehit      number,                                   /* cache hit ratio */
+  logicalread   number,                           /* number of logical reads */
+  spare1        number,
+  spare2        number,
+  spare3        number,
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        timestamp with time zone
+) tablespace sysaux 
+pctfree 1
+enable row movement
+/
+create unique index i_wri$_optstat_tab_obj#_st on 
+  wri$_optstat_tab_history(obj#, savtime)
+  tablespace sysaux
+/
+create index i_wri$_optstat_tab_st on 
+  wri$_optstat_tab_history(savtime)
+  tablespace sysaux
+/
+
+Rem Table to store optimizer statistics history 
+Rem for index and index partition objects
+create table wri$_optstat_ind_history
+( obj#          number not null,                            /* object number */
+  savtime       timestamp with time zone,      /* timestamp when stats saved */
+  flags         number,
+  rowcnt        number,                       /* number of rows in the index */
+  blevel        number,                                       /* btree level */
+  leafcnt       number,                                  /* # of leaf blocks */
+  distkey       number,                                   /* # distinct keys */
+  lblkkey       number,                          /* avg # of leaf blocks/key */
+  dblkkey       number,                          /* avg # of data blocks/key */
+  clufac        number,                                 /* clustering factor */
+  samplesize    number,                 /* number of rows sampled by Analyze */
+  analyzetime   date,                        /* timestamp when last analyzed */
+  guessq        number,                                 /* IOT guess quality */
+  cachedblk     number,                            /* blocks in buffer cache */
+  cachehit      number,                                   /* cache hit ratio */
+  logicalread   number,                           /* number of logical reads */
+  spare1        number,
+  spare2        number,
+  spare3        number,
+  spare4        varchar2(1000),
+  spare5        varchar2(1000),
+  spare6        timestamp with time zone
+) tablespace sysaux
+pctfree 1
+enable row movement
+/
+create unique index i_wri$_optstat_ind_obj#_st on 
+  wri$_optstat_ind_history(obj#, savtime)
+  tablespace sysaux
+/
+create index i_wri$_optstat_ind_st on 
+  wri$_optstat_ind_history(savtime)
+  tablespace sysaux
+/
+
+Rem Column statistics history
+create table wri$_optstat_histhead_history
+ (obj#            number not null,                          /* object number */
+  intcol#         number not null,                 /* internal column number */
+  savtime         timestamp with time zone,    /* timestamp when stats saved */
+  flags           number,                                           /* flags */
+  null_cnt        number,                  /* number of nulls in this column */
+  minimum         number,           /* minimum value (if 1-bucket histogram) */
+  maximum         number,           /* minimum value (if 1-bucket histogram) */
+  distcnt         number,                            /* # of distinct values */
+  density         number,                                   /* density value */
+  lowval          raw(32),
+                        /* lowest value of column (second lowest if default) */
+  hival           raw(32),
+                      /* highest value of column (second highest if default) */
+  avgcln          number,                           /* average column length */
+  sample_distcnt  number,                /* sample number of distinct values */
+  sample_size     number,             /* for estimated stats, size of sample */
+  timestamp#      date,                   /* date of histogram's last update */
+  expression      clob,                         /* extension of column group */
+  colname         varchar2("M_IDEN"),         /* column name if an extension */
+  spare1          number,           
+  spare2          number,
+  spare3          number,            
+  spare4          varchar2(1000),                        
+  spare5          varchar2(1000),
+  spare6          timestamp with time zone
+) tablespace sysaux
+pctfree 1
+enable row movement
+/
+create unique index i_wri$_optstat_hh_obj_icol_st on
+  wri$_optstat_histhead_history (obj#, intcol#, savtime, colname)
+  tablespace sysaux
+/
+create index i_wri$_optstat_hh_st on
+  wri$_optstat_histhead_history (savtime)
+  tablespace sysaux
+/
+
+Rem Histogram history
+create table wri$_optstat_histgrm_history
+( obj#            number not null,                          /* object number */
+  intcol#         number not null,                 /* internal column number */
+  savtime         timestamp with time zone,    /* timestamp when stats saved */
+  bucket          number not null,                          /* bucket number */
+  endpoint        number not null,                  /* endpoint hashed value */
+  epvalue         varchar2(1000),              /* endpoint value information */
+  colname         varchar2("M_IDEN"),         /* column name if an extension */
+  spare1          number,
+  spare2          number,
+  spare3          number,
+  spare4          varchar2(1000),
+  spare5          varchar2(1000),
+  spare6          timestamp with time zone
+) tablespace sysaux
+pctfree 1
+enable row movement
+/
+create index i_wri$_optstat_h_obj#_icol#_st on 
+  wri$_optstat_histgrm_history(obj#, intcol#, savtime, colname)
+  tablespace sysaux
+/
+create index i_wri$_optstat_h_st on 
+  wri$_optstat_histgrm_history(savtime)
+  tablespace sysaux
+/
+
+Rem Aux_stats$ history
+create table wri$_optstat_aux_history
+( 
+  savtime timestamp with time zone,
+  sname varchar2("M_IDEN"),
+  pname varchar2("M_IDEN"),
+  pval1 number,
+  pval2 varchar2(255), 
+  spare1          number,
+  spare2          number,
+  spare3          number,
+  spare4          varchar2(1000),
+  spare5          varchar2(1000),
+  spare6          timestamp with time zone
+) tablespace sysaux
+pctfree 1
+enable row movement
+/
+create index i_wri$_optstat_aux_st on 
+  wri$_optstat_aux_history(savtime)
+  tablespace sysaux
+/
+
+Rem Optimizer stats operations history
+create table wri$_optstat_opr
+( operation       varchar2(64),
+  target          varchar2(64),
+  start_time      timestamp with time zone,
+  end_time        timestamp with time zone,
+  flags           number,
+  spare1          number,
+  spare2          number,
+  spare3          number,
+  spare4          varchar2(1000),
+  spare5          varchar2(1000),
+  spare6          timestamp with time zone
+) tablespace sysaux
+pctfree 1
+enable row movement
+/
+create index i_wri$_optstat_opr_stime on 
+  wri$_optstat_opr(start_time)
+  tablespace sysaux
+/
+
+Rem =========================================================================
+Rem END Optimizer statistics history tables.
+Rem =========================================================================
+
+
+Rem =========================================================================
+Rem Begin Optimizer statistics preference tables
+Rem =========================================================================
+
+Rem This table contains various settings used in maintaining
+Rem stats history. Currently the following are stored. 
+Rem  sname             sval1    sval2  
+Rem  -----------------------
+Rem  SKIP_TIME         null   time used for purging history or time
+Rem                           when we last skiped saving old stats
+Rem  STATS_RETENTION  retention  null
+Rem                   in days
+Rem This table is not created in SYSAUX so that we can
+Rem write into it even if SYSAUX is offline.
+Rem
+Rem This table also contains the default values for dbms_stats
+Rem procedure arguments. The procedures set_param, get_param 
+Rem allows the users to change the default.
+Rem
+Rem Columns             Used for
+Rem -----------------------------------------------
+Rem sname               parameter name
+Rem sval1               parameter value
+Rem sval2               time of setting the default
+Rem spare1              1 if oracle default, null if set by user.
+Rem spare4              parameter value (stored in varchar,
+Rem                       please refer to set_param, get_param)
+Rem 
+create table optstat_hist_control$
+( 
+  sname           varchar2("M_IDEN"),
+  sval1           number,
+  sval2           timestamp with time zone,
+  spare1          number,
+  spare2          number,
+  spare3          number,
+  spare4          varchar2(1000),
+  spare5          varchar2(1000),
+  spare6          timestamp with time zone
+)
+/
+
+Rem 
+Rem This table contains the statistics preferences specified by a user.
+Rem The preferences are added, changed, deleted, imported and exported 
+Rem via a set of new pl/sql procedures in the dbms_stats package.
+Rem See procedures *PREFERENCE in file dbmsstat.sql.
+Rem 
+Rem Columns            Description
+Rem ---------------------------------------------------------------
+Rem obj#               table object number (tp join with obj$.obj#)
+Rem pname              preference name (e.g, METHOD_OPT)
+Rem valnum             parameter number value
+Rem valchar            parameter number character
+Rem chgtime            changed time
+Rem 
+create table optstat_user_prefs$
+(
+  obj#            number,
+  pname           varchar2("M_IDEN"),
+  valnum          number,
+  valchar         varchar2(4000),
+  chgtime         timestamp with time zone,
+  spare1          number
+)
+/
+create unique index i_user_prefs$ on optstat_user_prefs$ (obj#, pname)
+/
+
+Rem =========================================================================
+Rem END Optimizer statistics preference tables
+Rem =========================================================================
+
+
+
+
+Rem =========================================================================
+Rem BEGIN Global temporary table for incr. maintenance of histograms
+Rem =========================================================================
+
+create global temporary table finalhist$ 
+(endpoint        number not null,                  /* endpoint hashed value */
+ epvalue         varchar2(1000),              /* endpoint value information */
+ bucket          number not null,                          /* bucket number*/
+ spare1          varchar2(1000),
+ spare2          number,
+ spare3          number
+) on commit delete rows
+/
+Rem =========================================================================
+Rem END Global temporary table for incr. maintenance of histograms
+Rem =========================================================================

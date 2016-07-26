@@ -1,0 +1,121 @@
+CREATE OR REPLACE PACKAGE DBMS_XS_MTCACHE wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+128 f3
+K2ZVABE5V5p4xwoadbXGr9i72h0wgzLILcsVfHSiWE6UHDXg4M1de+jwEWiXLTditbUfGo3I
+aTcTflUAT11EKUAdhIrHJnIJA/MlhalICxhn4pfgPZnVcL37cLNYV0Vljhvs8oFsUVL+2Rh6
+LX92Y+fJQOgUuIBj84HAy6UP61lXeVBbUoOcVD2fD1bXCWJDDfQsBVAWCGgDSEc9Ajwv3aXX
+oD2BpLvmcPT4v/UHH1Z88uw=
+
+/
+show errors;
+CREATE OR REPLACE PACKAGE DBMS_XS_MTCACHE_FFI wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+14b f7
+BHYUMbExKCoR60/UFeo4uo2J+Qwwg/BQf8sVfHREaYtuFQv3dVTavkoM76tJwrZw2XMgNaP0
+O8o0MAi3nZD3uTALpV6gM8JvmahiaIutpjzCNijDXJPyCtSeEf/7kS7bvMXWf7MnO8nQAjjj
++pwviKzdPDtwR8EIWjCHQrbgrKTS/Is38pn8gQaPEjv0uFWznVG7g16vu3Fj3tAUbBTeBXfK
+5ORx7yrc2JBXb6rSOwjSOcIrrr4=
+
+/
+show errors;
+CREATE OR REPLACE PACKAGE BODY dbms_xs_mtcache_ffi wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+4d9 203
+yGxwrf4RD4KH0/llGoC+xWJhSZAwg2NeNSAVygRVMQ8IlV6ciqAwTqL7YpOZslAmSQajX8n8
+pw0MRz9zEXkXhuzoE7vm4bsI7bsI8+/kRouOzzUryO12wMeX12tasSk87NfJW1rwYKYtjnXx
+oglpjoZpWBQbWl6W06ID4+GGaeLyjBa8v8+m6KnRKo12At33jF8Pndy6TjpBO5n2wBPo+M9x
+f1XNWntA79UomeKQuWsi3ms+PUDd2KDMuf4+BEl072IUqZtJF6qoTmzx1co/GkcJRNR5w1uZ
+6B1NeVnaEkkh9ckA4uW8l4eteu/0HRQs2n7kyo4EAo3JDt2U5bocbiDJ/jOqOoeDvkAl8QhC
+nRqUUmwISXPkyJu+2b41JfqdNt+0CQxlhQltJIUlQ6HisyRtYlUgD8RZGt8l7VaxWbheK6VX
+TCEP8Un3rgG7NF1hfCxI4EqVuc0RGFWv+XkR/OCQUm7Z/gpIstbAJbhZGn8V+yoDiBMZEB35
+ubZb
+
+/
+show errors;
+grant execute on dbms_xs_mtcache_ffi to xdb;
+CREATE OR REPLACE PACKAGE BODY dbms_xs_mtcache wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+338 1e2
+VwaQFIaKgLpy04rVVl/RqaNBDhEwg43M2iDWfC+5bg9ShGzjRlHlCQfnMnwzNWlL8M8bFLc9
+6I1FkfIH+eSrtpvcdyOmr1X+9dfObpTnWG/VzjCaflVyPHm8sSAeZK5wIav7d2DHjvA1yl00
+ZklL5m0v1QlZZs5exVR8ahdHeknvUxDF15OUZ4DjLYCJXSyIb2OeuPehwAzAJcDUF32bNG5u
+47ugtx0L4aBmuvIU2ZEA3AAoxVInre2rsCZEA86WtgAUvLC0ZHEWoxc08wEMO3EH8JRhVZjV
+oiplhE7Be0jMpK2tD72fm2AIuSiOH8elT/CIbnRgZyfz6PhLCCHjRjcU9kCYXw9BFY9wkM8I
+aDkaukuXxqAjcpz9Yjg+wvrxHPiRVlfvERd9HmVFMsdxr9Wi6xYA7uvRfbJZoYnB6xHPDiji
+4Z0RVD0Lv+56YXIfKG341Bj28DLWA/1aLD/7+4IlQA==
+
+/
+show errors;
+CREATE OR REPLACE PUBLIC SYNONYM DBMS_XS_MTCACHE FOR sys.DBMS_XS_MTCACHE;
+GRANT EXECUTE on DBMS_XS_MTCACHE to XDB;
+commit;
+execute dbms_xs_mtcache.set_retention_time('0');
+commit;

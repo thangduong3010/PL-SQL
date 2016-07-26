@@ -1,0 +1,59 @@
+CREATE OR REPLACE LIBRARY dbms_trigger_lib wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+2c 61
+Xbl8BMBc64yFWJQlXNygex20dmAwg04I9Z7AdBjDWqGXYkqWPpdZrq5iGHL6WQnnvZ6yy1Iy
+zKV0K+fLUnQI9WHJpqbcy7K7
+
+/
+create or replace package dbms_ddl_internal wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+8f8 31a
+Q/dtj6YX1NaMgx3Na6zsGSJD4pcwg2Nc2UgFfC+KMQ+vjB3ScPrQFCojVMz2Ey2i0xRslUlR
+AhIWyItQM7XM8sIBbGyTsPM2hW9XaliQQ/LhVWpv+gge0A8zMM/Cmk+qqvg65EP0fACoXT07
+KIOrlWG6wyvFqMxY1juI30YvxVPf3bLuXFhrZk8it5GkNswWniQWstYcDjkkEfM5QxvrP1BM
+BBop4nQwowLMSH8IjIvz6llGaQrjO/Av+8PxM9TmhVkTqcT1iH+cPvPjQliiaDUvp0cl4yTn
+Cm5iZvp/xCL+/oWKvA0f4SLg/3S2aAU++hCrbVEWooxzVWWdbXWJnj6LTXNix5hFbXnlq2k/
+sApDwByhCTjw8owkiUJlmPBCRFWBkHh1XOxWb5zTbYqv7NbbgpmtTBlBTK5APobfx1wmjtNF
+hEUson514M/aEVhhuzsRzt1HMP5NNbOkTdKGRnEQMnF28hS7wVHdRKqoXy/MWP648I1zeJx2
+8r8ItMCBfzQCJgZF8QkW1kKc/5NcG6I33SA8qqp73P7OcugGoNpSWQV6lv+trgUZr4N9Kw9k
+zdQ7KxHFlXK62AvP2lBvnoajOc44d2rYQfK6KcxWnOY0DQ7ChoHD0g8YC1EIzKMrlzXF2QDy
+ZPQKsLjB6rS5dO2fiI0fCVrpPq9ULU/l+cGB+7J2ul2nC+v/ORrUe9ZJdVagE1U5TAlIjl/+
+nV8dVamgSpoRjGfclJfhFqeF8CqTsyyaLfqn50Lcm9iK2thVZ1IWPCz5ptaQ/d0=
+
+/
+create or replace public synonym dbms_ddl_internal for sys.dbms_ddl_internal
+/

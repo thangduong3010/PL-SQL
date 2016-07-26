@@ -1,10 +1,65 @@
-# export metadata only
+-- export metadata only
 expdp user_name/******* schemas=schema_name directory=directory_name dumpfile=file_name.dmp logfile=log_file.log content=METADATA_ONLY
 
-# export specified objects
+-- export specified objects
 expdp user_name/******* schemas=schema_name directory=directory_name dumpfile=file_name.dmp include=trigger,[table,index,...]
 
-# import to different schema
+-- import to different schema
 imp user_name/******* file=file_name.dmp fromuser=schema_name touser=schema_name
 
 impdp user_name/******* directory=directory_name dumpfile=file_name.dmp include=trigger,[table,index,...] remap_schema=schema_name:schema_name
+
+
+-- create folder
+mkdir –p /<PATH>/DPUMP
+
+SQL> create directory DPUMP_DIR as '/<PATH>/DPUMP';
+SQL> grant read, write, execute on directory DPUMP_DIR to <username>;
+
+-- Object validation
+select object_name, status from dba_objects where owner = 'SCHEMA_NAME' and status != 'VALID';
+
+-- Object storage
+select round(sum(bytes)/1024/1024) MB from dba_segments where owner = 'SCHEMA' and segment_type like '%TABLE%';
+
+select distinct segment_name, tablespace_name from dba_segments where owner = 'SCHEMA' and segment_type like '%TABLE%';
+
+select distinct tablespace_name from dba_segments where owner = 'SCHEMA' and segment_type like '%TABLE PARTI%';
+
+select owner, round(sum(bytes)/1024/1024) MB from dba_segments where segment_type like '%TABLE PARTI%' group by owner having owner = 'SCHEMA';
+
+select owner, round(sum(bytes)/1024/1024) MB from dba_segments where segment_type like '%INDEX PARTI%' group by owner having owner = 'SCHEMA';
+
+-- expdp metadata
+expdp system schemas=schema_name content=METADATA_ONLY directory=DPUMP_DIR PARALLEL=4 exclude=STATISTICS dumpfile=METADATA_XXX_%U.dmp logfile=METADATA_XXX.log
+
+-- expdp data
+expdp system schemas=schema_name EXCLUDE=TABLE:\"IN \(\'TABLE_PARTITIONS\')\" content=DATA_ONLY EXCLUDE=STATISTICS directory=DPUMP_DIR PARALLEL=4 dumpfile=DATA_XXX_%U.dmp logfile=exp_DATA_XXX.log
+
+-- create tablespace
+create tablespace XXX_DATA_TBS_01 datafile '/<PATH>/file_name.dbf' size XXXM autoextend on next 1G;
+create tablespace XXX_INDX_TBS_01 datafile '/<PATH>/file_name.dbf' size XXXM autoextend on next 1G;
+
+-- create schema
+create user <SCHEMA_NAME> identified by <password> default tablespace XXX_DATA_TBS_01;
+alter user <SCHEMA_NAME> quota unlimited on XXX_DATA_TBS_01;
+alter user <SCHEMA_NAME> quota unlimited on XXX_INDX_TBS_01;
+ALTER TABLESPACE XXX_DATA_TBS_01 NOLOGGING;
+ALTER TABLESPACE XXX_INDX_TBS_01 NOLOGGING;
+
+-- impdp metadata
+impdp system schemas=<SCHEMA_NAME> remap_tablespace=TABLESPACE_DATA_OLD:XXX_DATA_TBS_01,TABLESPACE_INDEX_OLD:XXX_INDEX_TBS_01 PARALLEL=4 content=METADATA_ONLY directory=DPUMP_DIR dumpfile=METADATA_XXX_01.dmp,METADATA_XXX_02.dmp,METADATA_XXX_03.dmp,METADATA_XXX_04.dmp logfile=imp_METADATA_XXX.log
+
+-- rebuild index
+select 'alter index ' || index_name || ' rebuild online tablespace XXX_INDEX_TBS_01 NOLOGGING PARALLEL 16;' from dba_indexes where owner = 'SCHEMA_NAME';
+
+-- disable constraints
+select 'alter table ' || owner || '.' || TABLE_NAME || ' disable constraint '|| CONSTRAINT_NAME || ';' from dba_constraints where owner = 'SCHEMA_NAME';
+
+-- import data
+impdp system content=DATA_ONLY directory=DPUMP_DIR PARALLEL=4 dumpfile=DATA_XXX_01.dmp,DATA_XXX_02.dmp,DATA_XXX_03.dmp,DATA_XXX_04.dmp logfile=imp_DATA_XXX.log
+
+-- enable constraints
+select 'alter table ' || owner || '.' || TABLE_NAME || ' enable constraint ' || CONSTRAINT_NAME ||';' from dba_constraints where owner = 'SCHEMA_NAME' and status = 'DISABLED';
+
+

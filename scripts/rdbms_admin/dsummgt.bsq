@@ -1,0 +1,383 @@
+REM   jklein    08/01/05 - creation
+create table sum$                                           /* summary table */
+( obj#             number not null,                         /* object number */
+  containerobj#    number not null,    /* object number of the container tab */
+  containertype    number not null,       /* type of container - snap, table */
+  containernam     varchar2("M_IDEN"),                  /* name of container */
+  fullrefreshtim   number,             /* number in seconds for full refresh */
+  Increfreshtim    number,             /* number in seconds for full refresh */
+  lastrefreshscn   number,             /* scn of last transaction to refresh */
+  lastrefreshdate  date,              /* date of last transaction to refresh */
+  refreshmode      number,                   /* 0=none, 1=any, 2=inc, 3=full */
+  pflags           number,                /* summary properties (bit flags): */
+                                                /* refer to  QSMKSANA* flags */
+  xpflags          number,                            /* extension to pflags */
+  mflags           number,                          /* summary mutable flags */
+                                              /* 0x01 summary is known stale */
+                                                 /* 0x02 summary is unusable */
+                                                 /* 0x04 summary is disabled */
+  numdetailtab     integer,                       /* number of detail tables */
+  numaggregates    integer,                            /* number of measures */
+  numkeycolumns    integer,                      /* keys are group by fields */
+  numjoins         integer,                    /* number of joins in summary */
+  numinlines       integer,             /* number of inline views in summary */
+  numwhrnodes      integer,   /* number of nodes in the where predicate tree */
+  numhavnodes      integer,  /* number of nodes in the having predicate tree */
+  numqbnodes       integer,       /* number of nodes in the query block tree */
+  qbcmarker        integer,        /* qbc marker idx postion in the sel list */
+  sumtextlen       number,                            /* length of text body */
+  sumtext          long,                        /* text from 'select' onward */
+  fromoffset       number not null,        /* offset in bytes to FROM clause */
+  fromlen          number not null,   /* length from the F to the last table */
+  metaversion      number not null,   /* version of this the canonical forms */
+  objcount         number not null,           /* number of dependant objects */
+  markerdty        integer,     /* data type of the qbc marker (for setop MV)*/
+                                         /* 1 for character string */
+                                         /* 2 for number */
+                                         /* 3 for integer ... */
+  rw_name          varchar2("M_IDEN"),    /* name of the rewrite equivalence */
+  src_stmt         clob,              /* source statement for rw equivalence */
+  dest_stmt        clob,         /* destination statement for rw equivalence */
+  rw_mode          integer,               /* rewrite mode for rw equivalence */
+                                                              /* disable = 0 */
+                                                           /* text_match = 1 */
+                                                              /* general = 2 */
+                                                            /* recursive = 3 */
+  spare1           number,   /* commitrefresh_scn, scn when refresh commited */
+  spare2           number,
+  spare3           varchar2(1000),
+  spare4           date
+)
+/
+create unique index i_sum$_1 on sum$(obj#)
+/
+create table sumdetail$            /* summary detail table */
+( sumobj#       number not null,   /* object number */
+  detailobj#    number not null,   /* obj number of detail table */
+  qbcid         number not null,   /* query block id */
+  detailobjtype number,            /* 1=table,2=view,3=snap,4=cont. table */
+  detailalias   varchar2("M_IDEN"),/* alias if used */
+  refreshscn    number,            /* scn of last refresh */
+  detaileut     number,            /* detail tablew EUT flag */
+  spare1        number,
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date,
+  inline#       number,            /* inline view number */
+  instance#     number,            /* instance # for duplicate table */
+  dataless      number,            /* is the table dataless ? */
+  tabscnctr     number             /* detail table SCN counter value relative
+                                    * to which the summary was last complete
+                                    * refreshed.
+                                    */
+)
+/
+create index i_sumdetail$_1 on sumdetail$(sumobj#)
+/
+create index i_sumdetail$_2 on sumdetail$(detailobj#)
+/
+
+create table suminline$            /* summary inline view table */
+( sumobj#       number not null,   /* object number */
+  inline#       number not null,   /* inline view unique identifier */
+  textspos      number not null,   /* inline view offset starting position */
+  textlen       number not null,   /* inline view text length */
+  text          long   not null,   /* inline view text */
+  hashval       number not null,   /* hash value generateed from the inline */
+                                   /* view text */    
+  qbcid         number not null,   /* query block id */
+  spare1        number,
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date,
+  instance#     number             /* instance # for duplicate inline view */
+)
+/
+create index i_suminline$_1 on suminline$(sumobj#)
+/
+create index i_suminline$_2 on suminline$(inline#)
+/
+create index i_suminline$_3 on suminline$(hashval)
+/
+
+create table sumkey$             /* summary key table */
+( sumobj#       number not null, /* parent summary obj */
+  sumcolpos#    number not null, /* position of column in select list */
+  containercol# number not null, /* pos. in container where stored */
+  detailobj#    number not null, /* detail table object from FROM */
+  qbcid         number not null, /* query block id */
+  detailobjtype number,          /* detail table type - see sumdetail$ */
+  detailcol#    number,          /* col number within detail table */
+  groupingpos#  number,          /* pos. in GB clause */
+  exprlen       number,
+  expression    varchar2(4000),
+  textlen       number,
+  text          long,
+  detailcolfunction number,      /* 0 = regular, 1 = partition key */
+                                 /* 2 = partition marker, 3 = rowid */
+  spare1        number,
+  spare2        number,          /* length of column datatype info text */
+  spare3        varchar2(1000),  /* column datatype info text */
+  spare4        date,
+  nodetype      number,          /* node type - see qkegstyp */
+  ordinalpos    number,          /* for GSets - ordinal position */
+  parentpos     number,          /* for GSets - parent postion (ordinal) */
+  inline#       number,          /* inline view number */
+  instance#     number           /* instance # for duplicate table */
+)
+/
+create unique index i_sumkey$_1 on sumkey$
+  (sumobj#,sumcolpos#,groupingpos#,ordinalpos,qbcid)
+/
+create table sumagg$             /* summary aggregate table */
+( sumobj#       number not null, /* parent summary obj */
+  sumcolpos#    number not null, /* position of column in select list */
+  containercol# number not null, /* pos. in container where stored */
+  qbcid         number not null, /* query block id */ 
+  aggfunction   integer,         /* type of aggregate function */
+  flags         number,          /* sumagg properties (bit flags): */
+                                 /* 0x01=distinct aggregate */
+  exprlen       number,          /* len of the canonical form */
+  expression    varchar2(4000),  /* expr in canonical form */
+  textlen       number,          /* len of aggregate text */
+  aggtext       long,            /* text of agg. expression */
+  spare1        number,
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date,
+  agginfo       varchar2(4000),  /* info about aggs like start of args */
+  agginfolen    number           /* length of agginfo */
+)
+/
+create unique index i_sumagg$_1 on sumagg$(sumobj#,sumcolpos#,qbcid)
+/
+create table sumjoin$             /* summary join table */
+( sumobj#       number not null,  /* Object number of the summary */
+  tab1obj#      number not null,  /* Object number of the first table */
+  tab1col#      number not null,  /* Column number in the first table */
+  tab2obj#      number not null,  /* Object number of the second table */
+  tab2col#      number not null,  /* Column number of second table */
+  qbcid         number not null,  /* query block id */
+  joinop        integer,          /* Op code as defined in opndef.h (OPTTEQ) */
+  flags         number,           /* currently unused */
+  spare1        number,
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date,
+  inline1#      number,           /* left inline view number */
+  inline2#      number,           /* right inline view number */
+  instance1#    number,           /* instance # for tabobj1 */
+  instance2#    number            /* instance # for tabobj2 */
+)
+/
+
+create index i_sumjoin$_1 on sumjoin$(sumobj#,tab1obj#)
+/
+create table sumdep$                             /* summary dependency table */
+( sumobj#       number not null,                  /* dependent object number */
+  order#        number not null,                             /* order number */
+  p_obj#        number not null,                     /* parent object number */
+  p_type        number not null,                       /* parent object type */
+  qbcid         number not null,                           /* query block id */
+  p_ref_time    date,                            /* parent refresh timestamp */
+  p_ref_scn     number,                                /* parent refresh scn */
+  flags         number,
+  inline#       number,                                     /* inline view # */
+  instance#     number,                            /* inline view instance # */
+  syn_own       varchar2("M_IDEN"),   /* owner of the synonym for base table */
+  syn_name      varchar2("M_IDEN"),    /* name of the synonym for base table */
+  syn_master    number,           /* order number that the synonym points to */
+  vw_query      long,                              /* text of the view query */
+  vw_query_len  number                      /* length of the view query text */
+)
+/
+create index i_sumdep$_1 on sumdep$(sumobj#,order#)
+/
+create index i_sumdep$_2 on sumdep$(p_obj#,p_type)
+/
+create table sumpred$                    /* summary where/having pred tree */
+(sumobj#           number not null,      /* summary object number */
+ nodeid            number not null,      /* id that identifies a tree node */
+ pnodeid           number not null,      /* parent node id */
+ clauseid          integer not null,     /* caluse type: WHERE, HAVING, EUT..*/
+ nodetype          integer not null,     /* AND, OR, COL_REL_CONST ... */
+ qbcid             number not null,      /* query block id */
+ numchild          integer,            /* num. of children for AND, OR nodes */
+ relop             integer,              /* <,>,...,RP, IN-LIST..*/
+ loptype           integer,              /* left operand type: COL,AGG,...*/
+ roptype           integer,              /* right operand type: COL,AGG,...*/
+ ldobj#            number,               /* left detail table object number */
+ rdobj#            number,               /* right detail table object number */
+ lcolid            number,               /* left column id if loptype=COL */
+ rcolid            number,               /* right column id if roptype=COL */
+ laggtype          integer,              /* OPTTYPE for left operand if AGG. */
+ raggtype          integer,             /* OPTTYPE for right operand if AGG. */
+ lcanotxt          varchar2(4000),       /* left operand normalized string */
+ rcanotxt          varchar2(4000),       /* right operand normalized string */
+ lcanotxtlen       integer,              /* left operand string length */
+ rcanotxtlen       integer,              /* right operand string length */ 
+ ltxt              varchar2(4000),       /* string for left expr */
+ rtxt              varchar2(4000),       /* string fot right expr */ 
+ ltxtlen           integer,              /* left expr length */
+ rtxtlen           integer,              /* right expr length */
+ value             long,                 /* value of oper. if optype = CONST */
+ valuelen          integer,              /* value length */
+ numval            integer,              /* number of values in in-list */
+ colpos            integer,              /* used for multi-column in-lists */
+ lflags            number,               /* left operand miscellaneous info */
+ rflags            number,               /* right operand miscellaneous info */
+ linline#          number,               /* left inline view number */
+ rinline#          number,               /* right inline view number */
+ linstance#        number,               /* instance # for left detail tab */
+ rinstance#        number                /* instance # for right detail tab */
+)
+/
+create index i_sumpred$_1 on sumpred$(sumobj#,clauseid)
+/
+create table sumqb$                      /* summary query block tree */
+(sumobj#           number not null,      /* summary object number */
+ nodeid            number not null,      /* node id */
+ pflags            number,               /* persistent flags for query block */
+ xpflags           number,               /* extented persistent flags */ 
+ sflags            number,               /* snapshot semantic flags */
+ state             number,               /* state info */
+ text              long,                 /* normalized text */
+ textlen           number,               /* length of the text */
+ marker            varchar2(4000),       /* qbc marker value */
+ markerlen         number,               /* length of the marker */
+ hashval           number,               /* hash value */
+ hashval2          number,               /* 2nd hash value */
+ rorder            number,               /* node order relative to root */
+ sorder            number,         /* node order relative to root of subtree */
+ leafcnt           number,               /* number of leaf nodes */
+ orignode          number,               /* node id of subtree */
+ parent            number,               /* parent node id */
+ opttyp            number,               /* operator type */
+ selcnt            number,               /* number of select list items */
+ frompo            number,               /* FROM position in text */
+ flags             number,               /* misc info flags */
+ numdetailtab      integer,              /* number of detail tables */
+ numaggregates     integer,              /* number of measures */
+ numkeycolumns     integer,              /* keys are group by fields */
+ numjoins          integer,              /* number of joins in summary */
+ numinlines        integer,             /* number of inline views in summary */
+ numwhrnodes       integer,   /* number of nodes in the where predicate tree */
+ numhavnodes       integer   /* number of nodes in the having predicate tree */
+)
+/
+create index i_sumqb$_1 on sumqb$(nodeid)
+/
+create index i_sumqb$_2 on sumqb$(hashval)
+/
+create index i_sumqb$_3 on sumqb$(hashval2)
+/
+create table hier$                  /* a hierarchy */
+( dimobj#       number not null,    /* object number */
+  hierid#       number not null,    /* unique number within dimension */
+  hiername      varchar2("M_IDEN"), /* text name or hierarchy */
+  spare1        number,
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date
+)
+/
+create unique index i_hier$_1 on hier$(dimobj#,hierid#)
+/
+create table hierlevel$            /* identifies a level in a hierarchy */
+( dimobj#       number not null,   /* object number */
+  hierid#       number not null,   /* unique number of the hierarchy */
+  pos#          number not null,   /* postition of level in hierarchy */
+  levelid#      number not null,   /* id of the level */
+  joinkeyid#    number,            /* join key - if levels are from 2 tables */
+  spare1        number,
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date
+)
+/
+create index i_hierlevel$_1 on hierlevel$(dimobj#,hierid#)
+/
+create table dim$                     /* dimension table */
+( obj#             number not null,   /* object number */
+  dimtextlen       number,            /* length of the dimension text */
+  dimtext          long,
+  flags            number,            /* currently only maintains force */
+  numlevels        number,            /* number or levels */
+  numlevkeys       number,            /* number of level keys */
+  numjoinkeys      number,            /* number of join keys */
+  numhier          number,            /* number or hierarchies */
+  numhierlv        number,            /* number of hierarchy levels */
+  numattr          number,            /* number of attributes */
+  spare1           number,
+  spare2           number,
+  spare3           varchar2(1000),
+  spare4           date
+)
+/
+create unique index i_dim$_1 on dim$(obj#)
+/
+create table dimlevel$              /* a dimension level */
+( dimobj#       number not null,    /* object number */
+  levelid#      number not null,    /* unique number within dimension */
+  levelname     varchar2("M_IDEN"), /* text name associated with the level */
+  spare1        number,
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date,
+  flags         number default 0    /* flags: 0x01 = SKIP WHEN NULL */
+)
+/
+create unique index i_dimlevel$_1 on dimlevel$(dimobj#,levelid#)
+/
+create table dimlevelkey$          /* the columns of a level */
+( dimobj#       number not null,   /* object number */
+  levelid#      number not null,   /* unique number within dimension */
+  keypos#       number not null,   /* postition of column in the key */
+  detailobj#    number,            /* detail table object */
+  col#          number,            /* col number within detail table */
+  spare1        number,
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date
+)
+/
+create index i_dimlevelkey$_1 on dimlevelkey$(dimobj#,levelid#)
+/
+create index i_dimlevelkey$_2 on dimlevelkey$(detailobj#,col#)
+/
+create table dimjoinkey$           /* describes a join in a dimension */
+( dimobj#       number not null,   /* object number */
+  joinkeyid#    number not null,   /* unique number within dimension */
+  keypos#       number not null,   /* postition of column in the key */
+  hierid#       number,            /* number of hier which this key links */
+  levelid#      number,            /* number of hier which this key links */
+  detailobj#    number,            /* detail table object */
+  col#          number,            /* col number within detail table */
+  chdlevid#     number,            /* number of the child level */
+  spare1        number,
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date
+)
+/
+create index i_dimjoinkey$_1 on dimjoinkey$(dimobj#,joinkeyid#)
+/
+create index i_dimjoinkey$_2 on dimjoinkey$(detailobj#,col#)
+/ 
+create table dimattr$               /* describes attributes of a dimension */
+( dimobj#       number not null,    /* object number */
+  levelid#      number not null,    /* id of the level */
+  detailobj#    number not null,    /* detail table object */
+  col#          number,             /* col number within detail table */
+  attname       varchar2("M_IDEN"), /* name of the attribute */
+  spare1        number,
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date
+)
+/
+create index i_dimattr$_1 on dimattr$(dimobj#,levelid#)
+/
+create index i_dimattr$_2 on dimattr$(detailobj#,col#)
+/
+

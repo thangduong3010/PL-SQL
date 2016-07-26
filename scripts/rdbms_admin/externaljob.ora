@@ -1,0 +1,36 @@
+# $Header: externaljob.ora 16-dec-2005.20:47:13 rramkiss Exp $
+#
+# Copyright (c) 2005, Oracle. All rights reserved.  
+# NAME
+#   externaljob.ora
+# FUNCTION
+#   This configuration file is used by dbms_scheduler when executing external
+#   (operating system) jobs. It contains the user and group to run external
+#   jobs as. It must only be writable by the owner and must be owned by root.
+#   If extjob is not setuid then the only allowable run_user
+#   is the user Oracle runs as and the only allowable run_group is the group
+#   Oracle runs as.
+#
+# NOTES
+#   For Porters: The user and group specified here should be a lowly privileged
+#                user and group for your platform. For Linux this is nobody
+#                and nobody.
+# MODIFIED
+#     rramkiss   12/09/05 -  Creation
+#
+##############################################################################
+# External job execution configuration file externaljob.ora
+#
+# This file is provided by Oracle Corporation to help you customize
+# your RDBMS installation for your site.  Important system parameters
+# are discussed, and default settings given.
+#
+# This configuration file is used by dbms_scheduler when executing external
+# (operating system) jobs. It contains the user and group to run external
+# jobs as. It must only be writable by the owner and must be owned by root.
+# If extjob is not setuid then the only allowable run_user
+# is the user Oracle runs as and the only allowable run_group is the group
+# Oracle runs as.
+
+run_user = nobody
+run_group = nobody

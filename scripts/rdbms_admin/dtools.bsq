@@ -1,0 +1,293 @@
+REM   jklein    08/01/05 - creation
+REM
+REM dependency on obj_dict_sql.bsq due to a use of a CLOB
+REM
+create table incexp                      /* incremental export support table */
+( owner#        number not null,                                 /* owner id */
+  name          varchar2("M_IDEN") not null,                  /* object name */
+  type#         number not null,                              /* object type */
+  ctime         date,                      /* time of last cumulative export */
+  itime         date not null,            /* time of last incremental export */
+  expid         number(3) not null)                             /* export id */
+/
+create unique index i_incexp on incexp(owner#, name, type#)
+/
+grant all on incexp to system
+/
+create table incvid                    /* incremental valid identifier table */
+( expid         number(3) not null)               /* id of last valid export */
+/
+insert into incvid(expid) values (0)
+/
+grant all on incvid to system
+/
+create table incfil                         /* incremental file export table */
+( expid         number(3) not null,                             /* export id */
+  exptype       varchar2(1) not null,                        /* export type: */
+                            /* X - complete, I - incremental, C - cumulative */
+  expfile       varchar2(100) not null,                  /* export file name */
+  expdate       date not null,                                /* export date */
+  expuser       varchar2("M_IDEN") not null)            /* user doing export */
+/
+grant all on incfil to system
+/
+create role exp_full_database
+/
+create role imp_full_database
+/
+grant select_catalog_role to exp_full_database
+/
+grant select_catalog_role to imp_full_database
+/
+grant execute_catalog_role to imp_full_database
+/
+grant execute_catalog_role to exp_full_database
+/
+create table expact$
+( owner         varchar2("M_IDEN") not null,              /* owner of object */
+  name          varchar2("M_IDEN") not null,               /* name of object */
+  func_schema   varchar2("M_IDEN") not null,     /* schema func is run under */
+  func_package  varchar2("M_IDEN") not null,                 /* package name */
+  func_proc     varchar2("M_IDEN") not null,               /* procedure name */
+  code          number not null,                    /* PRETABLE OR POSTTABLE */
+  callorder     number,
+  callarg       varchar2(1),        /* whether this function takes arguments */
+                              /* or not.  Null - no arguments; Y - pass arg. */
+  obj_type number not null,                 /* type of object to be exported */
+  user_arg varchar2(2000)              /* user arguments for pkg, proc, func */
+)                               
+/
+create table noexp$
+( owner varchar2("M_IDEN") not null,                       /* owner of table */
+  name  varchar2("M_IDEN") not null,                        /* name of table */
+  obj_type number not null              /* type of object NOT to be exported */
+)
+/
+create table exppkgobj$    /* Register procedural object sup pkgs for export */
+(
+  package     varchar2("M_IDEN") not null,                   /* package name */
+  schema      varchar2("M_IDEN") not null,                 /* package schema */
+  class       number not null,      /* 1=system, 2=schema, 3=object instance */
+  type#       number not null,      /* type of objects this package supports */
+  prepost     number,     /* 0=export prior to parent schema, 1=after parent */
+  level#      number default 1000 not null
+        /* Determines ordering in dump file of objects exported at same time */
+)
+/
+create unique index i_objtype on exppkgobj$(type#, class)
+/
+create table exppkgact$    /* Register procedural action sup pkgs for export */
+(
+  package     varchar2("M_IDEN") not null,                   /* package name */
+  schema      varchar2("M_IDEN") not null,                 /* package schema */
+  class       number not null,      /* 1=system, 2=schema, 3=object instance */
+  level#      number default 1000 not null
+        /* Determines ordering in dump file of actions exported at same time */
+)
+/
+create unique index i_actpackage on exppkgact$(package, schema, class)
+/
+create table expdepobj$  /* Register procedural object dependents for export */
+(
+  d_obj#      number not null,              /* dependent procedural object # */
+  p_obj#      number not null                             /* parent object # */
+)
+/
+create unique index i_dependobj on expdepobj$(d_obj#)
+/
+create index i_parentobj on expdepobj$(p_obj#)
+/
+create table expdepact$     /* Register objects that have associated actions */
+(
+  obj#        number not null,                                   /* object # */
+  package     varchar2("M_IDEN"),    /* package containing instance_info_exp */
+  schema      varchar2("M_IDEN")                           /* package schema */
+)
+/
+create unique index i_actobj on expdepact$(obj#, package, schema)
+/
+rem table used by import and export for storing xml format of export
+rem metadata when doing transportable tablespaces.
+create table expimp_tts_ct$(
+  owner         varchar2("M_IDEN") not null,                  /* table owner */
+  tablename     varchar2("M_IDEN") not null,                   /* table name */
+  xmlinfo       clob               not null, /* table's metadata from export */
+  when          timestamp          not null                    /* for safety */
+)
+/
+rem
+rem Metadata API infrastructure
+rem
+create table metaview$ /* Used by mdAPI to select which view per object type */
+(
+  type         varchar2("M_IDEN") not null,  /* dict. obj type: e.g, 'TABLE' */
+  flags        number not null, /* Might have mult. views per obj class for  */
+    /* performance: base rel. tables (fast), part. tbls, object tables, etc. */
+  properties   number not null,            /* dict. object type's properties */
+  /* 0x0001 =     1 = schema object */
+  /* 0x0002 =     2 = heterogeneous object */
+  /* 0x0004 =     4 = internal (not user-visible) object */
+  model        varchar2("M_IDEN") not null,  /* 'ORACLE', 'ANSI', 'CWM', etc */
+  version      number not null,     /* decimal RDBMS version: eg, 0802010000 */
+              /*  indicates which view to use for client's requested version */
+  xmltag       varchar2("M_IDEN"),         /*XML tag to use for each obj/row */
+  udt          varchar2("M_IDEN"),               /* UDT name for object view */
+                          /* UDT should be 'RELATIONAL' for relational views */
+  schema       varchar2("M_IDEN"),                        /* schema for view */
+  viewname     varchar2("M_IDEN")   /* view for this type, model and version */
+)
+/
+create unique index i_metaview$ on metaview$(type, model, version, flags)
+/
+create table metafilter$  /* maps filters in mdAPI to UDT attributes */
+(
+  filter       varchar2("M_IDEN") not null,       /* documented filter. name */
+  type         varchar2("M_IDEN") not null,  /* dict. obj type: e.g, 'TABLE' */
+  model        varchar2("M_IDEN") not null,                    /* model name */
+  properties   number not null,                         /* filter properties */
+        /* 0x00000001 1         boolean filter                               */
+        /* 0x00000002 2         expression filter                            */
+        /* 0x00000004 4         custom filter                                */
+        /* 0x00000008 8         has default                                  */
+        /* 0x00000010 16        numeric filter                               */
+        /* 0x00000020 32        filter leaf types (e.g., BEGIN_WITH)         */
+        /* 0x00000040 64        filter branch (e.g., INCLUDE_PATH_EXPR)      */
+        /* 0x00000080 128       ORDERED filter                               */
+        /* 0x00000100 256       TOTAL_ORDER filter                           */
+  view_attr    number not null,     /* view flag bits (boolean filters only) */
+  attrname     varchar2(2000),                        /* filtering attribute */
+  default_val  number
+)
+/
+create unique index i_metafilter$ on metafilter$(filter, type, model)
+/
+create table metaxsl$                                  /* metadata xsl table */
+( xmltag        varchar2("M_IDEN") not null,                      /* xml tag */
+  transform     varchar2("M_IDEN") not null,               /* transform name */
+  model         varchar2("M_IDEN") not null,                   /* model name */
+  script        varchar2(2000) not null)                /* URI of xsl script */
+/
+create table metaxslparam$               /* mdAPI's XSL and parse parameters */
+(
+  model        varchar2("M_IDEN") not null,                    /* model name */
+  transform    varchar2("M_IDEN") not null,                /* transform name */
+  type         varchar2("M_IDEN") not null,  /* dict. obj type: e.g, 'TABLE' */
+  param        varchar2("M_IDEN") not null,        /* documented param. name */
+  default_val  varchar2(2000),
+  properties   number default 0 not null,          /* parameter's properties */
+  /* 0x0001 = additive  */
+  /* 0x0002 = remap     */
+  parse_attr   varchar2(2000),        /* attr path for UDT-based parse items */
+  datatype     number,                         /* datatype of user parameter */
+  /* NULL   = unspecified type, no checking done */
+  /* 0x0001 = boolean */
+  /* 0x0002 = text    */
+  /* 0x0003 = number  */
+  lower_bound  number,        /* lower bound for numeric type, NULL for none */
+  upper_bound  number         /* upper bound for numeric type, NULL for none */
+)
+/
+create unique index i_metaxslparam$ on metaxslparam$(model, transform, 
+type, param)
+/
+create table metastylesheet    /* Storage for the XSL stylesheets themselves */
+( name          varchar2("M_IDEN") not null,              /* stylesheet name */
+  model         varchar2("M_IDEN") not null,      /* model that uses this ss */
+  stylesheet    clob)                                     /* stylesheet body */
+/
+Rem
+Rem  Dictionary tables for heterogeneous object types in Metadata API
+Rem
+create table metascript$                  /* scripts for heterogeneous types */
+( htype         varchar2("M_IDEN") not null,   /* root heterogeneous objtype */
+  ptype         varchar2("M_IDEN") not null, /* parent heterogeneous objtype */
+  seq#          number not null,                          /* sequence number */
+  rseq#         number not null,        /* sequence number of reference type */
+  ltype         varchar2("M_IDEN") not null,             /* leaf object name */
+  properties    number not null,                    /*leaf type's properties */
+                            /* 0x0001 =     1 = leaf is heterogeneous object */
+  model         varchar2("M_IDEN") not null,             /* model properties */
+  version       number not null,    /* decimal RDBMS version: eg, 0802010000 */
+  soseq#        number not null,              /* save objunm sequence number */
+  r1seq#        number,                 /* sequence number prerequisite step */
+  r2seq#        number                  /* sequence number prerequisite step */
+)
+/
+create unique index i_metascript1$ on metascript$(ptype,seq#,model,version)
+/
+create unique index i_metascript2$ on metascript$(model,htype,seq#,version)
+/
+create table metascriptfilter$              /* filters for steps in a script */
+( htype         varchar2("M_IDEN") not null,   /* root heterogeneous objtype */
+  ptype         varchar2("M_IDEN") not null, /* parent heterogeneous objtype */
+  seq#          number not null,                          /* sequence number */
+  ltype         varchar2("M_IDEN") not null,             /* leaf object name */
+  filter        varchar2("M_IDEN") not null,                 /*  filter name */
+  pfilter       varchar2("M_IDEN"),                    /* parent filter name */
+  vcval         varchar2(2000),                         /* filter text value */
+  bval          number,                              /* filter boolean value */
+  nval          number,                              /* filter numeric value */
+  properties    number default 0 not null,              /* filter properties */
+  model         varchar2("M_IDEN") not null              /* model properties */
+)
+/
+rem
+rem (these indexes intentionally not unique)
+rem
+create index i_metascriptfilter1$ on metascriptfilter$(model,htype,seq#)
+/
+create index i_metascriptfilter2$ on metascriptfilter$(model,ptype,seq#)
+/
+create table metanametrans$    /* path names for heterogeneous objtype nodes */
+( name          varchar2(200) not null,                        /* path name  */
+  htype         varchar2("M_IDEN") not null,   /* root heterogeneous objtype */
+  ptype         varchar2("M_IDEN") not null,     /* immediate parent objtype */
+  seq#          number not null,                 /* sequence number in ptype */
+  properties    number not null,                   /* path name's properties */
+  /* 0x0001 =     1 = this is the fully qualified path name */
+  model         varchar2("M_IDEN") not null,            /* model properties  */
+  descrip       varchar2(2000)             /* description of the object type */
+)
+/
+create index i_metanametrans1$ on metanametrans$(model,htype,name)
+/
+create index i_metanametrans2$ on metanametrans$(model,ptype,seq#)
+/
+create table metapathmap$  /* het objtypes containing objs named by pathname */
+( name         varchar2(200) not null,                          /* path name */
+  htype        varchar2("M_IDEN") not null,         /* heterogeneous objtype */
+  model        varchar2("M_IDEN") not null,                    /* model name */
+  version      number not null      /* decimal RDBMS version: eg, 0802010000 */
+)
+/
+create index i_metapathmap$ on metapathmap$(name,htype,model)
+/
+create table impcalloutreg$                      /* register import callouts */
+( package      varchar2("M_IDEN") not null,     /* pkg implementing callouts */
+  schema       varchar2("M_IDEN") not null,           /* pkg's owning schema */
+  tag          varchar2("M_IDEN") not null,/* mandatory component identifier */
+  class        number not null,     /* 1=system,           3=object instance */
+                                    /* (2=schema support deferred)           */
+  level#       number default 1000 not null, /* determines calling order for */
+            /* multpile pkgs registered at same callout pt: lower called 1st */
+  flags        number not null,                    /* Only used when class=3 */
+  /* See dbmsdp.sql for flags definitions                                    */
+  /* 0x01: KU$_ICRFLAGS_IS_EXPR: tgt_object is an expression to be evaluated */
+  /*       with LIKE operator. Only valid for tables (not views)             */
+  /* 0x02: KU$_ICRFLAGS_EARLY_IMPORT: tgt_object will be imported and its    */
+  /*       post-instance callout executed before import of user tables       */
+  /* 0x04: KU$_ICRFLAGS_GET_DEPENDENTS: child dependents of tgt_object (eg,  */
+  /*       indexes, grants, constraints, etc) will be fetched at export time */
+  /*       Only valid for tables (not views)                                 */
+  /* 0x08: KU$_ICRFLAGS_EXCLUDE: tgt_object should not be exported when it   */
+  /*       matches a wildcard registration via flag KU$_ICRFLAGS_IS_EXPR     */
+  /* 0x10: KU$_ICRFLAGS_XDB_NO_TTS: tgt_object is exported only if the XDB   */
+  /*       tablespace is not transportable (xdb use only)                    */
+  tgt_schema   varchar2("M_IDEN"), /* for class 2/3, the target schema or    */
+                                 /* schema of the target object respectively */
+  tgt_object   varchar2("M_IDEN"), /* for class 3, the name of the tgt obj.  */
+  tgt_type     number,          /* type of obj as defined in KQD.H. Must be  */
+                                /* table, view, type, pkg or proc            */
+  cmnt         varchar2(2000) not null    /* mandatory component description */
+)
+/

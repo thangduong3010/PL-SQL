@@ -1,0 +1,555 @@
+REM   achoi     09/28/07 - edition as a service attribute
+REM   jklein    08/30/05 - creation
+rem
+rem transparent session migration
+rem
+create table tsm_src$
+(
+  /* the following are set by start_migration */
+  src_db_name               varchar2("M_VCSZ"),            /* source db name */
+  src_inst_name             varchar2("M_VCSZ"),      /* source instance name */
+  src_inst_id               varchar2("M_VCSZ"),        /* source instance id */
+  src_inst_start_time       timestamp with time zone,
+                                           /* start time for source instance */
+  sequence#                 number,             /* migration sequence number */
+  src_sid                   number,         /* session id on source instance */
+  src_serial#               number,            /* serial# on source instance */
+  src_state                 number,                       /* migration state */
+  connect_string            varchar2("M_VCSZ"),/* destination connect string */
+  src_start_time            timestamp with time zone,/* migration start time */
+  /* the following are updated by source session */
+  cost                      number,              /* estimated migration cost */
+  failure_reason            number,       /* reason for failure of migration */
+  src_end_time              timestamp with time zone,  /* migration end time */
+  roundtrips                number, /* number of roundtrips during migration */
+  src_userid                number,                               /* user id */
+  src_schemaid              number,                             /* schema id */
+  dst_db_name               varchar2("M_VCSZ")        /* destination db name */
+)
+tablespace SYSAUX
+/
+create index i_tsm_src1$ on tsm_src$(sequence#)
+tablespace SYSAUX
+/
+create index i_tsm_src2$ on tsm_src$(src_sid, src_serial#, sequence#)
+tablespace SYSAUX
+/
+create table tsm_dst$
+(
+  src_db_name               varchar2("M_VCSZ"),            /* source db name */
+  dst_db_name               varchar2("M_VCSZ"),       /* destination db name */
+  dst_inst_name             varchar2("M_VCSZ"), /* destination instance name */
+  dst_inst_id               varchar2("M_VCSZ"),   /* destination instance id */
+  dst_inst_start_time       timestamp with time zone,
+                                      /* start time for destination instance */
+  sequence#                 number,             /* migration sequence number */
+  dst_sid                   number,    /* session id on destination instance */
+  dst_serial#               number,       /* serial# on destination instance */
+  dst_start_time            timestamp with time zone,/* migration start time */
+  dst_end_time              timestamp with time zone,  /* migration end time */
+  dst_userid                number,                               /* user id */
+  dst_schemaid              number,                             /* schema id */
+  dst_state                 number            /* destination migration state */
+)
+tablespace SYSAUX
+/
+create index i_tsm_dst1$ on tsm_dst$(sequence#)
+tablespace SYSAUX
+/
+create index i_tsm_dst2$ on tsm_dst$(dst_sid, dst_serial#, sequence#)
+tablespace SYSAUX
+/
+create sequence tsm_mig_seq$
+  increment by 1
+  start with 1
+  minvalue 0
+  nomaxvalue
+  cache 10
+  order
+  nocycle
+/
+rem Services persistent database table
+create table service$
+(
+  service_id         number,                                    /* unique ID */
+  name               varchar2(64),                             /* short name */
+  name_hash          number,                            /* service name hash */
+  network_name       varchar2(512),           /* SERVICE_NAME as used by net */
+  creation_date      date,                                   /* date created */
+  creation_date_hash number,                           /* creation date hash */
+  deletion_date      date,                            /* date marked deleted */
+  failover_method    varchar2(64),            /* TAF failover characterstics */
+  failover_type      varchar2(64),
+  failover_retries   number(10),
+  failover_delay     number(10),
+  min_cardinality    number,                                  /* cardinality */
+  max_cardinality    number,
+  goal               number,                                 /* service goal */
+                                                                 /* none : 0 */
+                                                         /* service time : 1 */
+                                                             /* throughput : 2 */
+  flags              number,                      /* service attribute flags */
+                                                       /* GRID enabled : 0x1 */
+                                                        /* DTP service : 0x2 */
+  edition            varchar2(30)                 /* initial session edition */
+)
+/
+rem Create the internal system service
+insert into service$
+  (service_id, name, creation_date)
+  values (1, 'SYS$BACKGROUND', sysdate)
+/
+
+insert into service$
+  (service_id, name, creation_date)
+  values (2, 'SYS$USERS', sysdate)
+/
+
+rem table used by director that contains all databases in cluster
+create global temporary table cluster_databases(
+    database_name varchar2(128),
+    sparen1       number,
+    sparen2       number,
+    sparevc1      varchar2(4000),
+    sparevc2      varchar2(4000))
+  on commit preserve rows
+/
+
+rem table used by director that contains all nodes in cluster
+create global temporary table cluster_nodes(
+    node_name varchar2(4000),
+    sparen1   number,
+    sparen2   number,
+    sparevc1  varchar2(4000),
+    sparevc2  varchar2(4000))
+  on commit preserve rows
+/
+
+rem table used by director that contains all running instances in cluster
+create global temporary table cluster_instances(
+    instance_number number,
+    database_name   varchar2(128),
+    inst_name       varchar2(4000),
+    node_name       varchar2(4000),
+    sparen1         number,
+    sparen2         number,
+    sparevc1        varchar2(4000),
+    sparevc2        varchar2(4000))
+  on commit preserve rows
+/
+
+rem table used by director for migrate operations
+create table dir$migrate_operations(
+   job_name         varchar2(100),
+   alert_seq_id     number,
+   incarnation_info varchar2(4000),
+   service_name     varchar2(4000),
+   source_instance  varchar2(4000),
+   dest_instance    varchar2(4000),
+   session_count    number,
+   director_factor  number,
+   submit_time      date,
+   status           number,
+   start_time       date,
+   end_time         date,
+   actual_count     number,
+   error_message    varchar2(4000),
+   sparen1          number,
+   sparen2          number,
+   sparen3          number,
+   sparen4          number,
+   sparen5          number,
+   sparevc1         varchar2(4000),
+   sparevc2         varchar2(4000),
+   sparevc3         varchar2(4000),
+   sparevc4         varchar2(4000),
+   sparevc5         varchar2(4000))
+tablespace sysaux
+/
+create unique index sys.i_dir$migrate_ui
+  on sys.dir$migrate_operations(job_name, status)
+  tablespace sysaux
+/
+create index sys.i_dir$migrate_end_time
+  on sys.dir$migrate_operations(end_time)
+  tablespace sysaux
+/
+create index sys.i_dir$migrate_alert_seq_id
+  on sys.dir$migrate_operations(alert_seq_id)
+  tablespace sysaux
+/
+create index sys.i_dir$migrate_status
+  on sys.dir$migrate_operations(status)
+  tablespace sysaux
+/
+
+rem table used by director for service operations
+create table dir$service_operations(
+   job_name         varchar2(100),
+   alert_seq_id     number,
+   job_type         number,
+   incarnation_info varchar2(4000),
+   service_name     varchar2(4000),
+   instance_name    varchar2(4000),
+   director_factor  number,
+   submit_time      date,
+   status           number,
+   start_time       date,
+   end_time         date,
+   error_message    varchar2(4000),
+   sparen1          number,
+   sparen2          number,
+   sparen3          number,
+   sparen4          number,
+   sparen5          number,
+   sparevc1         varchar2(4000),
+   sparevc2         varchar2(4000),
+   sparevc3         varchar2(4000),
+   sparevc4         varchar2(4000),
+   sparevc5         varchar2(4000))
+tablespace sysaux
+/
+create unique index sys.i_dir$service_ui
+  on sys.dir$service_operations(job_name, status)
+  tablespace sysaux
+/
+create index sys.i_dir$service_end_time
+  on sys.dir$service_operations(end_time)
+  tablespace sysaux
+/
+create index sys.i_dir$service_alert_seq_id
+  on sys.dir$service_operations(alert_seq_id)
+  tablespace sysaux
+/
+create index sys.i_dir$service_status
+  on sys.dir$service_operations(status)
+  tablespace sysaux
+/
+
+rem table used by director for escalate operations
+rem this is used to keep track of escalations from
+rem the database director to the cluster director
+create table dir$escalate_operations(
+   escalation_id    varchar2(200),
+   alert_seq_id     number,
+   escalation       VARCHAR2(20),
+   incarnation_info varchar2(4000),
+   instance_name    varchar2(4000),
+   submit_time      date,
+   status           number,
+   start_time       date,
+   end_time         date,
+   retry_time       date,
+   retry_count      number,
+   error_message    varchar2(4000),
+   sparen1          number,
+   sparen2          number,
+   sparen3          number,
+   sparen4          number,
+   sparen5          number,
+   sparevc1         varchar2(4000),
+   sparevc2         varchar2(4000),
+   sparevc3         varchar2(4000),
+   sparevc4         varchar2(4000),
+   sparevc5         varchar2(4000))
+tablespace sysaux
+/
+create unique index sys.i_dir$escalate_ui
+  on sys.dir$escalate_operations(escalation_id, status)
+  tablespace sysaux
+/
+create index sys.i_dir$escalate_end_time
+  on sys.dir$escalate_operations(end_time)
+  tablespace sysaux
+/
+create index sys.i_dir$escalate_alert_seq_id
+  on sys.dir$escalate_operations(alert_seq_id)
+  tablespace sysaux
+/
+create index sys.i_dir$escalate_status
+  on sys.dir$escalate_operations(status)
+  tablespace sysaux
+/
+
+rem table used by database director for 
+rem recording quiesce operations
+create table dir$quiesce_operations
+( 
+   job_name         varchar2(100),
+   alert_seq_id     number,
+   job_type         number,
+   incarnation_info varchar2(4000),
+   instance_name    varchar2(4000),
+   submit_time      date,
+   status           number,
+   start_time       date,
+   end_time         date,
+   error_message    varchar2(4000),
+   sparen1          number,
+   sparen2          number,
+   sparen3          number,
+   sparen4          number,
+   sparen5          number,
+   sparevc1         varchar2(4000),
+   sparevc2         varchar2(4000),
+   sparevc3         varchar2(4000),
+   sparevc4         varchar2(4000),
+   sparevc5         varchar2(4000))
+tablespace sysaux
+/
+
+create unique index sys.i_dir$quiesce_ui
+  on sys.dir$quiesce_operations(job_name, status)
+  tablespace sysaux
+/
+create index sys.i_dir$quiesce_status
+  on sys.dir$quiesce_operations(status)
+  tablespace sysaux
+/
+create index sys.i_dir$quiesce_end_time
+  on sys.dir$quiesce_operations(end_time)
+  tablespace sysaux
+/
+create index sys.i_dir$quiesce_alert_seq_id
+  on sys.dir$quiesce_operations(alert_seq_id)
+  tablespace sysaux
+/
+
+rem table used by database director for 
+rem recording specific instance actions
+rem done by a job
+create table dir$instance_actions
+( 
+   job_name         varchar2(100),
+   action_type      number,
+   instance_name    varchar2(4000),
+   submit_time      date,
+   start_time       date,
+   end_time         date,
+   error_message    varchar2(4000),
+   sparen1          number,
+   sparen2          number,
+   sparen3          number,
+   sparen4          number,
+   sparen5          number,
+   sparevc1         varchar2(4000),
+   sparevc2         varchar2(4000),
+   sparevc3         varchar2(4000),
+   sparevc4         varchar2(4000),
+   sparevc5         varchar2(4000))
+tablespace sysaux
+/
+
+
+create index sys.i_dir$instance_job_name
+  on sys.dir$instance_actions(job_name)
+  tablespace sysaux
+/
+
+create index sys.i_dir$instance_acttyp
+  on sys.dir$instance_actions(action_type)
+  tablespace sysaux
+/
+
+create index sys.i_dir$instance_end_time
+  on sys.dir$instance_actions(end_time)
+  tablespace sysaux
+/
+
+rem table used by director for resonate operations
+create table dir$resonate_operations
+( 
+   job_name         varchar2(100),
+   alert_name       varchar2(200),
+   job_type         number,
+   incarnation_info varchar2(4000),
+   database_name    varchar2(128),
+   instance_name    varchar2(4000),
+   node_name        varchar2(4000),
+   submit_time      date,
+   status           number,
+   start_time       date,
+   end_time         date,
+   error_message    varchar2(4000),
+   priority         number,
+   sparen1          number,
+   sparen2          number,
+   sparen3          number,
+   sparen4          number,
+   sparen5          number,
+   sparevc1         varchar2(4000),
+   sparevc2         varchar2(4000),
+   sparevc3         varchar2(4000),
+   sparevc4         varchar2(4000),
+   sparevc5         varchar2(4000))
+tablespace sysaux
+/
+create unique index sys.i_dir$resonate_ui
+  on sys.dir$resonate_operations(job_name, status)
+  tablespace sysaux
+/
+create index sys.i_dir$resonate_status
+  on sys.dir$resonate_operations(status)
+  tablespace sysaux
+/
+create index sys.i_dir$resonate_end_time
+  on sys.dir$resonate_operations(end_time)
+  tablespace sysaux
+/
+create index sys.i_dir$resonate_alert_name
+  on sys.dir$resonate_operations(alert_name)
+  tablespace sysaux
+/
+
+rem table used by director for keeping alert history
+create table dir$alert_history
+( 
+   alert_name       varchar2(200),
+   message_level    number,
+   action_id        number,
+   reason_id        number,
+   last_time        date,
+   next_time        date,
+   action_time      date,
+   incarnation_info varchar2(4000),
+   job_name         varchar2(100),
+   sparen1          number,
+   sparen2          number,
+   sparen3          number,
+   sparen4          number,
+   sparen5          number,
+   sparevc1         varchar2(4000),
+   sparevc2         varchar2(4000),
+   sparevc3         varchar2(4000),
+   sparevc4         varchar2(4000),
+   sparevc5         varchar2(4000))
+tablespace sysaux
+/
+
+create index sys.i_dir$alert_history_name
+  on sys.dir$alert_history(alert_name)
+  tablespace sysaux
+/
+create index sys.i_dir$alert_history_action_id
+  on sys.dir$alert_history(action_id)
+  tablespace sysaux
+/
+create index sys.i_dir$alert_history_reason_id
+  on sys.dir$alert_history(reason_id)
+  tablespace sysaux
+/
+create index sys.i_dir$alert_history_at
+  on sys.dir$alert_history(action_time)
+  tablespace sysaux
+/
+
+rem table used by director for keeping reasons
+create table dir$reason_strings
+( 
+   reason_id        number,
+   reason           varchar2(4000),
+   sparen1          number,
+   sparen2          number,
+   sparevc1         varchar2(4000),
+   sparevc2         varchar2(4000))
+tablespace sysaux
+/
+
+create unique index sys.i_dir$reason_strings_ui
+  on sys.dir$reason_strings(reason_id)
+  tablespace sysaux
+/
+
+rem table used by director for database priorities
+create table dir$database_attributes
+(
+  database_name        varchar2("M_XDBI"),
+  attribute_name       varchar2("M_IDEN"),
+  attribute_value      varchar2("M_VCSZ"),
+  sparen1              number,
+  sparen2              number,
+  sparen3              number,
+  sparen4              number,
+  sparen5              number,
+  sparevc1             varchar2("M_VCSZ"),
+  sparevc2             varchar2("M_VCSZ"),
+  sparevc3             varchar2("M_VCSZ"),
+  sparevc4             varchar2("M_VCSZ"),
+  sparevc5             varchar2("M_VCSZ"))
+tablespace sysaux
+/
+create unique index sys.i_dir$db_attributes_ui
+  on sys.dir$database_attributes(database_name, attribute_name)
+  tablespace sysaux
+/
+
+rem table used by director for victim database policy function
+create table dir$victim_policy
+(
+  user_name            varchar2("M_IDEN"),
+  policy_function_name varchar2(98),  /* policy fun vers. for changing param */
+  version              number,
+  sparen1              number,
+  sparen2              number,
+  sparen3              number,
+  sparen4              number,
+  sparen5              number,
+  sparen6              number,
+  sparen7              number,
+  sparevc1             varchar2("M_VCSZ"),
+  sparevc2             varchar2("M_VCSZ"),
+  sparevc3             varchar2("M_VCSZ"),
+  sparevc4             varchar2("M_VCSZ"),
+  sparevc5             varchar2("M_VCSZ"))
+tablespace sysaux
+/
+
+Rem Table for keeping node attributes
+create table dir$node_attributes
+( node_name            varchar2(4000),
+  attribute_name       varchar2(30),
+  attribute_value      varchar2(4000),
+  sparen1              number,
+  sparen2              number,
+  sparen3              number,
+  sparen4              number,
+  sparen5              number,
+  sparevc1             varchar2(4000),
+  sparevc2             varchar2(4000),
+  sparevc3             varchar2(4000),
+  sparevc4             varchar2(4000),
+  sparevc5             varchar2(4000))
+tablespace sysaux
+/
+
+create index sys.i_dir$node_attributes_attr
+  on sys.dir$node_attributes(attribute_name)
+  tablespace sysaux
+/
+
+Rem Table for keeping service attributes
+create table dir$service_attributes
+( service_id           number,
+  attribute_name       varchar2(30),
+  attribute_value      varchar2(4000),
+  sparen1              number,
+  sparen2              number,
+  sparen3              number,
+  sparen4              number,
+  sparen5              number,
+  sparevc1             varchar2(4000),
+  sparevc2             varchar2(4000),
+  sparevc3             varchar2(4000),
+  sparevc4             varchar2(4000),
+  sparevc5             varchar2(4000))
+tablespace sysaux
+/
+create unique index sys.i_dir$service_attributes_ui
+  on sys.dir$service_attributes(service_id, attribute_name)
+  tablespace sysaux
+/
+create index sys.i_dir$service_attributes_attr
+  on sys.dir$service_attributes(attribute_name)
+  tablespace sysaux
+/
+

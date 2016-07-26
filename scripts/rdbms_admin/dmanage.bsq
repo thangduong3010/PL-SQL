@@ -1,0 +1,231 @@
+REM   arbalakr  11/12/09 - increase lengths of module/action 
+REM   schakkap  10/20/06 - move object_usage from doptim.bsq
+REM   ddas      10/27/06 - rename OPM to SPM
+REM   ddas      10/02/06 - plan_hash_value=>plan_id, add version
+REM   mziauddi  09/15/06 - add SPM_TRACING as parameter to smb$config
+REM   mziauddi  07/17/06 - don't create sql$ as IOT (ebv issue)
+REM   mziauddi  06/12/06 - enable creation of IOTs
+REM   mziauddi  06/06/06 - create sequence sqllog$_seq to compute batch#
+REM   mziauddi  05/11/06 - replace old SQL Tuning Base schema with
+REM                        new SQL Management Base schema
+REM   jklein    08/01/05 - creation
+
+Rem ===========================================================================
+Rem SYSAUX table space definition
+Rem ===========================================================================
+CREATE TABLESPACE sysaux DATAFILE "D_SXFN" 
+  "D_SDSG" ONLINE
+/
+
+Rem ===========================================================================
+Rem Statement log table (is used to recognize repeatable SQL statements)
+Rem ===========================================================================
+CREATE TABLE sqllog$ (
+   signature           NUMBER,
+   batch#              NUMBER        NOT NULL,
+   CONSTRAINT sqllog$_pkey PRIMARY KEY (signature)
+ )
+ ORGANIZATION INDEX
+ TABLESPACE sysaux
+/
+
+Rem - Create sequence to compute sqllog$.batch# value from it.
+CREATE SEQUENCE sqllog$_seq
+  START WITH 1
+  INCREMENT BY 1
+  MINVALUE 1
+  MAXVALUE 100000000000000000000
+  NOORDER
+  CYCLE
+/
+
+Rem ===========================================================================
+Rem SMB configuration table
+Rem ===========================================================================
+CREATE TABLE smb$config (
+   parameter_name      VARCHAR2(30)  NOT NULL,
+   parameter_value     NUMBER        NOT NULL,
+   last_updated        TIMESTAMP,
+   updated_by          VARCHAR2(30)
+ )
+ TABLESPACE sysaux
+/
+CREATE UNIQUE INDEX i_smb$config_pkey ON smb$config (parameter_name)
+ TABLESPACE sysaux
+/
+
+-- Store 10 percent as the default SYSAUX storage space for SMB.
+INSERT INTO smb$config (parameter_name, parameter_value)
+ VALUES ('SPACE_BUDGET_PERCENT', 10)
+/
+-- Store 53 weeks as the default retention period for plan baselines.
+INSERT INTO smb$config (parameter_name, parameter_value)
+ VALUES ('PLAN_RETENTION_WEEKS', 53)
+/
+-- Store 0 (i.e OFF) as the value for the tracing of DBMS_SPM functions.
+INSERT INTO smb$config (parameter_name, parameter_value)
+ VALUES ('SPM_TRACING', 0)
+/
+
+Rem ===========================================================================
+Rem SQL statement table
+Rem ===========================================================================
+CREATE TABLE sql$ (
+   signature           NUMBER       NOT NULL,                    /* join key */
+   inuse_features      NUMBER       NOT NULL,
+   flags               NUMBER       NOT NULL,
+   spare1              NUMBER,
+   spare2              CLOB
+--   CONSTRAINT sql$_pkey PRIMARY KEY (signature)
+ )
+--ORGANIZATION INDEX
+ TABLESPACE sysaux
+/
+
+CREATE UNIQUE INDEX i_sql$_pkey on sql$ (signature)
+ TABLESPACE sysaux
+/
+
+Rem ===========================================================================
+Rem SQL statement text table
+Rem ===========================================================================
+CREATE TABLE sql$text (
+   signature           NUMBER        NOT NULL,                   /* join key */
+   sql_handle          VARCHAR2(30)  NOT NULL,                 /* search key */
+   sql_text            CLOB          NOT NULL,
+   spare1              NUMBER,
+   spare2              CLOB
+ )
+ TABLESPACE sysaux
+/
+CREATE UNIQUE INDEX i_sql$text_pkey ON sql$text (signature)
+ TABLESPACE sysaux
+/
+CREATE UNIQUE INDEX i_sql$text_handle ON sql$text (sql_handle)
+ TABLESPACE sysaux
+/
+
+Rem ===========================================================================
+Rem SQL management object table
+Rem ===========================================================================
+CREATE TABLE sqlobj$ (
+   signature           NUMBER,                                   /* join key */
+   category            VARCHAR2(30),                             /* join key */
+   obj_type            NUMBER,                                   /* join key */
+   plan_id             NUMBER,                                   /* join key */
+   name                VARCHAR2(30)  NOT NULL,                 /* search key */
+   flags               NUMBER        NOT NULL,
+   last_executed       TIMESTAMP,
+   spare1              NUMBER,
+   spare2              CLOB,
+   CONSTRAINT sqlobj$_pkey PRIMARY KEY (signature,
+                                        category,
+                                        obj_type,
+                                        plan_id)
+ )
+ORGANIZATION INDEX
+ TABLESPACE sysaux
+/
+CREATE UNIQUE INDEX i_sqlobj$name_type on sqlobj$(name, obj_type)
+ TABLESPACE sysaux
+/
+
+Rem ===========================================================================
+Rem SQL management object data table
+Rem ===========================================================================
+CREATE TABLE sqlobj$data (
+   signature           NUMBER,                                   /* join key */
+   category            VARCHAR2(30),                             /* join key */
+   obj_type            NUMBER,                                   /* join key */
+   plan_id             NUMBER,                                   /* join key */
+   comp_data           CLOB          NOT NULL,           /* hints collection */
+   spare1              NUMBER,
+   spare2              CLOB,
+   CONSTRAINT sqlobj$data_pkey PRIMARY KEY (signature,
+                                            category,
+                                            obj_type,
+                                            plan_id)
+ )
+ORGANIZATION INDEX
+ TABLESPACE sysaux
+/
+
+Rem ===========================================================================
+Rem SQL management object auxiliary data table
+Rem ===========================================================================
+CREATE TABLE sqlobj$auxdata (
+   signature            NUMBER        NOT NULL,                  /* join key */
+   category             VARCHAR2(30)  NOT NULL,                  /* join key */
+   obj_type             NUMBER        NOT NULL,                  /* join key */
+   plan_id              NUMBER        NOT NULL,                  /* join key */
+   description          VARCHAR2(500),
+   creator              VARCHAR2(30),
+   origin               NUMBER        NOT NULL,        /* manual, auto, etc. */
+   version              VARCHAR2(64),               /* db version @ creation */
+-- temporal data
+   created              TIMESTAMP     NOT NULL,
+   last_modified        TIMESTAMP,
+   last_verified        TIMESTAMP,
+-- compilation information
+   parse_cpu_time       NUMBER,
+   optimizer_cost       NUMBER,
+-- user criteria
+   module               VARCHAR2(64),
+   action               VARCHAR2(64),
+   priority             NUMBER,
+-- execution context
+   optimizer_env        RAW(2000),
+   bind_data            RAW(2000),
+   parsing_schema_name  VARCHAR2(30),
+-- execution statistics
+   executions           NUMBER,
+   elapsed_time         NUMBER,
+   cpu_time             NUMBER,
+   buffer_gets          NUMBER,
+   disk_reads           NUMBER,
+   direct_writes        NUMBER,
+   rows_processed       NUMBER,
+   fetches              NUMBER,
+   end_of_fetch_count   NUMBER,
+-- map sql object data back to the advisor task that created it
+   task_id              NUMBER,                          /* adv fmwk task id */
+   task_exec_name       VARCHAR2(30),             /* adv fmwk execution name */
+   task_obj_id          NUMBER,                        /* adv fmwk object id */
+   task_fnd_id          NUMBER,                       /* adv fmwk finding id */
+   task_rec_id          NUMBER,                /* adv fmwk recommendation id */
+   flags                NUMBER,                               /* spare flags */
+   spare1               NUMBER,
+   spare2               CLOB
+ )
+ TABLESPACE sysaux
+/
+CREATE UNIQUE INDEX i_sqlobj$auxdata_pkey ON sqlobj$auxdata (signature,
+                                                             category, 
+                                                             obj_type,
+                                                             plan_id)
+ TABLESPACE sysaux
+/
+CREATE INDEX i_sqlobj$auxdata_task ON sqlobj$auxdata (task_id,
+                                                      task_exec_name,
+                                                      task_obj_id,
+                                                      task_fnd_id,
+                                                      task_rec_id)
+ TABLESPACE sysaux
+/
+
+Rem ===========================================================================
+Rem Object usage table - displays object usage information. For now, it has
+Rem only index usage.
+Rem ===========================================================================
+create table object_usage                         /* object usage statistics */
+( obj#               number not null,   /* object number of monitored object */
+  flags              number not null,                       /* various flags */
+                           /* index accessed during monitoring period : 0x01 */
+  start_monitoring   char(19),                      /* start monitoring time */
+  end_monitoring     char(19)                         /* end monitoring time */
+) initrans 30  pctused 50           /* itls and space so each row has an itl */
+  storage (maxextents unlimited) 
+/
+create index i_stats_obj# on object_usage(obj#)
+  storage (maxextents unlimited) 
+/

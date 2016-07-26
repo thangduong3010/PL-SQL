@@ -1,0 +1,277 @@
+##############################################################################
+# Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved. 
+#
+# orasdk_shrept.lst (SDK = Software Development Kit) -- Linux version
+#
+#    List of additional symbols required by OraSDK consumers that must 
+#    be defined by liborasdk.so
+#
+#  MODIFIED   (MM/DD/YY)
+#     vmedam   03/30/09 - removed invalid ldap symbols
+#     rlong    09/25/08 - 
+#     slari    08/22/08 - b7196627: add ldap entry point for nzdacvalue
+#     hnandyal 05/21/07 - Add skgdll symbols
+#     garnaiz  12/12/06 - add kgzf (fencing) APIs
+#     jboyce   11/01/06 - 
+#     skalyana 03/30/06 - 
+#  mchengjr    11/20/2004 - Original file
+#  mchengjr    02/15/2005 - Add CRS required symbols
+#
+
+#------------------------------------------------------------------------------
+# From libldapclnt
+#------------------------------------------------------------------------------
+
+ldap : gsldlAStrParseLine
+ldap : gsldlBStrGetline
+ldap : gsluqdwDequeueWork
+ldap : gsluqewEnqueueWork
+ldap : gsluqklKillListQueue
+ldap : gsluqkwKillWorkQueue
+ldap : gsluswfpeFreePwdEntry
+ldap : gsluswipeInitPwdEntry
+ldap : gsluswspsSetPwdStore
+ldap : gsluwpwaGetWalletPasswd
+ldap : nzsuppni_nl_init
+ldap : nzsuppnt_nl_term
+ldap : nzsupppl_pkivendor_lookup
+ldap : nzsuppwl_wallet_lookup
+ldap : nzsuppti_trace_init
+ldap : nzsupptw_trace_write
+ldap : nzsuppte_trace_exit
+ldap : nzdacvalue
+
+#------------------------------------------------------------------------------
+# From libclient
+#------------------------------------------------------------------------------
+
+#
+# The following kg symbols have dependencies on PL/SQL - need to statically 
+# link for now.  See PL/SQL comments below for explanation
+#
+#rdbms : kguqsdh
+#rdbms : kguqvld
+rdbms : upial7
+rdbms : upiall
+rdbms : upidqr
+rdbms : upirdd
+
+#------------------------------------------------------------------------------
+# From libgeneric
+#------------------------------------------------------------------------------
+rdbms : skgfcfi
+rdbms : skgfgfsz
+rdbms : skgfifi
+rdbms : skgfofi
+rdbms : skgfqio
+rdbms : skgfrfhblk
+rdbms : skgfrgsz
+rdbms : skgfrpini
+rdbms : skgfrsini
+rdbms : skgfrsz
+rdbms : skgmsmr_op
+rdbms : skgpmaterialize
+rdbms : skgpdematerialize
+rdbms : skgpospidstr
+rdbms : slclts
+# following symbols from libgeneric are needed by CSS for providing
+# the fencing infrastructure
+rdbms : kgzf_cbinit
+rdbms : kgzf_ini
+rdbms : kgzf_ini_begin
+rdbms : kgzf_ini_end
+rdbms : kgzf_fini
+rdbms : kgzf_gen_reid
+rdbms : kgzf_gen_node_reid
+rdbms : kgzf_gen_group_reid
+rdbms : kgzf_gen_member_reid
+rdbms : kgzf_gen_proc_reid
+rdbms : kgzf_cluster_restart
+rdbms : kgzf_fence_entity
+rdbms : kgzf_wait
+rdbms : kgzf_get_status
+rdbms : kgzf_release_handle
+rdbms : kgz_format_rac_entity_id
+rdbms : kgz_reid_copy
+rdbms : kgz_reid_equal
+# following symbols are needed from libgeneric for CSS to discover voting files
+# managed by ASM
+rdbms : skgdllClose
+rdbms : skgdllDestroy
+rdbms : skgdllDiscover
+rdbms : skgdllInit
+rdbms : skgdllIterInit
+rdbms : skgdllIterNext
+rdbms : skgdllIterTerm
+rdbms : skgdllOpen
+rdbms : skgdllSym
+
+
+network : nlstdgo
+network : nlstdap
+network : nlstdat
+
+#------------------------------------------------------------------------------
+# From libsql
+#------------------------------------------------------------------------------
+
+#  NOTE: sqlcx2t is considered deprecated by the Precompiler team and is 
+#        going through desupport process.  All current OraSDK consumers have
+#        been migrated off of this entrypoint via the SQL TOOLS GET/PUT 
+#        Pro*C pragmas.
+#
+#        sqliap is a psuedo entry point that requires Forms/Reports runtime
+#        libraries.  An enhancement request has been issued to the Reports 
+#        team to provide APIs that obviate the need for this entry point.
+#
+#precomp : sqlcx2t
+#precomp : sqliap
+
+#------------------------------------------------------------------------------
+# From libvsn
+#------------------------------------------------------------------------------
+
+# Data reference
+rdbms : vsnsta
+rdbms : vsnupr 
+
+####
+
+#
+#  NOTE: PL/SQL symbols are not included as PL/SQL is not compiled with 
+#      relocatable code (-KPIC option).  Consumers of PL/SQL must statically 
+#      link PL/SQL code for now
+#
+#------------------------------------------------------------------------------
+# From libplc
+#------------------------------------------------------------------------------
+
+#plsqlc : psdrph
+#plsqlc : psuasyn
+#plsqlc : psuift
+
+#------------------------------------------------------------------------------
+# From libplp
+#------------------------------------------------------------------------------
+
+# Data reference 
+#plsqlp : PLITBLM_S
+#plsqlp : STANDA_B
+#plsqlp : STANDA_S
+#plsqlp : stdicd_i
+
+#------------------------------------------------------------------------------
+# From libpls
+#------------------------------------------------------------------------------
+
+#plsql : lisfst
+#plsql : lislst
+#plsql : pbb_lu_to_plio
+#plsql : pbbdelete
+#plsql : pbbdisable
+#plsql : pbbenable
+#plsql : pbbfget
+#plsql : pbbfset
+#plsql : pbbget
+#plsql : pbbline
+#plsql : pbblineu
+#plsql : pbblu_info
+#plsql : pbbset
+
+# Data reference - be aware of portability issues
+#plsql : pbcdiana
+
+#plsql : pbvgetscalar
+#plsql : pbvlspkgs
+#plsql : pbvpvals
+#plsql : pbvset
+#plsql : pbvsetscalar
+#plsql : pbvsval
+#plsql : pcicmp
+#plsql : pcidpu
+#plsql : pcipmis_pick_match_in_scope
+#plsql : pdechk
+#plsql : pegckd_convert_kopm_to_dty
+#plsql : pegich
+#plsql : pegida
+#plsql : peginu
+#plsql : pegipt
+#plsql : pegisc
+#plsql : pegttrec
+#plsql : pegttri
+#plsql : pegttrn
+#plsql : pegttrx
+#plsql : pegttth
+#plsql : peiabo
+#plsql : peicnt
+#plsql : peicrc
+#plsql : peidcs
+#plsql : peiptd_prepare_to_deinst
+#plsql : peirai
+#plsql : peirep
+#plsql : peirep_suspendable
+#plsql : peisnd
+#plsql : peisus
+#plsql : petico
+#plsql : petid1
+#plsql : petid2
+#plsql : petid3
+#plsql : petie1
+#plsql : petie2
+#plsql : petiex
+#plsql : petifi
+#plsql : petili
+#plsql : petilm
+#plsql : petinx
+#plsql : petipr
+#plsql : petitr
+#plsql : pfrgnc
+#plsql : phdgln
+#plsql : pigicollection
+#plsql : pisoch
+#plsql : pisoda
+#plsql : pisonu
+#plsql : pisopt
+#plsql : pisosc
+#plsql : pkalu
+#plsql : pkamh2
+#plsql : pkidescribe
+#plsql : pkiflatten
+#plsql : pkiimlucontains
+#plsql : pkiinflate
+#plsql : pl_udp
+
+# Data reference
+#plsql : plsdiana
+
+#plsql : plsver
+#plsql : pppjmp
+#plsql : psfchk
+#plsql : psflod
+#plsql : psfnrc
+#plsql : psici_init_client_instance
+#plsql : psicu_init_client_user
+#plsql : psiini
+#plsql : psiinp
+#plsql : psiins
+#plsql : psiinu
+#plsql : psikgsf
+#plsql : psitrm
+#plsql : psitrp
+#plsql : psitrs
+#plsql : psitru
+#plsql : psivsn
+#plsql : ptg_ls
+#plsql : ptg_nd
+#plsql : ptg_tx
+#plsql : ptg_u2
+#plsql : ptg_u4
+#plsql : ptgend
+#plsql : ptglnd
+#plsql : ptgsln
+#plsql : ptkin
+#plsql : puiclosehst
+#plsql : puiclosesess
+#plsql : puicreatesess
+#plsql : puisun
+#plsql : puiswitchhst

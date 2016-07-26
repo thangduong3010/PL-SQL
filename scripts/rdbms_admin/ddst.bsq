@@ -1,0 +1,25 @@
+REM
+REM  MODIFIED
+REM   huagli     06/09/08 - creation
+REM
+CREATE TABLE dst$affected_tables (
+           table_owner VARCHAR2(30) NOT NULL,
+           table_name  VARCHAR2(30) NOT NULL,
+           column_name VARCHAR2(4000) NOT NULL,
+           row_count   NUMBER,
+           error_count NUMBER
+)
+/
+CREATE TABLE dst$error_table (
+           table_owner  VARCHAR2(30) NOT NULL,
+           table_name   VARCHAR2(30) NOT NULL,
+           column_name  VARCHAR2(4000) NOT NULL,
+           rid          UROWID,
+           error_number NUMBER
+)
+/
+CREATE TABLE dst$trigger_table (
+           trigger_owner  VARCHAR2(30) NOT NULL,
+           trigger_name   VARCHAR2(30) NOT NULL
+)
+/

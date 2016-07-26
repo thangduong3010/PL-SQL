@@ -1,0 +1,57 @@
+CREATE OR REPLACE LIBRARY dbms_fga_lib wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+28 5d
+l+FbdksAEuFMOkDTT3cXhBxZJRQwg04I9Z7AdBjDWqGXYkquDK5fcvpZCee9nrLLUjLMpXQr
+58tSdAj1Ycmmpr37dD4=
+
+/
+CREATE OR REPLACE PACKAGE BODY dbms_fga wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+b97 306
+iAY3bv1QeZVPqJuvjrxaZ8oHbEAwg1WNr0rrfC9ArcE+YBIxO46oVEjYV1kG3ie4ioWfVCMY
+GJfAZ8o2eEEceBOgh8ah7CeVN+Xyjtq1JGEXvFkCOltW52WVYUu15HO/TqUyWxHTWnApmkzF
+O8DgDRtn1OzyvUEgIMMzQcAFdc+EbOGmnKXzMrw1EJkgmjfYAlqQ35IeoNMMJ08AzU2Lf4pl
+sjxfBRvqJVVT8W08tPbpTPJUU52y8htaLCjB03kmVGIRWKcUyazcctwTPmznVctuPPzsYA3U
+UWPxGnmKYWa21O3fFHH/4hf/2SddUdBMveu43ibKVdSqxzw4eOXCec5fDHcFjB2MKjwVFQq+
+08z+my98I/ULCVT7eM0UEMIabDMgYYGfgc1yakjEtUI9sp5B3sQhcJPe7DI38P196Lm+VakK
+Vx7PRWueDYJS4ovoE+OKytuhQ2hU1wH3Fcgh1Meg8tb6SF5ayQibNOYYNCaRbyy7Q6iTgvae
+UhgwkFoTCJ4ImzRAXZApPYZvCHv3V4Y97uoXZO+9yzqb4bKzTh1sA02VHctYGJgCd3QKlR2X
+urTlB/sBzCxFLj+cdrrU9f04o1wIIsJd9h93Oq2yqE2qrmVytfmxnYaqifkCitDxqm7jAVIh
+9DgcLJn5iGVCzNFJwq1sI4MU72LAvI685M4sDKiQklHp3iRtMkhBO1rRCvEIZSmYP2BEnJCE
+T4WctpWQIx5aAP718BVQ/LhlFFgd+kzQQL+W+eFd3s+W
+
+/

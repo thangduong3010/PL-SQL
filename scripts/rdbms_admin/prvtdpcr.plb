@@ -1,0 +1,61 @@
+CREATE OR REPLACE PACKAGE BODY dbms_tde_toolkit_ffi wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+431 1d2
+5PbphfFsWg/NLQd8auhIZTSRiV0wg1UJLUjWfC/NI8+V9D73ZZ/ZkX4Ho6l5iIxG+gkMZune
+jeXXd2Rk+wfxicVMRdI59UX+5BlSv+xQXxp2tpUnfhwPGVUmMUXrCM7PtE9oSMSACWDMRiJF
+0N8YwCuISl9UUQrm2tEmJg2QvZOj75EY5mFZIZHt46ZFdlwBHfyCiRjFTP50bl9fsaxMUsEQ
+mVGivC1oWvGMFETGzqWzNCLteYb/1eEuX5YSYK2M8qOuMxBumB2m6ekeX4xRyFlp4I01Frf4
+RF8Obtl3IsrmPR1qT88+TMNbJgMJHwtgNd+HjryZMysdLxyfjKmZxGmS+sXd6iJre2VYKK6D
+rzXR04RZ8KdSH5sck5kkqXyXbKJ4uTcIJJhbZPX4y+xTu4q/6qa1u54bH1VKkSev6/2L8agM
+GCUNwwrDQb0eK9UtNPg24wy7ZQ==
+
+/
+show errors;
+CREATE OR REPLACE PACKAGE BODY dbms_tde_toolkit wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+4f7 284
+wVPPix05Z9qrUQLsqYLmicPkcs4wgzvxLiAGfC9AEjI/lXYrxfcW8r4yzCgbiN2etKeGiYuR
+zGcK5Y5poSj4u7Gf5y4D2GFcHtvxAA/6NE5aq7D1X3yOofsKB8HWPur2XrmfE7DG0xFvpqnD
+ZtQU6ue9PcOLgt7IxuXIRWow6JSGC3B2aEWMxUFpPbs5RjAd43EshIq9U+MCVqs4uJ9jVEtd
+cebnItYBLy/UlJDWVZA/junuysrfa3mbjaNg6jjjC9ShjxzKfjbe0UMosREgImuDUFg4uAVL
+GZXUTF+YBExaIYLs3sPKiWKPPzrrRIvmY33CgTa+PdWI/2WMtiGj496XoIjwVLuWlccAKmGc
+h34kIO9VOiECS5mNNkxN+J+ryMSI5DQy5hF/r/jclPwdxe0T/8ki3IKgNRjCdLKNwJfg5ViP
+OY3T5cc90OKME9Fxm1UzJw0WH/ixwQCKD5/Zge6m2ZXJTlNzRA1q2MTZnJr4m2V2tIhmrqnw
+5fepmKD4pMgOwEE3fK/Q5s4knq5SjS9h3JlXrm4kIaiYP4Ym4cXKj5qW4YFsQSJAXjuQkA1v
+tXB9XU7lRsbculcNQtgC9o+B7eTYPCokuwhCgHItAAzQeMQaBHHk++RQ8o0=
+
+/

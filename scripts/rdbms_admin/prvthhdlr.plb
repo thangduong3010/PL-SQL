@@ -1,0 +1,56 @@
+CREATE OR REPLACE PACKAGE dbms_apply_handler_adm wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+34a 171
+VBEWqYOORr18UrXinzVZ06hcfGowgz3ILgwdfy9AAPjVi7TmRCbKBgY431hhCjrgZbr8PtjY
+j2uNUUm17WvNYX6YJGeEwPp6QjBOOcOWV0kRmt+aJjFIsSQpjDp+sbsPJt54qQirj1OQrpn1
+gy+wWMGgmw2mO45EJjTVZS8EwW+uvybAjV85QS6PySO1uL/a0UAN+j1vmz707ggpph/Gyjft
+ZkyCNRShzNj1QMxB4fV7B6ePS8VbDJENZ0Hcn8iWT6Gh0Iip4X+5vMAG0cp0rzQz6Zxpjo7C
+XTYjyGW8aB2XBQNScuHsyVT9+g0Eghz84Q35Tkxdj8EtWNgPJZ1a3NzW0XlZEmGZ44Nv6p36
+H9TH
+
+/
+show errors;
+CREATE OR REPLACE PACKAGE dbms_apply_handler_internal wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+208 103
+bn84bAWQeZLMO8iU7BGWkIAxpX8wg1VyLZ4VZ3Q5cMEi6WBESbHcKUxQJ5a/Gg0G9cOjaU1j
+wx+ah2sre1RoAln6xq4/BycH9qyb9e06UXkeByQfLpPqkJ0h/uX2GKt8sqaSUuCUKe0vDjwi
+11mLeIV7qFid4qaeMZtLm19ApuBAdul5aSvZ88Kzp8OLzTehP2siEdO++90h5sHxhsbwUGbk
+JdyFtG756HBn2DWAGxAK7rV1gtPUFG4A+w6M1pI=
+
+/
+show errors;

@@ -1,0 +1,31 @@
+CREATE OR REPLACE PACKAGE kupm$mcp wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+5de 22f
+JiyRDMkcbqX1RFTUivg6E+8g838wgzuJLiAVfHRAv4vqXak2jZ83ECcRW3gyDGAT9dzhBT4H
+pEkU0fi1x97ZcI4mE6tc/IAGSbn2nT414sqECDoNBUrELNr7GWJcZhpJ5s2sxFrhihEUNg9s
+iPT0SY5EFmJ71NKV2zWEN9faZKMd+mxQ5CMUkl+ecN/sxHNJqVB7yh8Ed6bgYzcZ1iXLghpB
+dTYLT1JZJ6JJG6MhUfWht/1eYU4msSU+jOlRfr3c0XLp78+BbjLt8FQ6CUqENzzAAVG8JM16
+KetQlZM9CY0LhS484lcUqaIlFFR5ZBDz/m8mNgaj2hoxUmtUmI7PuduRm+r/z8r/12duBTdX
+vx1SuVsGenTbQjTd9NEhT4I4CxE9RRKaz3mC5Q9zBa/Ivi1UrfjPl1GZEnL53+p5XSEHR4fA
+CK9RiIRpSZ6gi3Z7dCuYhiERsr7y3TjdxPEoLLoQEytyNxd6HNWOMrjsCryUcJM9j8rJLTxa
+EgQo3iFPJ4MNKXcIJCkAAJl/C3ZJD/RUX5mT0eK8+4e5Zfk=
+
+/
+GRANT EXECUTE ON sys.kupm$mcp TO PUBLIC; 

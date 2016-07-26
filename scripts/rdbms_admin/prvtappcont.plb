@@ -1,0 +1,33 @@
+SET ECHO ON
+SET FEEDBACK 1
+SET NUMWIDTH 10
+SET LINESIZE 80
+SET TRIMSPOOL ON
+SET TAB OFF
+SET PAGESIZE 100
+CREATE OR REPLACE PACKAGE BODY dbms_app_cont_prvt wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+169 103
+QdatxWdOLcl05lPbB0bko+/dKOswg43Xs56sfI7UCOL+jlsPagopy2Yp34ue7XtNoVStlWB3
+BcTZ0WabudYsz6rX6wByL9Nsq1cy65CDAWs/n0Gnge6oZAQdcFn9jVFXBEYJ+mjFhGGnNawd
+cHmzWodGPkL0L0yWea7rimAkZF1P0Z4JXfTu6Pv3iZRSOz5cJfHfgAw3BnKirJPR+g7RME6Y
+s7LBs7N7VsQzDX+sCeSNBGjeDMpoP68w/jlLUMkU
+
+/

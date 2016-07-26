@@ -1,0 +1,34 @@
+create or replace package body wmsys.ltaq wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+5df 327
+aJVZTP1R+dPvjhU/Z6Vh87BK8QYwgzLDLtATfC/NWA9/B/KpiWAxVUgK0fJsW0DbnrTYeRWL
+kekny9V571yjzd6qz3m23cjbW3wwGc80WMEYGrrCYFQIfigguweqZwEvZ7gy+8OssHU94ahs
+jWUgaKhe9xInYPJGpPMpQOP4iCFxfgHpCW4cw6JUTrrBG0fwXAyOOy3BLvdcUvOsd5aDRqhj
+RuiJEq0gl2R+Fz/MhmfeDWQvZUehTBZwMszbeTHJqBI8Y3HrR23VWrZVc+O3PKnqJ+xUYcVj
+G3LHHeItYHlZFhcJCm8Jq4Pl/cjTYyGyUDw2AlG0jHYmtsMPWdlTCmoDnyERhIT2VQjzANHg
+MKMj3zldacHRyy8sMsTjcslf9jc+O02c87wafZd+huqs2Axl5D2JzJQ63YjPmLW8MDC4euK4
+LlgdJXonCsWJ3I3eBZ8ASemv/VVswSWnS0bIA3w5DTWfQfevbUzTmVlc6rZp6M5N3XGlwBUO
+Id6Lduyyq6mAcsCXF9NZ5UAi2PuC2WlgjrOtZJOLsH2/LowvcUdEa9NVYWQ0JHckqt7UFy+8
+QSLLIGSqj85Seu1qKaX+zjY4BBXBsE+wOmUkalc30Swh7nJMx2iSNnE4S/2CgqTqydm2M8Ny
+eJF6/aL8DOvqkXS9NhDOUpmWGo7wSNYrTHkHP4RX+rSQQIb4C1FamQPhHP1MJ1CDrT1KstXC
+llf6bh/9wAbUTP0z2JiEBhRTyJnO1lIckDVxYSp8mydkSXLw9rtLsELhr11qftc2tMGctcV0
+cAY=
+
+/

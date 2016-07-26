@@ -1,0 +1,187 @@
+-------------------------------------------------------------------------------
+--
+-- $Header: dmsyssch.sql 14-mar-2006.11:53:51 mmcracke Exp $
+--
+--  Copyright (c) 2001, 2003, Oracle. All rights reserved.
+--
+--    NAME
+--    dmsyssch.sql
+--
+--    DESCRIPTION
+--    ODM Schema Definitions
+--
+--    NOTES
+--
+--       MODIFIED MM/DD/YY
+--       mmcracke 03/08/06 - Move view definitions to catalog.sql
+--       mmcracke 03/08/06 - Move metadata table creates to ddm.bsq
+--       mmcracke 03/08/06 - Remove 10.2 metadata
+--       gtang    04/07/05 - Fix bug #4260574 by adding a new constraint on 
+--                           DM$P_MODEL_TABLES 
+--       pstengar 03/14/05 - bug 4238290: fixed current user identification 
+--       mmcracke 03/31/05 - Changes to move to SYS. 
+--       mmcracke 12/15/04 - Add public synonyms for types. 
+--       mmcracke 11/15/04 - Remove uneeded DMSYS types 
+--       mmcracke 11/05/04 - Add ora_mining_varchar2_nt type. 
+--       gtang    10/26/04 - ADD Cluster_Rule_Tab_type 
+--       fcay     09/27/04 - Add with grant option 
+--       amozes   07/08/04 - remove/obsolete dm_target_values
+--       xbarr    06/25/04 - xbarr_dm_rdbms_migration
+--       mmcracke 06/21/04 - Remove dmsys objects. 
+--       xbarr    06/01/04 - comment out certain TYPEs & grants 
+--       mmcracke 05/20/04 - Remove Java ODM references
+--       gtang    04/15/04 - Add cluster_tab_type
+--       mmcracke 12/01/03 - Include INPUT_PDS_ID in DM_RESULT view
+--       mmcracke 11/18/03 - Address bug 3215155.  Fix model reference in
+--                           dm$result
+--       jyarmus  10/26/03 - add weight of evidence record
+--       hyoon    10/23/03 - to add MDL for AI
+--       mmcracke 10/01/03 - Add NMF apply result record
+--       mmcracke 07/14/03 - Index table dm$task_arguments
+--       fcay     06/23/03 - Update copyright notice
+--       mmcracke 05/09/03 - Replace c_approximation with c_regression
+--       mmcracke 04/04/03 - Fix rule table enum
+--       mmcracke 04/03/03 - Remove ABN table types (nodeTable,valueTable,
+--                           ruleTable)
+--       mmcracke 04/03/03 - Add textMining table type
+--       mmcracke 03/21/03 - Remove OWNER from dm_result views
+--       ddadashe 03/13/03 - remove schema_name from dm_model_tables_2d
+--       xbarr    03/08/03 - remove dm$message_log, dm$error_table tables/views/
+--                           synonyms
+--       kakchan  03/03/03 - add type for regression record apply
+--       pkuntala 02/21/03 - removing nmftaxonomy and nmfattrmap tables
+--       pkuntala 02/19/03 - removing nmf basis and euclidean tables
+--       mmcracke 02/14/03 - Add types for AR build
+--       kakchan  01/23/03 - renamed SVM table type name
+--       jyarmus  02/13/03 - add record apply types for new rule paradigm
+--       mmcracke 01/20/03 - Add large VARRAY for > 5000 attributes
+--       mmcracke 01/18/03 - Alter DM_CATEGORY_MATRIX_ENTRY view to recognize
+--                           'char'
+--       cbhagwat 01/17/03 - Moving dbms_dm types to dmpsyssch
+--       pkuntala 01/16/03 - adding nmfAttrMappedTable
+--       mmcracke 01/07/03 - Add new table types for SVM
+--       ramkrish 01/10/03 - Add DM_Rules type
+--       mmcracke 12/31/02 - Add model_id to dm$result
+--       xbarr    12/10/02 - Remove DROP statements 
+--       mmcracke 12/09/02 - Fix bug 2679294
+--       mmcracke 11/15/02 - Change category names & values to VARCHAR2(4000)
+--       xbarr    11/12/02 - Fix dm_attribute_property view
+--       mmcracke 11/12/02 - Fix problem with dm_attribute_property view
+--       mmcracke 11/08/02 - Fix bug 2515208
+--       mmcracke 10/29/02 - Add input_pds_id to dm$model
+--       cbhagwat 10/15/02 - unstructured data type
+--       mmcracke 10/15/02 - Fix bug 2446532
+--       mmcracke 10/08/02 - Remove view references to sys.obj$
+--       dwong    10/09/02 - add NUM_LIST_TYPE and STRVAL_LIST_TYPE
+--                         - for ABN detail rule
+--       mmcracke 10/08/02 - Change model_tables view for new nmf tables
+--       cbhagwat 10/08/02 - Adding property name dm_attribute_property view
+--       mmcracke 10/04/02 - Changes to dm$logical_data for data prep
+--                         - enhancements
+--       mmcracke 10/02/02 - Add new nmf model tables to dm_model_tables view
+--       mmcracke 10/02/02 - Fix dm_location_access_data view
+--       mmcracke 09/30/02 - Add new  function/algorithm
+--       mmcracke 09/23/02 - Fix dm$v$object view (add logicalData back in)
+--       xbarr    09/18/02 - add view for error tbs bug[2562249]
+--       mmcracke 09/12/02 - Fix dm$v$object view.  Bug 2520186
+--       xbarr    09/12/02 - add unique_id sequence
+--       jyarmus  09/12/02 - modify cost and priors settings names
+--       jyarmus  09/11/02 - change regression to approximation in
+--                         - settings_map table
+--       mmcracke 09/11/02 - Add new svm table types to views
+--       cbhagwat 09/03/02 - Adding internal modelseeker task
+--       hyoon    09/11/02 - to revers changes for JDM
+--       hyoon    09/06/02 - JDM RI
+--       kakchan  08/29/02 - Replaced c_regression with c_approximation
+--       pstengar 08/28/02 - Changed dm$task INSTANCE column to be of type
+--                         - VARCHAR2 instead of NUMBER
+--       pstengar 08/23/02 - Added public synonym for DM$PMML_DTD table
+--       mmcracke 08/07/02 - Change names in dm$ms_result_entry to varchar2(64)
+--       mmcracke 08/05/02 - Change metadata for new Category design
+--       mmcracke 08/01/02 - Fix comboAdaptiveBayesNetwork enum
+--       mmcracke 07/30/02 - Change dm$execution_handle to unnamed object
+--       dmukhin  07/29/02 - add types for apply_record
+--       mmcracke 07/29/02 - Change function to fs_obj_id in
+--                         - dm$ms_result_entry table
+--       mmcracke 07/28/02 - Change model_seeker_result view
+--       mmcracke 07/24/02 - Add deleted flag to dm$model_tables
+--       mmcracke 07/22/02 - Add comments to schema fix dm$v$physical_data view
+--       xbarr    07/16/02 - add DM_CATALOG_ROLE
+--       mmcracke 07/15/02 - Fix dm_result view
+--       mmcracke 07/10/02 - Change dm$result, rework input_obj_id..
+--       kakchan  07/10/02 - Fixed dm_category_matrix view to handle
+--                         - non-string data type category.
+--       mmcracke 07/03/02 - model seeker changes..
+--       mmcracke 06/28/02 - Create DM_LOCATION_ACCESS_DATA view.
+--       mmcracke 06/28/02 - Changes to DM$MODEL_SEEKER_RESULT.
+--       mmcracke 06/27/02 - Add start and end time to dm_model view.
+--       mmcracke 06/27/02 - add ms_result_entry view.
+--       mmcracke 06/26/02 - change create synonym statements.
+--       mmcracke 06/25/02 - Add views for dm$apply_output.
+--       mmcracke 06/24/02 - Add apply_output views.
+--       mmcracke 06/21/02 - Change to dm$apply_output table.
+--       mmcracke 06/18/02 - Grant select on result views..
+--       mmcracke 06/17/02 - Remove dm$nested_settings table..
+--       mmcracke 06/17/02 - Grant execute on dm$category_id_seq to public..
+--       mmcracke 06/17/02 - Add view for dm$message_log.
+--       mmcracke 06/17/02 - Add 2D dm_model_tables_2d view.
+--       mmcracke 06/14/02 - Move package synonyms to dmproc.sql.
+--       mmcracke 06/14/02 - Fix model table enum..
+--       mmcracke 06/14/02 - Fix dm_category_matrix view..
+--       mmcracke 06/13/02 - Add owner field to dm$message_log.
+--       mmcracke 06/13/02 - Change object types to authid current_user.
+--       mmcracke 06/12/02 - Add synonyms for packages.
+--       mmcracke 06/12/02 - Fix dm_model view.
+--       mmcracke 06/11/02 - Include funtion and algorithm in dm$v$model view.
+--       mmcracke 06/07/02 - Modify dm_location_cell_access_data view.
+--       mmcracke 06/06/02 - Add crossValidate type to task enum.
+--       mmcracke 06/04/02 - Create views for location_access_data and
+--                         - location_cell_access_data.
+--       mmcracke 06/04/02 - .
+--       mmcracke 06/04/02 - Mods to support Mining Apply Output.
+--       mmcracke 05/31/02 - Rework dm$location_cell_access_data.  Add api.
+--       mmcracke 05/31/02 - Add view for model_tables.
+--       mmcracke 05/29/02 - Add MFS to potential MAS owner in view
+--                         - definitions.
+--       mmcracke 05/28/02 - Minor view changes.
+--       mmcracke 05/23/02 - Add MAS field to DM$MS_RESULT_ENTRY.
+--       mmcracke 05/17/02 - Cleanup.
+--       mmcracke 05/16/02 - Rework views.
+--       mmcracke 05/15/02 - New view definitions.
+--       mmcracke 04/09/02 - 10.1 Changes.
+--       ddadashe 02/18/02 - 
+--       ramkrish 02/01/02 - rollback DerivedField out of BayesInput for 9iR2
+--       pstengar 01/28/02 - Modified ODM_MINING_TASK table, changed
+--                         - SESSION_ID to INSTANCE..
+--       xbarr    01/14/02 - add PMML table ODM_PMML_DTD 
+--       ramkrish 01/11/02 - add types for dmnbb:gen_pmml 
+--       xbarr    09/01/01 - Creation
+--
+--
+-- Package Synonyms moved to dmproc.sql
+
+-------------------------------------------------------------------------------
+-- SEQUENCES 
+-------------------------------------------------------------------------------
+
+-- sequence used by export/import jobs
+--CREATE SEQUENCE DM$EXPIMP_ID_SEQ
+--/
+
+-------------------------------------------------------------------------------
+-- TYPES
+-------------------------------------------------------------------------------
+-- types moved to catodm.sql
+   
+-------------------------------------------------------------------------------
+-- SYNONYMS
+-------------------------------------------------------------------------------
+-- type synonyms moved to catodm.sql
+
+---------------------------------------------------------------------
+-- GRANTS
+---------------------------------------------------------------------
+-- type grants moved to catodm.sql
+
+--GRANT SELECT ON DM$EXPIMP_ID_SEQ TO PUBLIC WITH GRANT OPTION
+--/

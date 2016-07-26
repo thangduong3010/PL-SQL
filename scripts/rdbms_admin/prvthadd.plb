@@ -1,0 +1,39 @@
+CREATE OR REPLACE PACKAGE dbms_repcat_add_master wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+f80 422
+pR5EuZ1RY54P+9zEq+uuEXOPgP8wg5DqACAFfC/Nig+vf/sYy6T99Q76A+ZGZj3vlLHrqHll
+ORbx5KrS0jiAwhaTITiW+hC8Es966gkAheHbTk+xvyMSOv7+KdZBQU8pgSlzhkMudUsx58xr
+6g72NvPFacm/ylsSxQHjqe5AskYWblY1GkpSBsxRRZzOc/b2gzrMibqZtl7tYh09s1S2KJrS
+PKv+Z9PMHEi7tEJxX3cjo+fk4npg5s5c/TYQHJ2turtiWrFc7yxjLS4+ITsKxE873rTQQKRE
+Q+hz+Hue6py63WQQN/NxfBn3s2Z5SsCaMUjzXR3pidFp0vWXIbFHWHOmbqAQRE3d6RumzXrx
+8cxVsZSNLhiM7VLTKJFxRga0rHsW1NWpm9wH/yOsUhV5G/3qPjwX9jucA2NN4BOzHIIr01g7
+hP9W8EbHbjnCNlT2reKi5M76A8QzZX4fkJzd2Ud6QLivrfsU5k0MyvmEbJmI/Uer4MCWeL2O
+2n3TOMU2HOG4FS9jbWBgUABcnGBl/WSfg+tYHKCrpqiL/1THINtaLRB0Ptn5nmOD5ffBx0cT
+8q1ZiSJ9/ttmOcWsQRt5YLYtObMBLD/OmAqQJ8kVAlQMTzr4GGDnKEqB6Z6U/3uO4q+IvbOs
+d65x0Z3L1k6TnUUPKSV4Rby26A/YhGAeGWXMqEaLs3GTw4bh43a4ActGJYAOxnxed2K626uu
+GlQa5mqR0p8wAbHzysfkMWoPwGklCLRypxhDr8TIKc2DdP8LPmJCFygm2QAtF95dgJ0v2Ze+
+Sg9YipeLKxsDK5snGpbtP3iu9z4KjEuRmaEGcWtiA8zCXRtS8SFHSgZUhRGrxYKXlBWCtmwM
+bQmWd2xCg+MM4TLUCnIfif1Sld4fu0hyjSgp470hReOtzeh1iVt7ZBtZF2AQpceRpVFOtZF5
+jLSh/Y8z0fBQKYvNY/TNDf1IezSsKnibycC/ZTF/6whczBujyJUtTrIO0KAj/O86Q3ncaj3p
+WX1BodKyV1VzQF3zCBkZuSak1L8P+R0LU2Uo
+
+/
+grant execute on dbms_repcat_add_master to execute_catalog_role
+/

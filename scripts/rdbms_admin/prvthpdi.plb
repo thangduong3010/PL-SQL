@@ -1,0 +1,85 @@
+CREATE OR REPLACE LIBRARY KUPDLIB wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+22 55
+LUCcFBFzbcA1R1eI1H7b7te3sfYwg04I9Z7AdBjDpcuyuAgI9QnnvZ6yy1IyzLh0K+fLUnQI
+9cmmpug1vRY=
+
+/
+CREATE OR REPLACE LIBRARY KUPCLIB wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+22 55
+I3m2TK4XD7myVUgUYaTfsfZTsbAwg04I9Z7AdBjDpcuyuDMI9QnnvZ6yy1IyzLh0K+fLUnQI
+9cmmpujFvUk=
+
+/
+CREATE OR REPLACE PACKAGE kupd$data_int wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+f38 3e5
+U7xLjRfDaI3mcydERv8Nvtv8pTcwg82nACAFfC9A2vjquIXIpmLIV6GdRstJm34Dp1qnGgZX
+mfPKDMwOfcj5tUEicAyfEcxYow5xdAUjhZgSmtqzpg9q0zHQmp1B/0EcTyxq/k9yWUWTqi2F
+7JCH1CdKUcKFdm+FEBYNZ9T/AF1EOURsYQValbndm5S0OgV9k0pkS0YAjTaIS7y/aaugFnAp
+I5q9CVxYjPDvYygdGC9MOsxHVHEODRZFl9IEbwJQW/KZGOFtixKyQ6Mf58U/8XzMfWYSoZhh
+040GhyeVVGOesmbnpbgiiWYmGoGrTUFZso5Z6G/CZxfIAymJz7Q62Y7RWkNSQvJqK4DX1mHh
+zaJL3y6aF/oOhifxNf0ocIdiD8e06pCufjxKJf09iZFnTHYJbxABW+6RsOiXUHWg+T4XwPyv
+bsnR+LvBnVAT7zUrYyl1Po6tghFeBT0u8jsZBWucUROx+g7891uPlX91PD+ATMRncuproijG
+O/7l/xNmGaC63WsGKWLcEKXs3xbpjwL/W+r7g/p+k3NOorKSxBZsrMTdf4lIoWz+n8iZBVQp
+f2ctN3kLDXP9Iu45sV/MY+2z//pgb5qDyM8eNbJ+2yKqOLuLkwNqqMQDIF+Yl8nNlUnn3imj
+tMTPRqjbBsQYHCTg4IXPv54ZEqCeGMxdI6qXqLaESMKT/Wm0qVxqM/DKxMawRjreXXOZhYHe
+XWoca4C5aT3wBYu2hCK58wI/jM0jIZyukC5rdIEeodEUGBpmyA7drXvqrsiNbz50PoP/mTSc
+/wvThK0QClBIHUI3g8ZJlWBDSIBzmcN32o5MeJ8dEOUBJLxN4pEslIxR7tc+JtqgwC2yIfsv
+lxoGVTyToYBEdHBZAKErwJyTdwrqMrOQquclvp6kDLb+wD8DeGCxLDnkJ3Q0RydwFwhgzX8M
+L7gRpetzeyGHFq87gCMgYD3gHpfjA4tM3KrJIPmmmCsUFQ==
+
+/
+GRANT EXECUTE ON sys.kupd$data_int TO EXECUTE_CATALOG_ROLE;

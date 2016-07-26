@@ -1,0 +1,3038 @@
+REM   myuin     03/15/13 - Backport myuin_bug-16006038 from main
+REM   romorale  09/13/12 - 14669280 - rfi backport of bug 14541945
+REM   huntran   11/15/11 - error position
+REM   yurxu     04/11/11 - Add connect_user for xstream$_sever
+REM   yurxu     03/07/11 - Bug-11922716: 2-level privilege model
+REM   huntran   12/21/10 - xstream$_dml_conflict_handler
+REM                        xstream$_dml_conflict_columns
+REM                        xstream$_reperror_handler
+REM                        xstream$_handle_collisions
+REM   praghuna  11/10/09 - bug 9121494
+REM   thoang    10/10/09 - add inbound_svr to streams$_apply_process
+REM   thoang    02/14/09 - add xout_processed_time & parent_transaction_id
+REM   rmao      02/17/08 - add seqnum to streams$_propagation_process, add
+REM                      - streams$_propagation_seqnum sequence
+REM   juyuan    11/24/08 - add apply change handler table
+REM   jinwu     10/06/08 - add stmt handlers
+REM   thoang    11/24/08 - add xidusn, xidslt & xidsqn cols to apply$_error
+REM   rmao      04/04/08 - add streams$_split_merge, streams$_capture_server
+REM   huagli    03/08/08 - Project 25482: commit SCN-based MV logs
+REM   wesmith   12/10/07 - MV log purge optimization
+REM   thoang    02/27/08 - Add xstream system tables
+REM   jklein    08/01/05 - creation
+REM
+REM the streams feature depends on the SYSAUX tablespace from manageability.
+REM
+rem
+rem  sumpartlog$ table
+rem  This table has one row per table partition being dropped or its dataobj# 
+rem  changed
+rem  obj# is a key; and so is (bo#, part#)
+rem  There is a non-unique index on bo#, obj#
+rem
+create table sumpartlog$ (
+  obj#        number not null,                 /* object number of partition */
+  /* DO NOT CREATE INDEX ON DATAOBJ#  AS IT WILL BE UPDATED IN A SPACE
+   * TRANSACTION DURING TRUNCATE */
+  dataobj#    number,                            /* data layer object number */
+  bo#         number not null,                /* object number of base table */
+  newobj#     number,               /* new object number of partition if any */
+  newdataobj#    number,              /* new data layer object number if any */
+  pobj#       number,               /* partition object number; populated when 
+                                           TRUNCATE/COALESCE of subpartition */
+  hiboundlen  number not null,      /* length of high bound value expression */
+  loboundlen  number not null,       /* length of low bound value expression */
+  boundvals   long,               /* concatenated text of low-and high-bound */
+                                                         /* value expression */
+  parttype    number,                                      /* partition type */
+                                               /* 1=RANGE,2=COMPOSITE,3=LIST */
+  pmoptype    number,                                  /* recorded PMOP type */
+  scn         number,                             /* summary sequence number */
+  timestamp   date not null,                 /* Time when the PMOP occurred. */
+  flags       number,                        /* 0x01 It is a table operation */
+                               /* 0x02 logged because DL/DML happened before */
+                              /* 0x04 table op is issued by complete refresh */
+                                        /* 0x08 PMOP log is commit SCN-based */
+  /* These spare columns are for future needs, e.g. values for the 
+   * PARALLEL(degree, instances) parameters.  */
+  spare1      number,           
+  spare2      number,
+  spare3      number,
+  xid         number,                                     /* transaction id */
+  cscn        number                                          /* commit SCN */
+)
+/
+create index i_sumpartlog$ on sumpartlog$(bo#, obj#)
+/
+create index i_sumpartlog$_bopart$ on sumpartlog$(bo#, dataobj#)
+/
+create table sumdelta$           /* sumdelta table */
+( tableobj#     number not null, /* detail table obj# loaded */
+  partitionobj# number not null, /* partition obj# that was loaded */
+  dmloperation  char(1),         /* I=insert, D=delete */
+  scn           number not null, /* SCN when the bulk DML occurred. */
+  timestamp     date not null,   /* Time when the bulk DML occurred. */
+  lowrowid      rowid not null,  /* low rowid modified in this partition. */
+  highrowid     rowid not null,  /* high rowid modified in this partition. */
+  sequence      number,          /* sequence # */
+  spare1        number,          /* 0x0001 - commit SCN-based DL log */
+  spare2        number,
+  spare3        varchar2(1000),
+  spare4        date,
+  xid           number           /* transaction id */
+)
+/
+create unique index i_sumdelta$ on 
+  sumdelta$(tableobj#, partitionobj#, timestamp, lowrowid, highrowid) 
+/ 
+CREATE TABLE snap_logdep$ (                           /* slog$ for sumdelta$ */
+  tableobj#  number,                             /* obj# of the master table */
+  snapid     integer,           /* internal id of the snapshot using the log */
+  snaptime   date,                  /* time of last refresh for the snapshot */
+  rscn       number)                                     /* last refresh scn */
+/ 
+create unique index i_snap_logdep1 on snap_logdep$(tableobj#, snapid)
+/
+CREATE TABLE snap_loadertime$ (                       /* mlog$ for sumdelta$ */
+  tableobj#  number,                             /* obj# of the master table */
+  oldest     date,                /* oldest information for the master table */
+  oldest_scn number,          /* oldest scn information for the master table */
+  youngest   date,                 /* most recent refresh timestamp assigned */
+  flag       number)                            /* (reserved for future use) */
+/
+create unique index i_snap_loadertime1 on snap_loadertime$(tableobj#)
+/
+create cluster c_mlog# (master varchar2("M_IDEN"),
+                        mowner varchar2("M_IDEN"))
+/
+create index i_mlog# on cluster c_mlog#
+/
+create table mlog$          /* list of local master tables used by snapshots */
+( mowner          varchar2("M_IDEN") not null,            /* owner of master */
+  master          varchar2("M_IDEN") not null,             /* name of master */
+  oldest          date,       /* maximum age of rowid information in the log */
+  oldest_pk       date,          /* maximum age of PK information in the log */
+  oldest_seq      date,    /* maximum age of sequence information in the log */
+  oscn            number,                                   /* scn of oldest */
+  youngest        date,                     /* most recent snaptime assigned */
+  yscn            number,                   /* set-up scn;  identifies group */
+                                          /* of rows set up at time youngest */
+  log             varchar2("M_IDEN") not null,                /* name of log */
+  trig            varchar2("M_IDEN"),           /* trigger on master for log */
+  flag            number,       /* 0x0001, log contains rowid values         */
+                                /* 0x0002, log contains primary key values   */
+                                /* 0x0004, log contains filter column values */
+                                /* 0x0008, log is imported                   */
+                                /* 0x0010, log is created with temp table    */
+  mtime           date not null,                    /* DDL modification time */
+  temp_log        varchar2("M_IDEN"),/* temp table as updatable snapshot log */
+  oldest_oid      date,         /* maximum age of OID information in the log */
+  oldest_new      date,              /* maximum age of new values in the log */
+  purge_start       date,                                /* purge start date */
+  purge_next        varchar2("M_DATF"),        /* purge next date expression */
+  purge_job         varchar2("M_IDEN"),                    /* purge job name */
+  last_purge_date   date,                                 /* last purge date */
+  last_purge_status number,    /* last purge status: error# or 0 for success */
+  rows_purged       number,                     /* last purge: # rows purged */
+  oscn_pk           number,      /* maximum scn of PK information in the log */
+  oscn_seq          number,/* maximum scn of sequence information in the log */
+  oscn_oid          number,     /* maximum scn of OID information in the log */
+  oscn_new          number           /* maximum scn of new values in the log */
+)
+cluster c_mlog# (master, mowner)
+/
+create table snap_xcmt$ /* xid and commit_scn mapping table */
+( xid          number not null,                            /* transaction id */
+  commit_scn   number not null                                 /* commit SCN */
+)
+/
+create table slog$                     /* list of snapshots on local masters */
+( mowner          varchar2("M_IDEN") not null,            /* owner of master */
+  master          varchar2("M_IDEN") not null,             /* name of master */
+  snapshot        date,                 /* identifies V7 snapshots: obsolete */
+  snapid          integer,                        /* identifies V8 snapshots */
+  sscn            number,                                 /* scn of snapshot */
+  snaptime        date               not null,        /* when last refreshed */
+  tscn            number,                                 /* scn of snaptime */
+  user#           number)                  /* userid for security validation */
+cluster c_mlog# (master, mowner)
+/
+create index i_slog1 on slog$(snaptime)
+/
+REM
+REM IMPORTANT NOTE:
+REM   Due to the clob column, snap$ must appear after the creation of lob$
+REM
+create table snap$                                /* list of local snapshots */
+( sowner          varchar2("M_IDEN") not null,          /* owner of snapshot */
+  vname           varchar2("M_IDEN") not null,      /* name of snapshot view */
+  tname           varchar2("M_IDEN") not null,     /* name of snapshot table */
+  mview           varchar2("M_IDEN"),          /* view snapshot is made from */
+  mowner          varchar2("M_IDEN"),                     /* owner of master */
+  master          varchar2("M_IDEN"),                      /* name of master */
+  mlink           varchar2("M_XDBI"),        /* database link to master site */
+  can_use_log     varchar2(1),                                     /* unused */
+  snapshot        date,       /* used by V7 masters to identify the snapshot */
+  snapid          integer,    /* used by V8 masters to identify the snapshot */
+  sscn            number,                                 /* scn of snapshot */
+  snaptime        date,   /* when this snapshot was last refreshed: OBSOLETE */
+  tscn            number,                                 /* scn of snaptime */
+  error#          number,          /* last error caused by automatic refresh */
+  auto_fast       varchar2(1),        /* date function for automatic refresh */
+  auto_fun        varchar2("M_DATF"),             /* obsolete, 7.1 and above */
+  auto_date       date,                           /* obsolete, 7.1 and above */
+  refgroup        number,                                          /* unused */
+  ustrg           varchar2("M_IDEN"),     /* trigger for updatable snapshots */
+  uslog           varchar2("M_IDEN"),         /* log for updatable snapshots */
+  status          integer,  /* 0x0000, Need to regenerate refresh operations */
+                            /* 0x0001, fast refresh operations generated     */
+                            /* 0x0002, complete refresh operations generated */
+  master_version  integer,              /* Oracle version of the master site */
+                                                              /* (1) -> V7.x */
+                                                              /* (2) -> V8.0 */
+  tables          integer,  /* number of tables in snapshot definition query */
+  field1          number,                                  /* for future use */
+  field2          varchar2("M_IDEN"),                      /* for future use */
+  flag            number,                   /* 0x0001, can use master log    */
+                                            /* 0x0002, snapshot is updatable */
+                                            /* 0X0010, ROWID snapshot        */
+                                            /* 0x0020, PRIMARY KEY snapshot  */
+  flag2           number,                           /* extended snapshot flg */
+  query_txt       long,                /* query which this view instantiates */
+  lobmaskvec      raw(255),                       /* lob columns mask vector */
+  mtime           date not null,                    /* DDL modification time */
+  mas_roll_seg    varchar2("M_IDEN"),        /* master-side rollback segment */
+  rscn            number,                                /* last refresh scn */
+  refhnt          number,                                    /* refresh hint */
+  query_len       integer,            /* length of snapshot definition query */
+  instsite        integer default 0,                   /* instantiating site */
+  flavor_id       number,                                       /* flavor id */
+  objflag         number,                   /* object properties of snapshot */
+  sna_type_oid    raw(16),                             /* object MV type OID */
+  sna_type_hashcode raw("KOTHCL"),                /* object MV type hashcode */
+  sna_type_owner  varchar2("M_IDEN"),                /* object MV type owner */
+  sna_type_name   varchar2("M_IDEN"),                 /* object MV type name */
+  mas_type_oid    raw(16),                   /* master object table type OID */
+  mas_type_hashcode raw("KOTHCL"),      /* master object table type hashcode */
+  mas_type_owner  varchar2("M_IDEN"),      /* master object table type owner */
+  mas_type_name   varchar2("M_IDEN"),       /* master object table type name */
+  parent_sowner   varchar2("M_IDEN"),               /* parent snapshot owner */
+  parent_vname    varchar2("M_IDEN"),                /* parent snapshot name */
+  rel_query       clob,                /* relational transformation of query */
+  alias_txt       clob,                             /* text for column alias */
+  syn_count       integer,           /* number of synonyms for master tables */
+  flag3           number                            /* extended snapshot flg */
+)
+/
+create unique index i_snap1 on snap$(vname, sowner, instsite)
+/
+create index i_snap2 on snap$(parent_vname, parent_sowner, instsite)
+/
+create sequence snapshot_id$                         /* Snapshot ID sequence */
+  increment by 1
+  start with 1
+  minvalue 1
+  maxvalue 2147483647     /* max value that is guaranteed to fit into an SB4 */
+  nocycle
+/
+create table snap_reftime$
+( sowner          varchar2("M_IDEN") not null,          /* owner of snapshot */
+  vname           varchar2("M_IDEN") not null,      /* name of snapshot view */
+  tablenum        integer not null,   /* order of master table in snap query */
+  snaptime        date,                    /* time of last refresh for table */
+  mowner          varchar2("M_IDEN"),                     /* owner of master */
+  master          varchar2("M_IDEN"),                      /* name of master */
+  masflag         number,                  /* additional master information: */
+                                    /* (0x0001) is a fact table              */
+                                    /* (0x0002) can be foreign key optimized */
+  masobj#         number,                        /* obj# of the master table */
+  loadertime      date,       /* last refresh with respect to SQL*Loader log */
+  refscn          number,   /* scn of latest info used to refresh this table */
+  instsite        integer default 0,                   /* instantiating site */
+  lastsuccess     date,             /* time of last known successful refresh */
+  fcmaskvec       raw(255),                    /* filter columns mask vector */
+  ejmaskvec       raw(255),                 /* equi-join columns mask vector */
+  sub_handle      number,              /* subscription handle (if using CDC) */
+  change_view     varchar2("M_IDEN")      /* change view name (if using CDC) */
+)
+/
+create unique index i_snap_reftime1 on 
+  snap_reftime$(vname, sowner, instsite, tablenum)
+/
+create table mlog_refcol$             /* list of snapshot log filter columns */
+( mowner          varchar2("M_IDEN") not null,            /* owner of master */
+  master          varchar2("M_IDEN") not null,             /* name of master */
+  colname         varchar2("M_IDEN") not null,   /* master table column name */
+  oldest          date,          /* maximum age of information in the column */
+  oldest_scn      number,        /* maximum scn of information in the column */
+  flag            integer)                       /* column meta information: */
+/
+create unique index i_mlog_refcol1 on mlog_refcol$(mowner, master, colname)
+/
+create table snap_refop$            /* fast refresh operations for snapshots */
+( sowner          varchar2("M_IDEN") not null,          /* owner of snapshot */
+  vname           varchar2("M_IDEN") not null,      /* name of snapshot view */
+  tabnum          integer not null,   /* order of table in subquery chain    */
+                                      /* the master table is indicated by 1  */
+  setnum          integer default 0,  /* the set of queries for a given      */
+                                      /* table number, used for many-many    */
+                                      /* subqueries or UNIONS                */
+  operation#      integer not null,   /* operation type (see kkzrff, kkzrei) */
+                                      /* FAST REFRESH OPERATIONS (outer tab) */
+                                      /* 0 -> SELECT for delete phase        */
+                                      /* 1 -> DELETE statement               */
+                                      /* 2 -> SELECT for upd/ins phase       */
+                                      /* 3 -> UPDATE statement               */
+                                      /* 4 -> INSERT statement               */
+                                      /* 5 -> DELETE local inserts (if upd)  */
+                                      /* FAST REFRESH OPERATIONS (inner tab) */
+                                      /* 0 -> SELECT for delete phase        */
+                                      /* 1 -> DELETE statement               */
+                                      /* 2 -> SELECT for insert phase        */
+                                      /* 3 -> INSERT statement               */
+                                      /* COMPLETE REFRESH OPERATIONS         */
+                                      /* 6 -> Insert as Select               */
+  cols            number,             /* bind columns in the query           */
+                                      /* 0 -> no bind columns                */
+                                      /* 1 -> snaptime                       */
+                                      /* 2 -> snaptime, ejmaskvec            */
+                                      /* 3 -> snaptime, ejmaskvec, fcmaskvec */
+  fcmaskvec       raw(255),        /* obsolete -  filter columns mask vector */
+                                      /* used for many-many subquery or UNION*/
+  ejmaskvec       raw(255),       /* obsolete -equi-join columns mask vector */
+                                      /* used for many-many subquery or UNION*/
+  sql_txt         long,                /* query which this view instantiates */
+  instsite        integer default 0)                   /* instantiating site */
+/
+create unique index i_snap_refop1 on 
+  snap_refop$(sowner, vname, instsite, operation#, tabnum, setnum)
+/
+create table snap_colmap$            /* snapshot column aliasing information */
+( sowner          varchar2("M_IDEN") not null,          /* owner of snapshot */
+  vname           varchar2("M_IDEN") not null,      /* name of snapshot view */
+  snacol          varchar2("M_IDEN") not null,    /* name of snapshot column */
+  tabnum          integer not null,   /* order of master table in snap query */
+  mascol          varchar2("M_IDEN"),                  /* master column name */
+  maspos          integer,             /* position of master column (intcol) */
+  colrole         number,                         /* how is this column used */
+  instsite        integer default 0,                   /* instantiating site */
+  snapos          integer default 0     /* position of col in snapshot table */
+)
+/
+create unique index i_snap_colmap1 on 
+  snap_colmap$(sowner, vname, instsite, tabnum, snacol)
+/
+create table snap_objcol$              /* snapshot object column information */
+( sowner            varchar2("M_IDEN") not null,      /* snapshot view owner */
+  vname             varchar2("M_IDEN") not null,       /* snapshot view name */
+  instsite          integer default 0,                 /* instantiating site */
+  tabnum            integer not null, /* master table this column belongs to */
+  snacol            varchar2("M_IDEN") not null,     /* snapshot column name */
+  mascol            varchar2("M_IDEN"),     /* associated master column name */
+  flag              number,                             /* column properties */
+  storage_tab_owner varchar2("M_IDEN"),  /* non-image coll/substitutable col */
+  storage_tab_name  varchar2("M_IDEN"),  /* non-image coll/substitutable col */
+  sna_type_oid      raw(16),                 /* type OID for snapshot column */
+  sna_type_hashcode raw("KOTHCL"),      /* type hashcode for snapshot column */
+  sna_type_owner    varchar2("M_IDEN"),    /* type owner for snapshot column */
+  sna_type_name     varchar2("M_IDEN"),     /* type name for snapshot column */
+  mas_type_oid      raw(16),                   /* type OID for master column */
+  mas_type_hashcode raw("KOTHCL"),        /* type hashcode for master column */
+  mas_type_owner    varchar2("M_IDEN"),      /* type owner for master column */
+  mas_type_name     varchar2("M_IDEN")        /* type name for master column */
+)
+/
+create unique index i_snap_objcol1 on 
+  snap_objcol$(sowner, vname, instsite, tabnum, snacol);
+/
+create table reg_snap$            /* snapshots that use masters on this site */
+( sowner          varchar2("M_IDEN") not null,          /* owner of snapshot */
+  snapname        varchar2("M_IDEN") not null,           /* name of snapshot */
+  snapsite        varchar2("M_XDBI") not null,       /* location of snapshot */
+  snapshot_id     integer,                        /* identifies the snapshot */
+  flag            number,                            /* updatable, PK, rowid */
+  rep_type        number,                        /* type of replicating site */
+  comment$        varchar2("M_VCSZ"),                 /* comment on snapshot */
+  query_txt       long)                 /* query that this view instantiates */
+/
+create unique index i_reg_snap1 on reg_snap$(sowner, snapname, snapsite)
+/
+create index i_reg_snap2 on reg_snap$(snapshot_id)
+/
+create table snap_site$                      /* mapping of site names to IDs */
+( site_name  varchar2("M_XDBI") not null,                       /* site name */
+  site_id    integer                                              /* site ID */
+)
+/
+create unique index i_snap_site1 on snap_site$(site_name)
+/
+create sequence snapsite_id$                    /* snapshot Site ID sequence */
+  increment by 1
+  start with 1
+  minvalue 1
+  maxvalue 4294967295                           /* max portable value of UB4 */
+  nocycle
+/
+rem
+rem  Refresh Groups
+rem
+create sequence rgroupseq
+  start with 1
+  increment by 1
+  minvalue 1
+  maxvalue 999999999                        /* should be less than MAXSB4VAL */
+  cache 20
+  noorder
+  cycle
+/
+create cluster c_rg#
+( refgroup        number)                            /* refresh group number */
+/
+create index i_rg# on cluster c_rg#
+/
+create table rgroup$
+( refgroup         number,                        /* number of refresh group */
+  owner            varchar2("M_IDEN") not null,    /* owner of refresh group */
+  name             varchar2("M_IDEN") not null,     /* name of refresh group */
+  flag             number default 0,       /* 0x01, destroy group when empty */
+                                                 /* 0x02, do not push queues */
+                                               /* 0x04, refresh after errors */
+                                               /* 0x08, RepAPI refresh group */
+  rollback_seg     varchar2("M_IDEN"),            /* rollback segment to use */
+  field1           number default 0,
+  job              number not null,  /* job in job$ for refreshing this group */
+  purge_opt#       integer,      /* purge_opt#, parallelism#, and heap_size# */
+  parallelism#     integer,      /* are parameters for parallel propagation  */
+  heap_size#       integer,      /* in V8                                    */
+  instsite         integer default 0,                    /* snapshot site id */
+  refresh_sequence number                     /* refresh sequence for RepAPI */
+)
+cluster c_rg# (refgroup)
+/
+create unique index i_rgroup on rgroup$ (owner, name, instsite)
+/
+create unique index i_rgref on rgroup$ (refgroup)
+/
+create index i_rgjob on rgroup$ (job)
+/
+create table rgchild$
+( owner           varchar2("M_IDEN") not null,             /* owner of child */
+  name            varchar2("M_IDEN") not null,              /* name of child */
+  type#           varchar2("M_IDEN") default 'SNAPSHOT',   /* type of object */
+  field1          number default 0,
+  refgroup        number,                   /* refresh group the child is in */
+  instsite        integer default 0                      /* snapshot site id */
+)
+cluster c_rg# (refgroup)
+/
+create unique index i_rgchild on rgchild$ (owner, name, instsite, type#)
+/
+rem
+rem  Change Data Capture -- 3/2/2000 William D. Norcott
+rem  
+rem  Oracle CDC is a new feature in Oracle 8.2 RDBMS
+rem
+rem  4/11/2000 William D. Norcott changes to CDC system tables:
+rem
+rem  1. drop cdc_control_columns$ table, which is no longer needed
+rem  2. add new columns to other CDC tables for use by MV log integration
+rem  3. use "M_IDEN" for size of all identifiers in varchar2 fields
+rem
+create table cdc_system$          /* things that apply to all change sources */
+(
+  major_version      number         not null,       /* i.e. release 1 of CDC */
+  minor_version      number         not null     /* maintenance level i.e. 0 */
+)
+/
+insert into cdc_system$ (major_version, minor_version) values(1,0)
+/
+create table cdc_change_sources$                  /* origin of change stream */
+(                                             /* a collection of change sets */
+  source_name        varchar2("M_IDEN") not null,          /* user specified */
+  dbid               number,                        /* Oracle DBID of origin */
+  logfile_location   varchar2(2000),                   /* redo log directory */
+  logfile_suffix     varchar2("M_IDEN"),                      /* "log", etc. */
+  source_description varchar2(255),                          /* user comment */
+  created            date not null,                     /* when row inserted */
+  source_type        number not null,     /* change source type see qccpub.h */
+                                         /* 0x01 = Manuallog, 0x02 = Autolog */
+                                         /* 0x04 = Hotlog, 0x08 = Synchronous*/
+                                        /* 0x10 = 9iR2 src 0x20 = distributed*/
+                                        /* 0x40 = hot mine 0x80 = user def   */
+  source_database    varchar2("M_XDBI"), /* source database full global name */
+  source_dbid        varchar2("M_IDBI"),               /* source database ID */
+  first_scn          number,               /* SCN before LogMiner dict. dump */
+  first_logfile      varchar2("M_CSIZ"),    /* first ManualLog redo log file */
+  logfile_format     varchar2("M_CSIZ"),   /* later log format for ManualLog */
+  publisher          varchar2("M_IDEN"),    /* publisher that created source */
+  capture_name       varchar2("M_IDEN"),      /* Streams capture engine name */
+  capqueue_name      varchar2("M_IDEN"),       /* Streams capture queue name */
+  capqueue_tabname   varchar2("M_IDEN"), /* Streams capture queue table name */
+  source_enabled     char(1)                  /* Y or N - is capture started */
+)
+/
+create unique index i_cdc_change_sources$ on cdc_change_sources$(source_name)
+/
+insert into cdc_change_sources$
+  (source_name,dbid,logfile_location,logfile_suffix,source_description,created,
+   source_type, source_database, source_dbid, first_scn, first_logfile, 
+   logfile_format, publisher, capture_name, capqueue_name, capqueue_tabname,
+   source_enabled)
+  values('HOTLOG_SOURCE',NULL,NULL,NULL,'HOTLOG CHANGE SOURCE',SYSDATE,
+         4, NULL, NULL, 0, NULL, NULL, 'SYSTEM', NULL, 'NONE', 'NONE', 'Y')
+/
+insert into cdc_change_sources$
+  (source_name,dbid,logfile_location,logfile_suffix,source_description,created,
+   source_type, source_database, source_dbid, first_scn, first_logfile, 
+   logfile_format, publisher, capture_name, capqueue_name, capqueue_tabname,
+   source_enabled)
+  values('SYNC_SOURCE',NULL,NULL,NULL,'SYNCHRONOUS CHANGE SOURCE',SYSDATE,
+        8, NULL, NULL, 0, NULL, NULL, 'SYSTEM', 'NONE', 'NONE', 'NONE', 'Y')
+/
+create table cdc_change_sets$               /* a collection of change tables */
+(
+  set_name           varchar2("M_IDEN") not null,          /* user specified */
+  change_source_name varchar2("M_IDEN") not null,                  /* parent */
+  begin_date         date,       /* starting point for capturing change data */
+  end_date           date,        /* stoping point for capturing change data */
+  begin_scn          number,     /* starting point for capturing change data */
+  end_scn            number,      /* stoping point for capturing change data */
+  freshness_date     date,     /* stopping point for last successful advance */
+  freshness_scn      number,   /* stopping point for last successful advance */
+  advance_enabled    char(1),               /* Y or N - eligible for advance */
+  ignore_ddl         char(1),                  /* Y or N - continue vs. stop */
+  created            date not null,                     /* when row inserted */
+  rollback_segment_name varchar2("M_IDEN"), /* for use in advance - optional */
+  advancing          char(1) not null,       /* Y or N - being advanced now? */
+  purging            char(1) not null,         /* Y or N - being purged now? */
+  lowest_scn         number,                           /* LWM of change data */
+  tablespace         varchar2("M_IDEN"),          /* for advance LCR staging */
+  lm_session_id      number,          /* for LogMiner session during advance */
+  partial_tx_detected char(1),    /* advance detected partial transaction(s) */
+  last_advance       date,                     /* when set was last advanced */
+  last_purge         date,                       /* when set was last purged */
+  stop_on_ddl        char(1) not null,      /* Y or N - stop if DDL detected */
+  capture_enabled    char(1) not null,       /* Y or N - can perform capture */
+  capture_error      char(1) not null,    /* Y or N - Streams error detected */
+  capture_name       varchar2("M_IDEN"),      /* Streams capture engine name */
+  queue_name         varchar2("M_IDEN"),            /* AQ/Streams queue name */
+  queue_table_name   varchar2("M_IDEN"), /* AQ/Streams spillover queue table */
+  apply_name         varchar2("M_IDEN"),        /* Streams apply engine name */
+  supplemental_procs number,        /* number of supp. processes CDC can use */
+  set_description    varchar2(255),             /* description of change set */
+  publisher          varchar2("M_IDEN"),       /* publisher that created set */
+  set_sequence       varchar2("M_IDEN"),    /* sequence object name for rsid */
+  lowest_timestamp   date,                       /* lowest timestamp for set */
+  time_scn_name      varchar2("M_IDEN")/* table to map timestamp-scn for set */
+)
+/
+create unique index i_cdc_change_sets$ on cdc_change_sets$(set_name)
+/
+insert into cdc_change_sets$
+  (set_name, change_source_name, created, advancing, purging, stop_on_ddl,
+   capture_enabled, capture_error, set_description, lowest_scn, publisher,
+   advance_enabled)
+  values('SYNC_SET', 'SYNC_SOURCE', SYSDATE, 'N', 'N', 'N', 'Y', 'N',
+         'SYNCHRONOUS CHANGE SET', 0, NULL,'Y')
+/
+create table cdc_change_tables$           /* information about change tables */
+(
+  obj#                number not null,           /* object # of change table */
+  change_set_name     varchar2("M_IDEN") not null,                 /* parent */
+  source_schema_name  varchar2("M_IDEN") not null,     /* source table owner */
+  source_table_name   varchar2("M_IDEN") not null,  /* corresp. source table */
+  change_table_schema varchar2("M_IDEN") not null,  /* for DROP_CHANGE_TABLE */
+  change_table_name   varchar2("M_IDEN") not null,  /* for DROP_CHANGE_TABLE */
+  created             date not null,                    /* when row inserted */
+  created_scn         number,  /* system commit scn of this table's creation */
+  mvl_flag            number,                    /* for MV Log compatability */
+  captured_values     char(1) not null,           /* Old values, New or Both */
+  mvl_temp_log        varchar2("M_IDEN"),   /* MV Log temp. update. log name */
+  mvl_v7trigger       varchar2("M_IDEN"),               /* MV Log V7 trigger */
+  last_altered        date,       /* last successful ALTER_CHANGE_TABLE date */
+  lowest_scn          number not null,         /* LWM for this table (PURGE) */
+  mvl_oldest_rid      number,                     /* MV Log oldest rowid scn */
+  mvl_oldest_pk       number,               /* MV Log oldest primary key scn */
+  mvl_oldest_seq      number,                  /* MV Log oldest sequence scn */
+  mvl_oldest_oid      number,                 /* MV Log oldest object id scn */
+  mvl_oldest_new      number,                 /* MV Log oldest new value scn */
+  mvl_oldest_rid_time date,                      /* MV Log oldest rowid time */
+  mvl_oldest_pk_time  date,                /* MV Log oldest primary key time */
+  mvl_oldest_seq_time date,                   /* MV Log oldest sequence time */
+  mvl_oldest_oid_time date,                  /* MV Log oldest object id time */
+  mvl_oldest_new_time date,                  /* MV Log oldest new value time */
+  mvl_backcompat_view varchar2("M_IDEN"),  /* MV Log back. compat. view name */
+  mvl_physmvl         varchar2("M_IDEN"),             /* physical mv log     */
+  highest_scn         number,                 /*  high water mark scn for ct */
+  highest_timestamp   date,             /* time of last extend_window[_list] */
+  change_table_type  number         not null, /* type of change table:       */
+                                              /* 1 MV log style synchronous  */
+                                              /* 2 asynchronous              */
+                                              /* 3 improved synchronous      */
+  major_version      number         not null,       /* i.e. release 1 of CDC */
+  minor_version      number         not null,    /* maintenance level i.e. 0 */
+  source_table_obj#  number,                     /* object # of source table */
+  source_table_ver   number                /* version number of source table */
+)
+/
+create unique index i_cdc_change_tables$ on cdc_change_tables$(obj#)
+/
+create table cdc_subscribers$                /* subscriptions to change data */
+(
+  subscription_name varchar2("M_IDEN") not null,      /* subscription name   */
+  handle             number not null,                 /* subscription handle */
+  set_name           varchar2("M_IDEN") not null,   /* change set identifier */
+  username           varchar2("M_IDEN") not null,           /* of subscriber */
+  created            date not null,                     /* when row inserted */
+  status             char(1) not null,         /* Not active (yet) or Active */
+  earliest_scn       number not null,           /* starting point for window */
+  latest_scn         number not null,             /* ending point for window */
+  description        varchar2(255),                      /* for user comment */
+  last_purged        date,             /* last time user called PURGE_WINDOW */
+  last_extended      date,              /* time of last extend_window[_list] */
+  mvl_invalid        char(1),     /* MV Log subscription invalid, 'Y' or 'N' */
+  reserved1          number                     /* reserved numerical column */
+)    
+/
+create unique index i_cdc_subscribers$ on cdc_subscribers$(subscription_name)
+/
+create table cdc_subscribed_tables$               /* tables of subscriptions */
+(
+  handle             number not null,                 /* subscription handle */
+  change_table_obj#  number not null,    /* subscribed change table object # */
+  view_name          varchar2("M_IDEN"),              /* generated view name */
+  view_status        char(1) not null,                 /* Created or Dropped */
+  mv_flag            number,                  /* MV Log info. required by MV */
+  mv_colvec          raw(128)  /* MV Log columns required by MV (bit vector) */
+)
+/
+create unique index i_cdc_subscribed_tables$ on cdc_subscribed_tables$
+  (handle, change_table_obj#)
+/
+create table cdc_subscribed_columns$         /* columns of subscribed tables */
+(
+  handle            number not null,                  /* subscription handle */
+  change_table_obj# number not null,     /* subscribed change table object # */
+  column_name       varchar2("M_IDEN") not null  /* src table col identifier */
+)
+/
+create unique index i_cdc_subscribed_columns$ on cdc_subscribed_columns$
+  (handle, change_table_obj#, column_name)
+/
+create sequence cdc_subscribe_seq$     /* CDC subscription handle allocation */
+  start with 1
+  increment by 1
+  nomaxvalue
+  minvalue 1
+  nocycle
+  cache 20
+  noorder
+/
+create table cdc_change_columns$       /* track when columns added to tables */
+(
+  change_table_obj#  number not null,    /* subscribed change table object # */
+  column_name        varchar2("M_IDEN") not null,       /* column identifier */
+  created            date not null,                     /* when row inserted */
+  created_scn        number not null         /* scn of this columns creation */
+)
+/
+create unique index i_cdc_change_columns$ on cdc_change_columns$
+  (change_table_obj#, column_name)
+/
+create sequence cdc_rsid_seq$       /* CDC row sequence ids for sync capture */
+  start with 1
+  increment by 1
+  nomaxvalue
+  minvalue 1
+  nocycle
+  cache 10000
+  order
+/
+create table cdc_propagations$                       /* cdc propagation info */
+(                                          /* describes a given propagation  */
+  propagation_name   varchar2("M_IDEN") not null, /*Streams propagation name */
+  destqueue_publisher varchar2("M_IDEN") not null,    /* owner of dest queue */
+  destqueue_name     varchar2("M_IDEN") not null,  /* destination queue name */
+  staging_database   varchar2("M_XDBI") not null,    /* stage db global name */
+  sourceid_name      varchar2("M_IDEN") not null, 
+                                        /* source identifier name for propag */
+  source_class       number not null    /* class of source                   */
+                                        /* 1=propag starts at change source  */
+                                        /* 2=propag starts at change set     */
+)
+/
+create index i_cdc_propagations$ on cdc_propagations$(propagation_name)
+/
+create table cdc_propagated_sets$                /* cdc set propagation info */
+(                                    /* correlates progations to change sets */
+  propagation_name    varchar2("M_IDEN") not null, /*Streams propagation name*/
+  change_set_publisher varchar2("M_IDEN") not null, /* change set publisher  */
+  change_set_name     varchar2("M_IDEN") not null /* change set name-stage db*/
+)
+/
+create index i_cdc_propagated_sets$ on cdc_propagated_sets$(propagation_name)
+/
+rem end of change data capture metadata
+rem
+rem Streams tables
+rem
+rem NOTE: Not all columns are populated during cloning. 
+rem If you start using a spare column or add a new column then 
+rem please change the cloning logic if you want to copy over the 
+rem old value of that column to the cloned capture process. 
+
+-- tabel for dba_streams_slit_merge view
+CREATE TABLE streams$_split_merge
+(
+  original_capture_name  VARCHAR2(30)   NOT NULL,    /* the original capture */
+  cloned_capture_name    VARCHAR2(30)   DEFAULT NULL,  /* the cloned capture */
+  original_queue_owner   VARCHAR2(30)   DEFAULT NULL,
+  original_queue_name    VARCHAR2(30)   DEFAULT NULL, 
+  cloned_queue_owner     VARCHAR2(30)   DEFAULT NULL, 
+  cloned_queue_name      VARCHAR2(30)   DEFAULT NULL,
+  streams_type           NUMBER         DEFAULT NULL,
+                                             /* propagation (1) or apply (2) */
+  original_streams_name  VARCHAR2(30)   DEFAULT NULL,
+                                 /* original propagation or local apply name */
+  cloned_streams_name    VARCHAR2(30)   DEFAULT NULL,   
+                                   /* cloned propagation or local apply name */
+  recoverable_script_id  RAW(16)        DEFAULT NULL,
+                       /* unique oid of the script to split or merge streams */
+  action_type            NUMBER         DEFAULT NULL,   
+            /* type of action performed on this streams (1:split or 2:merge) */
+  action_threshold       NUMBER         DEFAULT NULL,          
+                    /* value of auto_split_threshold or auto_merge_threshold */
+  active                 NUMBER         DEFAULT NULL,    
+                                       /* whether there is a job on this row */
+  status                 NUMBER         DEFAULT NULL,  
+                                                        /* status of streams */
+  status_update_time     TIMESTAMP      DEFAULT NULL,
+                                        /* time when status was last updated */
+  creation_time          TIMESTAMP      DEFAULT SYSTIMESTAMP,
+                                             /* time when the row is created */
+  job_owner              VARCHAR2(30)   DEFAULT NULL,
+  job_name               VARCHAR2(30)   DEFAULT NULL,  
+                                /* name of the job to split or merge streams */
+  schedule_owner         VARCHAR2(30)   DEFAULT NULL,
+  schedule_name          VARCHAR2(30)   DEFAULT NULL,
+                   /* name of the schedule to run split or merge streams job */
+  lag                    NUMBER         DEFAULT NULL,      
+                        /* specifies the time in seconds that cloned capture */
+                                             /* lags behind original capture */
+  error_number           NUMBER         DEFAULT NULL,
+                                             /* error number reported if any */
+  error_message          VARCHAR2("M_VCSZ") DEFAULT NULL,
+                                                     /* explanation of error */
+  spare1                 NUMBER         DEFAULT NULL,              /* unused */
+  spare2                 NUMBER         DEFAULT NULL,              /* unused */
+  spare3                 NUMBER         DEFAULT NULL,              /* unused */
+  spare4                 NUMBER         DEFAULT NULL,              /* unused */
+  spare5                 VARCHAR2("M_VCSZ") DEFAULT NULL,          /* unused */
+  spare6                 VARCHAR2("M_VCSZ") DEFAULT NULL,          /* unused */
+  spare7                 VARCHAR2("M_VCSZ") DEFAULT NULL,          /* unused */
+  spare8                 VARCHAR2("M_VCSZ") DEFAULT NULL,          /* unused */
+  spare9                 DATE           DEFAULT NULL,              /* unused */
+  spare10                DATE           DEFAULT NULL,              /* unused */
+  spare11                DATE           DEFAULT NULL,              /* unused */
+  spare12                DATE           DEFAULT NULL,              /* unused */
+  spare13                TIMESTAMP      DEFAULT NULL,              /* unused */
+  spare14                TIMESTAMP      DEFAULT NULL,              /* unused */
+  spare15                TIMESTAMP      DEFAULT NULL,              /* unused */
+  spare16                TIMESTAMP      DEFAULT NULL               /* unused */
+)
+/
+
+CREATE UNIQUE INDEX i_streams_split_merge ON streams$_split_merge
+ (original_capture_name, cloned_capture_name, job_name, job_owner)
+/
+
+create sequence streams$_cap_sub_inst  
+                                  /* capture subscriber instantiation number */
+  increment by 1
+  start with 1
+  minvalue 1
+  maxvalue 4294967295                           /* max portable value of UB4 */
+  cycle
+  nocache
+/
+
+CREATE TABLE streams$_capture_server
+(
+  QUEUE_SCHEMA               VARCHAR2("M_IDEN"),
+  QUEUE_NAME                 VARCHAR2("M_IDEN"),
+  DST_QUEUE_SCHEMA           VARCHAR2("M_IDEN"),
+  DST_QUEUE_NAME             VARCHAR2("M_IDEN"),
+  STARTUP_TIME               DATE,
+  DBLINK                     VARCHAR2("M_XDBI"),
+  STATUS                     VARCHAR2("M_IDEN"),
+  TOTAL_MSGS                 NUMBER,
+  TOTAL_BYTES                NUMBER,
+  LAST_LCR_CREATION_TIME     DATE DEFAULT NULL,
+  LAST_LCR_PROPAGATION_TIME  DATE,
+  DST_DATABASE_NAME          VARCHAR2("M_XDBI"),
+  SESSION_ID                 NUMBER,
+  SERIAL#                    NUMBER,                     /* PROCESS SERIAL # */
+  SPID                       VARCHAR2("M_IDEN"),
+  PROPAGATION_NAME           VARCHAR2("M_IDEN") DEFAULT NULL,
+  CAPTURE_NAME               VARCHAR2("M_IDEN") DEFAULT NULL,
+  APPLY_NAME                 VARCHAR2("M_IDEN") DEFAULT NULL,
+  APPLY_OBJ#                 NUMBER default 0,
+  FIRST_APPLIED_SCN          NUMBER default 0,
+  INACTIVE_TIME              DATE DEFAULT NULL,
+  SUB_NUM                    NUMBER default 0, 
+      /* uniqueuely identifies capture queue subscribers as they are created */
+  SPARE1                     NUMBER,
+  SPARE2                     NUMBER,
+  SPARE3                     VARCHAR2("M_VCSZ"),
+  SPARE4                     VARCHAR2("M_VCSZ"),
+  SPARE5                     DATE,
+  SPARE6                     DATE
+)
+/
+
+CREATE UNIQUE INDEX i_streams_capture_server on streams$_capture_server
+  (capture_name, PROPAGATION_NAME, APPLY_NAME)
+/
+
+create table streams$_capture_process
+(
+  queue_oid       raw(16)             not null,       /* AQ queue identifier */
+  queue_owner     varchar2("M_IDEN")  not null,            /* AQ queue owner */
+  queue_name      varchar2("M_IDEN")  not null,             /* AQ queue name */
+  capture#        number              not null,                   /* 1 to 99 */
+  capture_name    varchar2("M_IDEN")  not null,
+  status          number,      /* capture process status: START, STOP, ABORT */
+  ruleset_owner   varchar2("M_IDEN"),                      /* rule set owner */
+  ruleset_name    varchar2("M_IDEN"),                       /* rule set name */
+  logmnr_sid      number,           /* id of the persistent logminer session */
+                                 /* needed for creating a persistent session */
+  predumpscn      number,                                        /* OBSOLETE */
+  dumpseqbeg      number,                                        /* OBSOLETE */
+  dumpseqend      number,                                        /* OBSOLETE */
+  postdumpscn     number,                                        /* OBSOLETE */
+  flags           number,                    /* 0x01 = KNLCAPF_DICT_LOADED   */
+                                             /* 0x02 = KNLCAPF_SESS_CDC      */
+                                             /* 0x04 = KNLCAPF_SESS_IMPLICIT */
+                                             /* 0x08 = KNLCAPF_SESS_EXPLICIT */
+                                             /* 0x10 = KNLCAPF_NEED_DECOUPLE */
+                                             /* 0x20 = KNLCAPF_DONE_DECOUPLE */
+                                             /* 0x40 = KNLCAPF_DOWN_CAPTURE  */
+                                             /* 0x80 = KNLCAPF_SESS_APPS     */
+                                             /*0x100 = KNLCAPF_DONT_EXPORT   */
+                                             /*0x200 = KNLCAPF_SYNC_CAPTURE  */
+                                             /*0x400 = KNLCAPF_NO_APP_RESTRT */
+                                             /*0x800 = KNLCAPF_SESS_AUDIT    */
+                                            /*0x1000 = KNLCAPF_ALREADY_RAN   */
+                                            /*0x2000 = KNLCAPF_CKPT_FREE     */
+                                            /*0x4000 = KNLCAPF_CLONE         */
+                                           /*0x20000 = KNLCAPF_SUSPENDED     */
+
+  start_scn       number,     /* scn from which capture process should start */
+  start_scn_time  timestamp,              /* Time coressponding to start_scn */
+  capture_userid  number,                        /* capture security context */
+  spare1          number,                           /* used for captured scn */
+  spare2          number,                                     /* applied scn */
+  spare3          number,                       /* checkpoint retention time */
+  use_dblink      number,            /* use dblink from downstream to src db */
+  first_scn       number, /* initially predump scn, eventually the earliest  */
+                          /* scn from which capture process can restart from */
+  first_scn_time  timestamp,              /* Time corresponding to first_scn */
+  source_dbname   varchar2("M_XDBI"),            /* global name of source db */
+  negative_ruleset_owner varchar2("M_IDEN"),      /* negative rule set owner */
+  negative_ruleset_name  varchar2("M_IDEN"),       /* negative rule set name */
+  start_date             date,                   /* captures from start date */
+  end_date               date,                    /* captures up to end_date */
+  error_number           number,             /* error number reported if any */
+  error_message          varchar2("M_VCSZ"),         /* explanation of error */
+  status_change_time     date,    /* the date that the status column changed */
+  version                varchar2(64),             /* capture version number */
+  spare4                 number,     /* for testing knlciWaitForInflightTxns */
+  spare5                 number,                                   /* unused */
+  spare6                 number,                                   /* unused */
+  spare7                 varchar2(1000)                            /* unused */
+)
+/
+create unique index i_streams_capture_process1 on streams$_capture_process
+ (capture#)
+/
+create unique index i_streams_capture_process2 on streams$_capture_process
+ (capture_name)
+/
+
+create sequence streams$_capture_inst        /* capture instantiation number */
+  increment by 1
+  start with 1
+  minvalue 1
+  maxvalue 4294967295                           /* max portable value of UB4 */
+  cycle
+  nocache
+/
+
+create table streams$_apply_process
+(
+  apply#            number         not null, /* apply#0 is reserved for HaDB */
+  apply_name        varchar2("M_IDEN") not null,       /* apply process name */
+  queue_oid         raw(16)            not null,      /* AQ queue identifier */
+  queue_owner       varchar2("M_IDEN") not null,           /* AQ queue owner */
+  queue_name        varchar2("M_IDEN") not null,            /* AQ queue name */
+  status            number,      /* apply process status: START, STOP, ABORT */
+  flags             number,              /* apply process flags (see knal.h) */
+                                   /* deferred (apply_captured=>TRUE) 0x0001 */
+                                                       /* send events 0x0002 */
+                                               /* no dependency check 0x0004 */
+                                                    /* use c handlers 0x0008 */
+                                                          /* CDC mode 0x0010 */
+                                                  /* Audit vault mode 0x0020 */
+                                     /* Assemble lobs for audit vault 0x0040 */
+                                        /* don't export apply process 0x0080 */
+                                                 /* XStream Out apply 0x0100 */
+                                                  /* XStream In apply 0x0200 */
+                                                  /* Uncommitted data 0x0400 */
+                                                      /* Include MVDD 0x0800 */
+  ruleset_owner     varchar2("M_IDEN"),                    /* rule set owner */
+  ruleset_name      varchar2("M_IDEN"),                     /* rule set name */
+  message_handler   varchar2(98),                         /* message handler */
+  ddl_handler       varchar2(98),                             /* DDL handler */
+  precommit_handler varchar2(98),                       /* precommit handler */
+  apply_userid      number,                        /* apply security context */
+  apply_dblink      varchar2("M_XDBI"),               /* apply database link */
+  apply_tag         raw("M_CSIZ"),                              /* apply tag */
+  spare1            number,
+  spare2            number,
+  spare3            number,
+  negative_ruleset_owner varchar2("M_IDEN"),      /* negative rule set owner */
+  negative_ruleset_name  varchar2("M_IDEN"),       /* negative rule set name */
+  start_date             date,                      /* apply txn start limit */
+  end_date               date,                        /* apply txn end limit */
+  error_number           number,             /* error number reported if any */
+  error_message          varchar2("M_VCSZ"),         /* explanation of error */
+  status_change_time     date,    /* the date that the status column changed */
+  ua_notification_handler varchar2(98),   /* user agent notification handler */
+  ua_ruleset_owner        varchar2("M_IDEN"),    /* user agent ruleset owner */
+  ua_ruleset_name         VARCHAR2("M_IDEN"),          /* user agent ruleset */
+  spare4                  number,
+  spare5                  number,
+  spare6                  varchar2("M_VCSZ"),
+  spare7                  varchar2("M_VCSZ"),
+  spare8                  date,
+  spare9                  date
+)
+/
+create unique index i_streams_apply_process1 on
+  streams$_apply_process (apply#)
+/
+create unique index i_streams_apply_process2 on
+  streams$_apply_process (apply_name)
+/
+create index i_streams_apply_process3 on
+  streams$_apply_process (queue_oid)
+/
+
+create table streams$_propagation_process
+(
+  propagation_name             varchar2("M_IDEN") not null,
+  source_queue_schema          varchar2("M_IDEN"),
+  source_queue                 varchar2("M_IDEN"),
+  destination_queue_schema     varchar2("M_IDEN"),
+  destination_queue            varchar2("M_IDEN"),
+  destination_dblink           varchar2("M_XDBI"),
+  ruleset_schema               varchar2("M_IDEN"),
+  ruleset                      varchar2("M_IDEN"),
+  negative_ruleset_schema      varchar2("M_IDEN"),/* negative rule set owner */
+  negative_ruleset             varchar2("M_IDEN"), /* negative rule set name */
+  original_propagation_name    varchar2("M_IDEN"),
+  original_source_queue_schema varchar2("M_IDEN"),
+  original_source_queue        varchar2("M_IDEN"),
+  spare1                       number,  /* 0x01 = queue to queue propagation */
+                                        /* 0x02 = auto_merge is TRUE         */
+                                        /* 0x04 = last run in CCAC mode      */
+  spare2                       varchar2("M_XDBI"),
+  acked_scn                    number,
+  auto_merge_threshold         number,
+  creation_time                date DEFAULT SYSDATE,     /* time of creation */
+  error_date                   date,          /* the time last error occured */
+  error_msg                    varchar2("M_VCSZ"),     /* last error message */
+                      /* error_date and error_msg are only populated in CCAC */
+  unschedule_time              DATE   DEFAULT NULL, /* time when unscheduled */
+  seqnum                       number,             /* unique sequence number */
+  spare3                       number,
+  spare4                       number,
+  spare5                       date,
+  spare6                       date,
+  spare7                       varchar2("M_VCSZ"),
+  spare8                       varchar2("M_VCSZ")
+)
+/
+create unique index streams$_prop_p_i1 on streams$_propagation_process
+(propagation_name)
+/
+create unique index streams$_prop_p_i2 on streams$_propagation_process
+(source_queue_schema,source_queue, destination_queue_schema,
+ destination_queue, destination_dblink)
+/
+
+rem squence for streams$_propagation_process.seqnum
+create sequence streams$_propagation_seqnum
+ start with     1
+ increment by   1
+ nocache
+ nocycle
+/
+
+rem Table to store parameters for capture and apply processes.
+create table streams$_process_params
+(
+  process_type       number not null,                /* 1 -> apply   process */
+                                                     /* 2 -> capture process */
+  process#           number not null,                         /* X_process # */
+  name               varchar2("M_XDBI") not null,          /* parameter name */
+  value              varchar2("M_VCSZ"),                  /* parameter value */
+  user_changed_flag  number,            /* 1 if changed by user, 0 otherwise */
+  internal_flag      number,    /* 1 if internal param, 0 if exposed to user */
+  spare1             number
+)
+/
+create unique index i_streams_process_params1 on
+  streams$_process_params (process_type, process#, name)
+/
+
+rem Table to store extra attributes for capture
+create table streams$_extra_attrs
+(
+  process#           number not null,                   /* capture_process # */
+  name               varchar2("M_IDEN") not null,          /* attribute name */
+  include            varchar2("M_IDEN"),       /* the attribute is included? */
+  flag               number,   /* 0x01 = row_attribute, 0x02 = ddl_attribute */
+  spare1             number,
+  spare2             varchar2(1000)
+)
+/
+create unique index i_streams_extra_attrs1 on
+  streams$_extra_attrs (process#, name)
+/
+
+create table streams$_prepare_object
+(
+  obj#            number  not null,
+  cap_type        number  default 0,  /* 0 = async capture, 1 = sync capture */
+  ignore_scn      number  not null,
+  timestamp       date,
+  flags           number,       /* flags for supplemental logging: see knl.h */
+  spare1          number,
+  spare2          varchar2(1000)
+)
+/
+create unique index i_streams_prepare1 on streams$_prepare_object 
+  (obj#, cap_type)
+/
+
+rem streams$_prepare_ddl is for DDL support.
+rem DDL looks up this table to see if a schema or database
+rem is prepared for instantiation
+create table streams$_prepare_ddl
+(
+  global_flag number not null,            /* 1 if usrid is null, 0 otherwise */
+  usrid       number,             /* user id (NULL for database instantiate) */
+  scn         number,                       /* ignore scn (currently unused) */
+  timestamp   date,                   /* time at which schema was registered */
+  flags       number,           /* flags for supplemental logging: see knl.h */
+  spare1      number,
+  spare2      varchar2(1000)
+)
+/
+create unique index i_streams_prepare_ddl on
+  streams$_prepare_ddl(global_flag, usrid)
+/
+
+create table streams$_apply_milestone 
+(
+  apply#          number             not null,
+  source_db_name  varchar2("M_XDBI") not null,
+  oldest_scn      number             not null,
+  commit_scn      number             not null,
+  synch_scn       number             not null,           /* Synch-point SCN. */
+  epoch           number             not null,         /* Incarnation number */
+  processed_scn   number             not null,
+                            /* all complete txns < processed_scn are applied */
+  apply_time      date,
+  applied_message_create_time date,
+  spare1          number, /* primary scn corresponding to this syncpoint SCN */
+  start_scn       number,
+  oldest_transaction_id varchar2(128),              /* oldest transaction id */
+  spill_lwm_scn       number,                     /* spill low watermark SCN */
+  lwm_external_pos    raw(64),     
+              /* low watermark external position, associated with commit_scn */
+  spare2              number,
+  spare3              varchar2("M_VCSZ"),
+  oldest_position                raw(64),                 /* oldest position */
+  spill_lwm_position             raw(64),    /* spill low watermark position */
+  processed_position             raw(64),              /* processed position */
+  start_position                 raw(64),                  /* start position */
+  xout_processed_position        raw(64),  /* XStream Out processed position */
+  xout_processed_create_time     date,  /* XStream Out processed create time */
+  xout_processed_tid             varchar2(128),        /* XOut proc trans id */
+  xout_processed_time            date,         /* XStream Out processed time */
+  applied_high_position          raw(64),    /* applied high commit position */
+  oldest_create_time             date,             /* oldest LCR create time */
+  spill_lwm_create_time          date,    /* spill low watermark create time */
+  spare4                         raw(64),   /* conservative restart position */
+  spare5                         raw(64), /* logbsn from source DB (OGG only)*/
+  spare6                         date,
+  spare7                         date,
+  spare8                         number,
+  spare9                         number,
+  spare10                        timestamp,
+  spare11                        timestamp,
+  flags                          number,           /* Added to hold PTO info */
+                              /* Could hold other info as well in the future */
+  eager_error_retry              number /* number of retries for eager error */
+)
+/
+create unique index i_streams_apply_milestone1 on streams$_apply_milestone
+(apply#, source_db_name)
+/
+
+rem No constraints on this table it has to be really high performance 
+rem since it is inserted on every txn
+create table streams$_apply_progress
+(
+  apply#          number,
+  source_db_name  varchar2("M_XDBI"),
+  xidusn          number,
+  xidslt          number,
+  xidsqn          number,
+  commit_scn      number,
+  spare1          number,
+                                                /*----- New 11.2 fields -----*/
+  commit_position raw(64),                                /* commit position */
+  transaction_id  varchar2(128)                           /* transaction id */
+)
+tablespace SYSAUX
+/
+
+create table streams$_key_columns
+(
+  sname       varchar2("M_IDEN") not null,
+  oname       varchar2("M_IDEN") not null,
+  type        number             not null,
+  cname       varchar2("M_IDEN") not null,
+  dblink      varchar2("M_XDBI"),
+  long_cname  varchar2("M_VCSZ"),
+  spare1      number
+)
+/
+create unique index i_streams_key_columns on 
+  streams$_key_columns(sname, oname, type, cname, dblink)
+/
+
+rem table used for deferred prcedure calls
+create table streams$_def_proc
+(
+  base_obj_num     number,
+  flags            number,
+  owner            varchar2("M_IDEN"),
+  package_name     varchar2("M_IDEN"),
+  procedure_name   varchar2("M_IDEN"),
+  param_name       varchar2("M_IDEN"),
+  param_type       number,
+  raw_value        raw("M_CSIZ"),
+  number_value     number,
+  date_value       date,
+  varchar2_value   varchar2("M_VCSZ"),
+  nvarchar2_value  nvarchar2(1000),
+  clob_value       clob,
+  blob_value       blob,
+  nclob_value      nclob
+)
+/
+
+rem streams$_rules is populated by APIs in dbms_streams_adm
+rem The values in columns streams_name and streams_type may not be valid
+rem if the same rule was used by multiple Streams processes and the Streams
+rem process, which the rule was created for, was dropped. In that scenario,
+rem the values in streams_name and streams_type columns still refer to the
+rem dropped Streams process. Internal users should refer to 
+rem "_DBA_STREAMS_RULES_H" to get the valid streams_name and streams_type. 
+rem
+create table streams$_rules
+(
+  streams_name         varchar2("M_IDEN"),     /* capture/apply/prop process */
+  streams_type         number,      /* capture (1), propagation(2), apply (3)*/
+  rule_type            number,                           /* dml (1), ddl (2) */
+  include_tagged_lcr   number,                                     /* 0 or 1 */
+  source_database      varchar2("M_XDBI"),           /* source database name */
+  rule_owner           varchar2("M_IDEN"),                     /* rule owner */
+  rule_name            varchar2("M_IDEN"),     /* system generated rule name */
+  rule_condition       varchar2("M_VCSZ"),  /* system generated rule context */
+  dml_condition        varchar2("M_VCSZ"), /* NULL except for row subsetting */
+  subsetting_operation number,    /* null, insert (1), update(2), delete (3) */
+  schema_name          varchar2("M_IDEN"),  /* schema name, null for db type */
+  object_name          varchar2("M_IDEN"),  
+                                      /* table name, null for schema/db type */
+  object_type          number,       /*  table(1), schema(2),  database (3)  */
+  and_condition        varchar2("M_VCSZ"), /* and condition appended to rule */
+  spare1               number,
+  spare2               number,
+  spare3               number
+)
+/
+create unique index i_streams_rules1 on
+  streams$_rules(rule_owner, rule_name)
+/
+create index  i_streams_rules2 on
+  streams$_rules(schema_name, object_name)
+/
+
+rem subscriptions of source objects
+create table apply$_source_obj
+(
+  id             number              not null,                 /* sequence # */
+  owner          varchar2("M_IDEN")  not null,        /* source object owner */
+  name           varchar2("M_IDEN")  not null,         /* source object name */
+  type           number              not null,         /* source object type */
+  source_db_name varchar2("M_XDBI")  not null,       /* source database name */
+  dblink         varchar2("M_XDBI"),   /* database link for HS instantiation */
+  inst_scn       number,                                /* instantiation scn */
+  ignore_scn          number,/* scn used to determine LCR selection by apply */
+  spare1              number,
+  inst_external_pos   raw(64),    /* 128 (length of correlation ID) / 2 = 64 */
+                                   /* external position, aka stream position */
+  spare2              varchar2("M_VCSZ"),
+  spare3              raw("M_CSIZ")
+)
+/
+create unique index i_apply_source_obj1 on
+  apply$_source_obj (id)
+/
+create unique index i_apply_source_obj2 on
+  apply$_source_obj (owner, name, type, source_db_name, dblink)
+/
+rem sequence for apply$_source_obj.id
+create sequence apply$_source_obj_id nocache
+/
+
+rem source schema instantiation scns
+rem a NULL name means a global inst_scn
+create table apply$_source_schema
+(
+  source_db_name varchar2("M_XDBI") not null,        /* source database name */
+  /* 1024 if value for RMAN TRANSPORT TABLESPACE otherwise
+   * 1 if name is null and 0 if name is non-null.
+   */
+  global_flag    number             not null,
+  name           varchar2("M_IDEN"),                   /* source schema name */
+  dblink         varchar2("M_XDBI"),   /* database link for HS instantiation */
+  inst_scn       number,                                /* instantiation scn */
+  spare1              number,
+  inst_external_pos   raw(64),    /* 128 (length of correlation ID) / 2 = 64 */
+                                   /* external position, aka stream position */
+  spare2              varchar2("M_VCSZ"),
+  spare3              raw("M_CSIZ")
+)
+/
+create unique index i_apply_source_schema1 on
+  apply$_source_schema (source_db_name, global_flag, name, dblink)
+/
+
+rem source object level (virtual) constraints
+create table apply$_virtual_obj_cons
+(
+  owner          varchar2("M_IDEN")  not null,        /* source object owner */
+  name           varchar2("M_IDEN")  not null,         /* source object name */
+  powner         varchar2("M_IDEN")  not null,    /* source parent obj owner */
+  pname          varchar2("M_IDEN")  not null,     /* source parent obj name */
+  spare1         number,
+  spare2         number,
+  spare3         varchar2("M_IDEN"),
+  spare4         varchar2("M_VCSZ")
+)
+/
+create unique index i_apply_virtual_obj_cons on
+  apply$_virtual_obj_cons (owner, name, powner, pname)
+/
+
+create table sys.apply$_constraint_columns
+(
+  owner                varchar2("M_IDEN") not null,          /* object owner */
+  name                 varchar2("M_IDEN") not null,           /* object name */
+  constraint_name      varchar2("M_IDEN") not null,
+  cname                varchar2("M_IDEN") not null,           /* column name */
+  cpos                 number,                            /* column position */
+  long_cname           varchar2("M_VCSZ"),  /* long col name for adt support */
+  spare1               number,
+  spare2               number,
+  spare3               varchar2("M_IDEN"),
+  spare4               varchar2("M_VCSZ")
+)
+/
+
+create unique index sys.apply$_constraint_columns_uix1 on
+  sys.apply$_constraint_columns(owner, name, constraint_name, cname)
+/
+-- to facilitate the query: given a constraint name, find out
+-- all related objects
+create index sys.apply$_constraint_columns_idx1 on
+  sys.apply$_constraint_columns(constraint_name)
+/
+
+rem This table allows multiple objects in the destination subscribed to the 
+rem same source object.
+create table apply$_dest_obj
+(
+  id              number             not null,                      /* seq # */
+  source_owner    varchar2("M_IDEN") not null,           /* source obj owner */
+  source_name     varchar2("M_IDEN") not null,            /* source obj name */
+  type            number       not null,  /* type of source obj and dest obj */
+  owner           varchar2("M_IDEN") not null,             /* dest obj owner */
+  name            varchar2("M_IDEN") not null,              /* dest obj name */
+  apply#          number,             /* apply process assigned to this dest */
+  status          number,                   /* such as pending, ready, error */
+  error_notifier  varchar2(92),             /* function to invoke for errors */
+  spare1          number
+)
+/
+create unique index i_apply_dest_obj1 on
+  apply$_dest_obj (id)
+/
+rem source and apply# uniquely identify a destination
+create unique index i_apply_dest_obj2 on
+  apply$_dest_obj (source_owner, source_name, type, apply#)
+/
+rem destination and apply# uniquely identify a source
+create unique index i_apply_dest_obj3 on
+  apply$_dest_obj (owner, name, type, apply#)
+/
+rem sequence for apply$_dest_obj.id
+create sequence apply$_dest_obj_id nocache
+/
+
+rem column mapping between source and destination tables
+create table apply$_dest_obj_cmap
+(
+  dest_id          number             not null,       /* id of parent row in */
+                                                          /* apply$_dest_obj */
+  src_long_cname   varchar2("M_VCSZ") not null,        /* source column name */
+  dest_long_cname  varchar2("M_VCSZ"),            /* destination column name */
+                                          /* if null, same as src_long_cname */
+  spare1           number
+)
+/
+rem we need to add src_long_cname to this index but it is > max key len
+create index i_apply_dest_obj_cmap1 on 
+  apply$_dest_obj_cmap (dest_id)
+/
+
+rem apply operations associated with destination object
+create table apply$_dest_obj_ops
+(
+  object_number        number not null,               /* id of parent row in */
+                                    /* obj$, -1 if not exists                */
+  sname                varchar2("M_IDEN") not null,
+  oname                varchar2("M_IDEN") not null,
+  apply_name           varchar2("M_IDEN"),
+  apply_operation      number not null,              /* apply operation type */
+                                                     /* 1 -> INSERT          */
+                                                     /* 2 -> UPDATE          */
+                                                     /* 3 -> DELETE          */
+                                                     /* 4 -> LOB_UPDATE      */
+                                                     /* 5 -> ASSEMBLE_LOBS   */
+  error_handler        char(1),                      /* 'Y' if error handler */
+                                                     /* 'N' if not           */
+  user_apply_procedure varchar2(98),  /* if user_apply_procedure is null,    */
+                                      /* default apply rules will be used    */
+                                      /* or if there is no child row in      */
+                                      /* apply$_dest_obj_ops                 */
+                                      /* for apply$_dest_obj.id              */
+  handler_name         varchar2("M_IDEN") default null, /*stmt-based handler */
+  assemble_lobs        char(1) default 'N',          /* 'Y' if assemble lobs */
+                                                     /* 'N' if not           */
+  set_by               number default NULL,          /* set by user or by GG */
+                                                     /* NULL -> USER         */
+                                                     /* 1    -> GOLDENGATE   */
+  spare1               number,
+  spare2               number,
+  spare3               number
+)
+/
+create unique index i_apply_dest_obj_ops1 on apply$_dest_obj_ops
+ (sname, oname, apply_operation, apply_name, handler_name)
+/
+
+rem generate unique id for streams stmt handlers
+create sequence streams$_stmt_handler_seq start with 1 increment by 1
+/
+
+create table streams$_stmt_handlers
+(
+  handler_id          number not null,                         /* handler id */
+  handler_name        varchar2("M_IDEN") not null,           /* handler name */
+  handler_comment     varchar2("M_VCSZ") default null,    /* handler comment */
+  handler_flag        raw(4) default '00000000',             /* handler flag */
+                                     /* '00000001' auto-created on statement */
+  creation_time       timestamp,      /* time when the statement was created */
+  modification_time   timestamp,     /* time when the statement was modified */
+  spare1              number,
+  spare2              number,
+  spare3              varchar2("M_VCSZ"),
+  spare4              timestamp,
+  spare5              raw(2000)
+)
+/
+create unique index i_streams_stmt_handlers on streams$_stmt_handlers
+ (handler_name)
+/
+create unique index i_streams_stmt_handler_ids on streams$_stmt_handlers
+ (handler_id)
+/
+
+rem streams handler stmts
+create table streams$_stmt_handler_stmts
+(
+  handler_id          number not null,                       /* handler name */
+  statement           clob,                                     /* statement */
+  statement_type      number not null,                  /* type of statement */
+  execution_sequence  number not null,    /* execution sequence of statement */
+  creation_time       timestamp,      /* time when the statement was created */
+  modification_time   timestamp,     /* time when the statement was modified */
+  spare1              number,
+  spare2              number,
+  spare3              varchar2("M_VCSZ"),
+  spare4              varchar2("M_VCSZ"),
+  spare5              timestamp,
+  spare6              raw(2000)
+)
+/
+create unique index i_streams_stmt_handler_stmts on streams$_stmt_handler_stmts
+ (handler_id, execution_sequence)
+/
+
+rem apply change handler
+create table apply$_change_handlers (
+  change_table_owner  varchar2("M_IDEN"),
+  change_table_name   varchar2("M_IDEN"),
+  source_table_owner  varchar2("M_IDEN"),
+  source_table_name   varchar2("M_IDEN"),
+  handler_name        varchar2("M_IDEN"),
+  capture_values      number,
+  apply_name          varchar2("M_IDEN"),
+  operation           number,
+  creation_time       timestamp,
+  modification_time   timestamp,
+  spare1              number,
+  spare2              number,
+  spare3              varchar2("M_VCSZ"),
+  spare4              varchar2("M_VCSZ"),
+  spare5              timestamp,
+  spare6              timestamp,
+  spare7              raw(2000)
+)
+/
+create unique index i_apply_change_handlers on apply$_change_handlers
+ (change_table_owner, change_table_name, source_table_owner,
+  source_table_name, handler_name, apply_name, operation)
+/
+
+rem table used to store error transaction information
+create table apply$_error
+( 
+  local_transaction_id  varchar2("M_LTID"),     /* Tid of error creation txn */
+  source_transaction_id varchar2(128),       /* transaction id at the source */
+  source_database       varchar2("M_XDBI"),/* node which originated this txn */
+  queue_owner           varchar2("M_IDEN") not null,    /* local queue owner */
+  queue_name            varchar2("M_IDEN") not null,     /* local queue name */
+  apply#                number  not null, /* apply engine processing the txn */
+  message_number        number,            /* message which caused the error */
+  message_count         number,             /* Number of messages in the txn */
+  min_step_no           number,            /* min step no in exception queue */
+  recipient_id          number,          /* User ID of the original receiver */
+  recipient_name        varchar2("M_IDEN"),  
+                                       /* User name of the original receiver */
+  source_commit_scn     number,           /* original commit SCN for the txn */
+  error_number          number,                     /* error number reported */
+  error_message         varchar2("M_VCSZ"),          /* explanation of error */
+  aq_transaction_id     varchar2(30),                   /* AQ transaction id */
+  spare1                number,
+  spare2                number,
+  spare3                number,
+  error_creation_time   date,                    /* time this error occurred */
+  external_source_pos   raw(64),                 /* external source position */
+  spare4                raw("M_CSIZ"),
+  spare5                varchar2("M_VCSZ"),
+                                                /*----- New 11.2 fields -----*/
+  commit_time           number,      /* time when txn commited on the source */
+  xidusn                number,    
+  xidslt                number,
+  xidsqn                number,
+  retry_count           number,         /* number of times to retry an error */
+  flags                 number,                                     /* flags */
+  error_pos             raw(64),                           /* error position */
+                                      /* 12.1 fields for integrated replicat */
+  start_seq#            number,          /* start seq# of the replicat trail */
+  end_seq#              number,            /* end seq# of the replicat trail */
+  start_rba             number,           /* start rba of the replicat trail */
+  end_rba               number,             /* end rba of the replicat trail */
+  error_seq#            number,   /* seq# of replicat trail for error record */
+  error_rba             number,    /* rba of replicat trail for error record */
+  error_index#          number,   /* replicat mapping index for error record */
+  spare6                number,
+  spare7                number,
+  spare8                varchar2("M_VCSZ"),
+  spare9                varchar2("M_VCSZ"),
+  spare10               raw(1000),
+  spare11               raw(1000),
+  spare12               timestamp
+)
+tablespace SYSAUX
+/
+create unique index streams$_apply_error_unq 
+ on apply$_error(local_transaction_id)
+ tablespace SYSAUX
+/
+
+rem table used to store message ids of error transactions for Streams
+create table apply$_error_txn
+(
+  msg_id               raw(16),        /* unique id of a msg, same as in the */
+                                                              /* queue table */
+  local_transaction_id varchar2("M_LTID"), /* id of txn that created the err */
+  txn_message_number   number,         /* unique number of a msg in the txn. */
+  error_number         number,                      /* error number reported */
+  error_message        varchar2("M_VCSZ"),           /* explanation of error */
+  flags                number,                                      /* flags */
+  spare1               number,
+  spare2               number,
+  spare3               varchar2("M_VCSZ"),
+  spare4               varchar2("M_VCSZ"),
+  spare5               raw(2000),
+  spare6               timestamp,
+  source_object_owner  varchar2("M_IDEN"),   /* source database object owner */
+  source_object_name   varchar2("M_IDEN"),    /* source database object name */
+  dest_object_owner    varchar2("M_IDEN"),     /* dest database object owner */
+  dest_object_name     varchar2("M_IDEN"),      /* dest database object name */
+  primary_key          varchar2("M_VCSZ"),        /* primary key information */
+  position             raw(64),                              /* LCR position */
+  message_flags        number,                              /* knlqdqm flags */
+  operation            varchar2(100),                       /* LCR operation */
+                                      /* 12.1 fields for integrated replicat */
+  seq#                  number,                /* seq# of the replicat trail */
+  rba                   number,                 /* rba of the replicat trail */
+  index#                number,            /* index # of the replicat record */
+  spare7                number,
+  spare8                number,
+  spare9                varchar2("M_VCSZ"),
+  spare10               varchar2("M_VCSZ"),
+  spare11               raw(1000),
+  spare12               raw(1000)
+)
+/
+
+create unique index streams$_apply_error_txn_unq
+  on apply$_error_txn(local_transaction_id, txn_message_number)
+  tablespace SYSAUX
+/
+
+rem tables required for conflict resolution
+rem apply$_error_handler_sequence is used to generate a value 
+rem for log_group_id in apply$_error_handler.
+
+create sequence apply$_error_handler_sequence start with 1
+/
+
+rem stores all conflict resolution methods
+create table apply$_error_handler
+(
+  object_number          number,  /* table obj# error handler is defined for */
+  method_name            varchar2(92),                     /* name of method */
+  resolution_column      varchar2("M_VCSZ"), /* column used to resolve error */
+  resolution_id          number,          /* id number for the error handler */
+  spare1                 number
+)
+/
+create unique index apply$_error_handler_unq
+ on apply$_error_handler(resolution_id)
+/
+
+rem stores the column list for update column resolution
+create table apply$_conf_hdlr_columns
+(
+  object_number number,           /* table obj# error handler is defined for */
+  resolution_id number,                   /* id number for the error handler */
+  column_name   varchar2("M_IDEN"),   /* name of a column in the column list */
+                                                /* for a update conf handler */
+  spare1        number
+)
+/
+create unique index apply$_conf_hdlr_columns_unq1
+ on apply$_conf_hdlr_columns(object_number, column_name)
+/
+create unique index apply$_conf_hdlr_columns_unq2
+ on apply$_conf_hdlr_columns(resolution_id, column_name)
+/
+
+rem XStream In persistent apply table stats
+create table apply$_table_stats 
+(
+apply#                     number,                   /* apply process number */
+server_id                  number,                /* apply server identifier */
+save_time                  date,                /* when stats were persisted */
+source_table_owner         varchar2("M_IDEN"),         /* source table owner */
+source_table_name          varchar2("M_IDEN"),          /* source table name */
+destination_table_owner    varchar2("M_IDEN"),    /* destination table owner */
+destination_table_name     varchar2("M_IDEN"),     /* destination table name */
+last_update                date,    /*last time stats for table were updated */
+total_inserts              number,  /* total number of inserts for the table */
+total_updates              number,  /* total number of updates for the table */
+total_deletes              number,  /* total number of deletes for the table */
+insert_collisions          number,    /* num insert collisions for the table */
+update_collisions          number,    /* num update collisions for the table */
+delete_collisions          number,   /* num delete collisionss for the table */
+reperror_records           number,  /* num colls resolved by reperror record */
+reperror_ignores           number,  /* num colls resolved by reperror ignore */
+wait_dependencies          number,            /* number of wait dependencies */
+cdr_insert_row_exists      number,  /* number of insert row exists conflicts */
+cdr_update_row_exists      number,  /* number of update row exists conflicts */
+cdr_update_row_missing     number, /* number of update row missing conflicts */
+cdr_delete_row_exists      number,  /* number of delete row exists conflicts */
+cdr_delete_row_missing     number, /* number of delete row missing conflicts */
+cdr_successful_resolutions number,   /* number of successful CDR resolutions */
+cdr_failed_resolutions     number,       /* number of failed CDR resolutions */
+spare1                     number,
+spare2                     number,
+spare3                     number,
+spare4                     number,
+spare5                     number,
+spare6                     number,
+spare7                     number,
+spare8                     number,
+spare9                     number,
+spare10                    number,
+spare11                    varchar2("M_VCSZ"),
+spare12                    varchar2("M_VCSZ"),
+spare13                    varchar2("M_VCSZ"),
+spare14                    varchar2("M_VCSZ"),
+spare15                    raw(1000),
+spare16                    raw(1000),
+spare17                    raw(1000),
+spare18                    date,                             /* startup time */
+spare19                    date,
+spare20                    date
+)
+/
+create index apply$_table_stats_i
+  on apply$_table_stats (apply#, save_time)
+/
+
+rem XStream In persistent apply coodinator table 
+create table apply$_coordinator_stats
+(
+apply#                     number,                   /* apply process number */
+save_time                  date,                /* when stats were persisted */
+apply_name                 varchar2("M_IDEN"),         /* apply process name */
+state                      number,                      /* coordinator state */
+total_applied              number,                           /* txns applied */
+total_waitdeps             number,             /* WAIT_DEP messages received */
+total_waitcommits          number,          /* WAIT_COMMIT messages received */
+total_admin                number,                  /* admin requests issued */
+total_assigned             number,                          /* txns assigned */
+total_received             number,                           /* txn received */
+total_ignored              number,                 /* number of txns ignored */
+total_rollbacks            number,            /* number of rollback attempts */
+total_errors               number,  /* number of txns which errored on apply */
+unassigned_eager           number,        /* number of unassigned eager txns */
+unassigned_complete        number,     /* number of unassigned complete txns */
+auto_txnbufsize            number,      /* Auto adjusted value of txnbufsize */
+startup_time               date,           /* SYSDATE when the apply started */
+lwm_time                   date,                     /* time lwm was updated */
+lwm_msg_num                number,                       /* lwm number (SCN) */
+lwm_msg_time               date,             /* creation time of lwm message */
+hwm_time                   date,                     /* time hwm was updated */
+hwm_msg_num                number,                       /* hwm number (SCN) */
+hwm_msg_time               date,             /* creation time of hwm message */
+elapsed_schedule_time      number,       /* time elapsed scheduling messages */
+elapsed_idle_time          number,                /* time elapsed being idle */
+lwm_position               raw(64),         /* low watermark commit position */
+hwm_position               raw(64),        /* high watermark commit position */
+processed_msg_num          number,             /* processed msg number (SCN) */
+flag                       number,                       /* coordinator flag */
+flags_factoring            number,                           /* factor flags */
+replname                   varchar2("M_IDEN"),   /* name of replicat process */
+spare1                     number,
+spare2                     number,
+spare3                     number,
+spare4                     number,
+spare5                     number,
+spare6                     number,
+spare7                     number,
+spare8                     number,
+spare9                     number,
+spare10                    number,
+spare11                    varchar2("M_VCSZ"),
+spare12                    varchar2("M_VCSZ"),
+spare13                    varchar2("M_VCSZ"),
+spare14                    varchar2("M_VCSZ"),
+spare15                    raw(1000),
+spare16                    raw(1000),
+spare17                    raw(1000),
+spare18                    date,
+spare19                    date,
+spare20                    date
+);
+create index apply$_coordinator_stats_i
+  on apply$_coordinator_stats (apply#, save_time)
+/
+
+
+rem XStream In persistent apply server table 
+create table apply$_server_stats
+(
+apply#                     number,                   /* apply process number */
+server_id                  number,                /* apply server identifier */
+save_time                  date,                /* when stats were persisted */
+apply_name                 varchar2("M_IDEN"),         /* apply process name */
+state                      number,              /* state of the apply server */
+startup_time               date,           /* SYSDATE when the apply started */
+xid_usn                    number,   /* xid usn of transaction being applied */
+xid_slt                    number,   /* xid slt of transaction being applied */
+xid_sqn                    number,   /* xid sqn of transaction being applied */
+cscn                       number,      /* commit scn of current transaction */
+depxid_usn                 number,       /* xid usn of txn server depends on */
+depxid_slt                 number,       /* xid slt of txn server depends on */
+depxid_sqn                 number,       /* xid sqn of txn server depends on */
+depcscn                    number,    /* commit scn of txn server depends on */
+msg_num                    number,          /* current message being applied */
+total_assigned             number,          /* total txns assigned to server */
+total_admin                number,   /* total admin tasks assigned to server */
+total_rollbacks            number,       /* total number of txns rolled back */
+total_msg                  number,       /* total number of messages applied */
+last_apply_time            date,            /* time last message was applied */
+last_apply_msg_num         number,         /* number of last message applied */
+last_apply_msg_time        date,    /* creation time of last applied message */
+elapsed_apply_time         number,         /* time elapsed applying messages */
+commit_position            raw(64),    /* commit position of the transaction */
+dep_commit_position        raw(64),   /* commit pos of txn server depends on */
+last_apply_pos             raw(64),      /* position of last message applied */
+flag                       number,                                  /* flags */
+nosxid                     varchar2(128),   /* txn id that slave is applying */
+depnosxid                  varchar2(128),        /* txn id slave depends on  */
+max_inst_scn               number,              /* maximum instantiation SCN */
+total_waitdeps             number,      /* total number of wait dependencies */
+total_lcrs_retried         number,           /* total number of lcrs retried */
+total_txns_retried         number,           /* total number of txns retried */
+txn_retry_iter             number,            /* current txn retry iteration */
+lcr_retry_iter             number,            /* current lcr retry iteration */
+total_txns_discarded       number,    /* txns handled by reperror RECORD_TXN */
+flags_factoring            number,                        /* factoring flags */
+spare1                     number,
+spare2                     number,
+spare3                     number,
+spare4                     number,
+spare5                     number,
+spare6                     number,
+spare7                     number,
+spare8                     number,
+spare9                     number,
+spare10                    number,
+spare11                    varchar2("M_VCSZ"),
+spare12                    varchar2("M_VCSZ"),
+spare13                    varchar2("M_VCSZ"),
+spare14                    varchar2("M_VCSZ"),
+spare15                    raw(1000),
+spare16                    raw(1000),
+spare17                    raw(1000),
+spare18                    date,
+spare19                    date,
+spare20                    date
+);
+create index apply$_server_stats_i
+  on apply$_server_stats (apply#, server_id, save_time)
+/
+
+rem XStream In persistent apply reader table 
+create table apply$_reader_stats
+(
+apply#                     number,                   /* apply process number */
+save_time                  date,                /* when stats were persisted */
+apply_name                 varchar2("M_IDEN"),         /* apply process name */
+state                      number,              /* state of the apply reader */
+startup_time               date,           /* SYSDATE when the apply started */
+msg_num                    number,          /* current message being applied */
+total_msg                  number,       /* total number of messages applied */
+total_spill_msg            number,   /* the total number of messages spilled */
+last_rcv_time              date,           /* time last message was received */
+last_rcv_msg_num           number,        /* number of last message received */
+last_rcv_msg_time          date,           /* creation time of last received */
+sga_used                   number,                        /* SGA memory used */
+elapsed_dequeue_time       number,        /* time elapsed dequeuing messages */
+elapsed_schedule_time      number,       /* time elapsed scheduling messages */
+elapsed_spill_time         number,         /* time elapsed spilling messages */
+last_browse_num            number,                        /* last browse SCN */
+oldest_scn_num             number,                             /* oldest SCN */
+last_browse_seq            number,            /* last browse sequence number */
+last_deq_seq               number,           /* last dequeue sequence number */
+oldest_xid_usn             number,                         /* oldest xid usn */
+oldest_xid_slt             number,                         /* oldest xid slt */
+oldest_xid_sqn             number,                         /* oldest xid sqn */
+spill_lwm_scn              number,                /* spill low watermark SCN */
+commit_position            raw(64),    /* commit position of the transaction */
+last_rcv_pos               raw(64),             /* position of last received */
+last_browse_pos            raw(64),                  /* last browse position */
+oldest_pos                 raw(64),                       /* oldest position */
+spill_lwm_pos              raw(64),          /* spill low watermark position */
+flag                       number,                                  /* flags */
+oldest_xidtxt              varchar2(128),           /* oldest transaction id */
+num_deps                   number,                 /* number of dependencies */
+num_dep_lcrs               number,            /* number of lcrs with txn dep */
+num_wmdeps                 number             ,/* number of lcrs with WM dep */
+num_in_memory_lcrs         number,           /* number of knallcrs in memory */
+sga_allocated              number,  /* total sga allocated from streams pool */
+total_lcrs_retried         number,           /* total number of lcrs retried */
+total_txns_retried         number,           /* total number of txns retried */
+txn_retry_iter             number,            /* current txn retry iteration */
+lcr_retry_iter             number,            /* current lcr retry iteration */
+total_txns_discarded       number,    /* txns handled by reperror RECORD_TXN */
+flags_factoring            number,                        /* factoring flags */
+spare1                     number,
+spare2                     number,
+spare3                     number,
+spare4                     number,
+spare5                     number,
+spare6                     number,
+spare7                     number,
+spare8                     number,
+spare9                     number,
+spare10                    number,
+spare11                    varchar2("M_VCSZ"),
+spare12                    varchar2("M_VCSZ"),
+spare13                    varchar2("M_VCSZ"),
+spare14                    varchar2("M_VCSZ"),
+spare15                    raw(1000),
+spare16                    raw(1000),
+spare17                    raw(1000),
+spare18                    date,
+spare19                    date,
+spare20                    date
+);
+create index apply$_reader_stats_i
+  on apply$_reader_stats (apply#, save_time)
+/
+
+rem stores persistent batch sql statistics for the apply servers
+create table apply$_batch_sql_stats
+(
+apply#                     number,                   /* apply process number */
+save_time                  date,                /* when stats were persisted */
+server_id                  number,                /* apply server identifier */
+batch_opeations            number,
+batches                    number,
+batches_executed           number,
+queues                     number,
+batches_in_error           number,
+normal_mode_ops            number,
+immediate_flush_ops        number,
+pk_collisions              number,
+uk_collisions              number,
+fk_collisions              number,
+thread_batch_groups        number,
+num_commits                number,
+num_rollbacks              number,
+queue_flush_calls          number,
+ops_per_batch              number,
+ops_per_batch_executed     number,
+ops_per_queue              number,
+parallel_batch_rate        number,
+spare1                     number,
+spare2                     number,
+spare3                     number,
+spare4                     number,
+spare5                     number,
+spare6                     number,
+spare7                     number,
+spare8                     number,
+spare9                     number,
+spare10                    number,
+spare11                    number,
+spare12                    number,
+spare13                    number,
+spare14                    number,
+spare15                    number,
+spare16                    varchar2(4000),
+spare17                    varchar2(4000),
+spare18                    varchar2(4000),
+spare19                    varchar2(4000),
+spare20                    raw(1000),
+spare21                    raw(1000),
+spare22                    raw(1000),
+spare23                    date,
+spare24                    date,
+spare25                    date
+);
+create index apply$_batch_sql_stats_i
+  on apply$_batch_sql_stats (apply#, server_id, save_time)
+/
+
+rem stores object level information for destination objects
+create table streams$_dest_objs
+(
+  object_number  number,                           /* destination table obj# */
+  property       number,                        /* table property - bit flag */
+                                       /* 0x01 -> do not compare for deletes */
+                                       /* 0x02 -> do not compare for updates */
+  dblink         varchar2("M_XDBI"),   /* database link for HS instantiation */
+  spare1         number,
+  spare2         number,
+  spare3         varchar2(1000),
+  spare4         varchar2(1000)
+)
+/
+
+create unique index streams$_dest_objs_i
+  on streams$_dest_objs(object_number, dblink)
+/
+
+rem stores the columns for which to turn conflict detection off
+create table streams$_dest_obj_cols
+(
+  object_number number,                            /* destination table obj# */
+  column_name   varchar2("M_IDEN"),       /* name of the column for which to */
+                                              /* turn conflict detection off */
+  flag          number,                        /* column property - bit flag */
+                                       /* 0x01 -> do not compare for deletes */
+                                       /* 0x02 -> do not compare for updates */
+  dblink        varchar2("M_XDBI"),    /* database link for HS instantiation */
+  spare1        number,
+  spare2        varchar2(1000)
+)
+/
+
+create unique index streams$_dest_obj_cols_i
+  on streams$_dest_obj_cols(object_number, column_name, dblink)
+/
+
+rem keeps track of the streams privileges granted to a user
+create table streams$_privileged_user
+(
+  user# number not null,     /* user number, this mapping is for user$.user# */
+  privs number not null,            /* the privileges granted (bit vector) : */
+                                    /*   0x1 is streams administrator        */
+  flags number,                                /* 0x01 for XStream admin usr */
+  spare1 number,
+  spare2 number,
+  spare3 varchar2(1000),
+  spare4 varchar2(1000)
+)
+/
+create unique index i_streams_privileged_user1
+ on streams$_privileged_user(user#)
+/
+
+rem populated by dbms_streams_adm.add_message_rule
+rem The values in columns streams_name and streams_type may not be valid
+rem if the same rule was used by multiple Streams processes and the Streams
+rem process, which the rule was created for, was dropped. In that scenario,
+rem the values in streams_name and streams_type columns still refer to the
+rem dropped Streams process. Internal users should refer to 
+rem "_DBA_STREAMS_RULES_H" to get the valid streams_name and streams_type. 
+rem
+create table streams$_message_rules
+(
+  streams_name    varchar2("M_IDEN") not null,      /* name of apply/dequeue */
+  streams_type    number not null, /* propagation(2), apply (3), dequeue (4) */
+  msg_type_owner  varchar2("M_IDEN"),                  /* message type owner */
+  msg_type_name   varchar2("M_IDEN"),                   /* message type name */
+  msg_rule_var    varchar2("M_IDEN"),               /* message rule variable */
+  rule_owner      varchar2("M_IDEN") not null,                 /* rule owner */
+  rule_name       varchar2("M_IDEN") not null,                  /* rule name */
+  rule_condition  varchar2("M_VCSZ"),          /* text of the rule condition */
+  spare1          number,
+  spare2          number,
+  spare3          number,
+  spare4          varchar2("M_IDEN"),
+  spare5          varchar2("M_XDBI")
+)
+/
+create unique index i_streams_message_rules
+ on streams$_message_rules(streams_name, streams_type, rule_owner, rule_name)
+/
+
+rem consumers of user-enqueued messages
+create table streams$_message_consumers
+(
+  streams_name    varchar2("M_IDEN") not null,            /* name of dequeue */
+  queue_oid       raw(16)            not null,        /* AQ queue identifier */
+  queue_owner     varchar2("M_IDEN") not null,                /* queue owner */
+  queue_name      varchar2("M_IDEN") not null,                 /* queue name */
+  rset_owner      varchar2("M_IDEN"),                      /* rule set owner */
+  rset_name       varchar2("M_IDEN"),                       /* rule set name */
+  neg_rset_owner  varchar2("M_IDEN"),             /* negative rule set owner */
+  neg_rset_name   varchar2("M_IDEN"),              /* negative rule set name */
+  spare1          number,
+  spare2          number,
+  spare3          number,
+  spare4          varchar2("M_IDEN"),
+  spare5          varchar2("M_XDBI")
+)
+/
+create unique index i_streams_message_consumers
+ on streams$_message_consumers(streams_name)
+/
+
+rem apply spilling transaction information
+create table streams$_apply_spill_txn
+(
+  applyname                 varchar2("M_IDEN") NOT NULL,/* name of the apply */
+  xidusn                    number NOT NULL,    /* source transaction ID usn */
+  xidslt                    number NOT NULL,    /* source transaction ID slt */
+  xidsqn                    number NOT NULL,    /* source transaction ID sqn */
+  first_scn                 number NOT NULL,         /* first SCN in the txn */
+  last_scn                  number,                   /* last SCN in the txn */
+  last_scn_seq              number,              /* last sequence in the txn */
+  last_cap_instno           number,          /* capture instantiation number */
+  commit_scn                number,                /* commit SCN for the txn */
+  spillcount                number,        /* the number of messages spilled */
+  err_num                   number,                          /* raised error */
+  err_idx                   number,       /* index of lcr which raised error */
+  sender                    varchar2("M_IDEN"), /* user who enqueued the txn */
+  flags                     number,                       /* txn level flags */
+  priv_state                number,                             /* txn state */
+  distrib_cscn              number,                /* distributed commit SCN */
+  src_commit_time           number,  /* time when txn commited on the source */
+  dep_flag                  number,                      /* dependency state */
+  spill_flags               number,                  /* spill specific flags */
+  first_message_create_time date,          /* time first message was created */
+  spill_creation_time       date DEFAULT SYSDATE,  /* time of spill creation */
+  txnkey                    number,       /* the id key for this transaction */
+  spare1                    number,
+  spare2                    number,
+  spare3                    number,
+  spare4                    number,
+  spare5                    varchar2("M_VCSZ"),
+  spare6                    varchar2("M_VCSZ"),
+  spare7                    varchar2("M_VCSZ"),
+                                                /*----- New 11.2 fields -----*/
+  first_position            raw(64),            /* first position in the txn */
+  last_position             raw(64),             /* last position in the txn */
+  commit_position           raw(64),          /* commit position for the txn */
+  last_message_create_time  date,   /* time last spilled message was created */
+  transaction_id            varchar2(128),                 /* transaction id */
+  parent_transaction_id     varchar2(128),     /* PDML parent transaction id */
+  spare8                    date,
+  spare9                    raw(100)
+)
+tablespace SYSAUX
+/
+create unique index i_streams_apply_spill_txn
+ on streams$_apply_spill_txn(applyname, xidusn, xidslt, xidsqn)
+tablespace SYSAUX
+/
+
+rem apply spill tracking table
+create table streams$_apply_spill_txn_list
+(
+  txnkey                    number,/* the id key in streams$_apply_spill_txn */
+  status                    varchar2(1),
+  spare1                    number,
+  spare2                    number,
+  spare3                    varchar2("M_VCSZ"),
+  spare4                    varchar2("M_VCSZ")
+)
+tablespace SYSAUX
+/
+
+rem create a sequence for split-merge api
+rem this sequence is used by auto_merge_streams to generate 
+rem schedule name, job name
+create sequence streams$_sm_id
+ start with     1
+ increment by   1
+ nocache
+ nocycle
+/
+
+
+rem
+rem File Group Repository tables
+rem
+
+rem file groups
+create table fgr$_file_groups
+(
+  file_group_id     number             not null,      /* obj# for file group */
+  keep_files        varchar2(1)        not null,        /* keep files setting*/
+  min_versions      number             not null,       /* min number to keep */
+  max_versions      number             not null,       /* max number to keep */
+  retention_days    number             not null,         /* max days to keep */
+  creator           varchar2("M_IDEN") not null,       /* file group creator */
+  creation_time     timestamp with time zone not null,      /* creation time */
+  sequence_name     varchar2("M_IDEN") not null,  /* sequence for version id */
+  audit$            varchar2("S_OPFL") not null,         /* auditing options */
+  user_comment      varchar2("M_VCSZ"),                      /* user comment */
+  default_dir_obj   varchar2("M_IDEN"),          /* default directory object */
+  spare1            number,
+  spare2            number,
+  spare3            varchar2("M_IDEN"),
+  spare4            varchar2("M_XDBI")
+)
+/
+
+create unique index i_fgr$_file_groups1
+ on fgr$_file_groups(file_group_id)
+/
+
+rem file group versions
+create table fgr$_file_group_versions
+(
+  version_id        number             not null,      /* internal version id */
+  file_group_id     number             not null,     /* version's file group */
+  creator           varchar2("M_IDEN") not null,        /* version's creator */
+  creation_time     timestamp with time zone not null,      /* creation time */
+  version_guid      raw(16)            not null,           /* version's GUID */
+  version_name      varchar2("M_IDEN") not null,          /* name of version */
+  user_comment      varchar2("M_VCSZ"),                      /* user comment */
+  default_dir_obj   varchar2("M_IDEN"),          /* default directory object */
+  spare1            number,
+  spare2            number,
+  spare3            varchar2("M_IDEN"),
+  spare4            varchar2("M_XDBI")
+)
+/
+create unique index i_fgr$_file_group_versions1
+ on fgr$_file_group_versions(version_name, file_group_id)
+/
+create unique index i_fgr$_file_group_versions2
+ on fgr$_file_group_versions(file_group_id, version_id)
+/
+create unique index i_fgr$_file_group_versions3
+ on fgr$_file_group_versions(version_guid)
+/
+
+rem file group versions export info
+create table fgr$_file_group_export_info
+(
+  version_guid      raw(16)            not null,           /* version's GUID */
+  export_version    varchar2("M_IDEN") not null,     /* export compatibility */
+  export_platform   varchar2(101)      not null,          /* export platform */
+  export_time       date               not null,              /* export time */
+  export_scn        number,                                    /* export scn */
+  source_db_name    varchar2("M_XDBI"),         /* global name of the source */
+  spare1            number,
+  spare2            number,
+  spare3            varchar2("M_IDEN"),
+  spare4            varchar2("M_XDBI")
+)
+/
+create unique index i_fgr$_file_group_export_info1
+ on fgr$_file_group_export_info(version_guid)
+/
+
+rem file group files
+create table fgr$_file_group_files
+(
+  file_name         varchar2(512)      not null,                /* file name */
+  creator           varchar2("M_IDEN") not null,             /* file creator */
+  /* file's creation time */
+  creation_time     timestamp with time zone not null,
+  file_dir_obj      varchar2("M_IDEN") not null,/* directory object for file */
+  version_guid      raw(16)            not null,           /* version's GUID */
+  file_size         number,                                     /* file size */
+  file_blocksize    number,                               /* file block size */
+  file_type         varchar2(32),                               /* file type */
+  user_comment      varchar2("M_VCSZ"),                      /* user comment */
+  spare1            number,
+  spare2            number,
+  spare3            varchar2("M_IDEN"),
+  spare4            varchar2("M_XDBI")
+)
+/
+create unique index i_fgr$_file_group_files1
+ on fgr$_file_group_files(file_name, version_guid)
+/
+create index i_fgr$_file_group_files2
+ on fgr$_file_group_files(version_guid)
+/
+
+create table fgr$_tablespace_info
+(
+  version_guid      raw(16)            not null,           /* version's GUID */
+  tablespace_name   varchar2("M_IDEN") not null,          /* tablespace name */
+  spare1            number,
+  spare2            number,
+  spare3            varchar2("M_IDEN"),
+  spare4            varchar2("M_XDBI")
+)
+/
+create unique index i_fgr$_tablespace_info1
+ on fgr$_tablespace_info(version_guid, tablespace_name)
+/
+create index i_fgr$_tablespace_info2
+ on fgr$_tablespace_info(tablespace_name)
+/
+
+create table fgr$_table_info
+(
+  version_guid      raw(16)            not null,           /* version's GUID */
+  schema_name       varchar2("M_IDEN") not null,              /* schema name */
+  table_name        varchar2("M_IDEN") not null,               /* table name */
+  tablespace_name   varchar2("M_IDEN"),                   /* tablespace name */
+  scn               number,                                    /* export scn */
+  spare1            number,
+  spare2            number,
+  spare3            varchar2("M_IDEN"),
+  spare4            varchar2("M_XDBI")
+)
+/
+create unique index i_fgr$_table_info1
+ on fgr$_table_info(version_guid, schema_name, table_name)
+/
+create index i_fgr$_table_info2
+ on fgr$_table_info(schema_name, table_name, tablespace_name)
+/
+create index i_fgr$_table_info3
+ on fgr$_table_info(table_name)
+/
+grant create table to system
+/
+grant create snapshot to system
+/
+grant select any table to system
+/
+grant global query rewrite to system
+/
+rem sequence used to generate ids for online redefinitions and its steps
+create sequence redef_seq$ increment by 1 start with 1 nocycle
+/
+
+rem table to store the redefinition metadata
+create table redef$(
+  id      integer            not null,                    /* redefinition id */
+  name    varchar2("M_IDEN") not null,                /* transformation name */
+  state   integer            not null,  /* current state of the redefinition */
+  flag    integer                                /* flag (internal use only) */
+)
+/ 
+create unique index ui_redef_id$ on redef$(id)
+/
+create unique index ui_redef_name$ on redef$(name)
+/
+
+rem table to store the information about the objects involved while executing
+rem a redefinition
+create table redef_object$(
+  redef_id       integer            not null,             /* redefinition id */
+  obj_type       integer            not null,                 /* object type */
+  obj_owner      varchar2("M_IDEN") not null,       /* original object owner */
+  obj_name       varchar2("M_IDEN") not null,        /* original object name */
+  int_obj_owner  varchar2("M_IDEN"),          /* interim/cloned object owner */
+  int_obj_name   varchar2("M_IDEN"),           /* interim/cloned object name */
+  bt_owner       varchar2("M_IDEN"),                     /* base table owner */
+  bt_name        varchar2("M_IDEN"),                      /* base table name */
+  genflag        integer,                        /* flag (internal use only) */
+  typflag        integer       /* obj type specific flag (internal use only) */
+)   
+/
+create index i_redef_object$ on
+ redef_object$(redef_id, obj_type, obj_owner, obj_name)
+/
+rem table to store the dependent objects that could not be cloned during the
+rem online redefinition
+create table redef_dep_error$(
+  redef_id       integer            not null,             /* redefinition id */
+  obj_type       integer            not null,                 /* object type */
+  obj_owner      varchar2("M_IDEN") not null,       /* original object owner */
+  obj_name       varchar2("M_IDEN") not null,        /* original object name */
+  bt_owner       varchar2("M_IDEN"),                     /* base table owner */
+  bt_name        varchar2("M_IDEN"),                      /* base table name */
+  ddl_txt        clob                                          /* ddl string */
+)  
+/
+create index i_redef_dep_error$ on
+ redef_dep_error$(redef_id, obj_type, obj_owner, obj_name)
+/
+create table ruleset$ (
+        obj#            number not null,                    /* object number */
+        baseobj         number not null,               /* base object number */
+        rules_table     number not null         /* table in which rules live */
+)
+/
+create table log$
+(
+  btable#    number not null,                        /* base table object id */
+  colname    varchar2(30) not null,                   /* logging column name */
+  refcount   number not null,                        /* number of references */
+  ltable#    number not null                      /* logging table object id */
+)
+/
+create sequence log$sequence   /* sequence for logging table name generation */
+  increment by 1
+  start with 1
+  minvalue 0
+  nomaxvalue
+  cache 10
+  order
+  nocycle
+/
+rem Recoverable script : table storing recoverable script details
+create table reco_script$
+( 
+  oid                    raw(16),                        /* global unique id */
+  invoking_package_owner varchar2("M_IDEN"),   /* pkg owner of invoking proc */
+  invoking_package       varchar2("M_IDEN"),     /* name of the invoking pkg */
+  invoking_procedure     varchar2("M_IDEN"),    /* name of the invoking proc */
+  invoking_user          varchar2("M_IDEN"),                /* invoking user */
+  total_blocks           number,     /* total number of blocks in the script */
+  context                clob,        /* any context the user wishes to pass */
+                                /* between blocks, like some state variables */
+  status                 number,   /* GENERATING, EXECUTING, EXECUTED, ERROR */
+  done_block_num         number,
+                            /* nth block that has been successfully executed */
+  script_comment         varchar2("M_VCSZ"),   /* comments passed in by user */
+  ctime                  date default SYSDATE,         /* script create time */
+  spare1                 number,
+  spare2                 number,
+  spare3                 number,
+  spare4                 varchar2(1000),
+  spare5                 varchar2(1000),
+  spare6                 date
+)
+tablespace SYSAUX
+/ 
+
+create unique index reco_script$_unq
+  on reco_script$ (oid)
+tablespace SYSAUX
+/
+
+rem Recoverable script : table storing operation parameters
+create table reco_script_params$
+(
+  oid            raw(16),               /* global unique id of the operation */
+  param_index    number,               /* to associate multivalue parameters */
+  name           varchar2("M_IDEN"),                    /* name of parameter */
+  value          varchar2(4000),                       /* value of parameter */
+  spare1         number,
+  spare2         number,
+  spare3         varchar2(1000)
+)
+tablespace SYSAUX
+/
+
+create unique index reco_script_params$_unq
+  on reco_script_params$ (oid, name, param_index)
+tablespace SYSAUX
+/
+
+rem Recoverable script : table storing recoverable script blocks
+create table reco_script_block$
+(
+  oid                  raw(16),                          /* global unique id */
+  block_num            number,                    /* nth block in the script */
+  forward_block        clob,                 /* forward block to be executed */
+  forward_block_dblink varchar2("M_XDBI"),/* where forward block is executed */
+  undo_block           clob,     /* block to be executed in case of rollback */
+  undo_block_dblink    varchar2("M_XDBI"),   /* where undo block is executed */
+  state_block          clob,        /* block to be executed to set the state */
+  status               number,   /* EXECUTED, ERROR, NOT EXECUTED, EXECUTING */
+  context              clob,              /* any ctx the user wishes to pass */
+  block_comment        varchar2("M_VCSZ"),    /* user comments for the block */
+  ctime                date default SYSDATE,   /* time the block was created */
+  spare1               number,
+  spare2               number,
+  spare3               number,
+  spare4               varchar2(1000),
+  spare5               varchar2(1000),
+  spare6               date
+)
+tablespace SYSAUX
+/
+
+create unique index reco_script_block$_unq
+  on reco_script_block$ (oid, block_num)
+tablespace SYSAUX
+/
+
+rem Recoverable script : table storing recoverable script errors
+create table reco_script_error$
+(
+  oid                 raw(16),                           /* global unique id */
+  block_num           number,                       /* nth block that failed */
+  error_number        number,                                /* error number */
+  error_message       varchar2("M_VCSZ"),                   /* error message */
+  error_creation_time date default SYSDATE,            /* time error occured */
+  spare1              number,
+  spare2              varchar2(1000)
+)
+tablespace SYSAUX
+/
+
+rem
+rem BEGIN Data comparison: sequence, table definitions
+rem 
+
+rem Stores the comparison registration's static parameters
+
+CREATE TABLE comparison$
+(
+  comparison_id      NUMBER NOT NULL,
+  comparison_name    VARCHAR2("M_IDEN") NOT NULL,
+  user#              NUMBER,               /* userid for security validation */
+  comparison_mode    NUMBER,                              /* CMP_CMODE_TABLE */
+  schema_name        VARCHAR2("M_IDEN"),   
+  object_name        VARCHAR2("M_IDEN"),   
+  object_type        NUMBER,
+  rmt_schema_name    VARCHAR2("M_IDEN"),   
+  rmt_object_name    VARCHAR2("M_IDEN"),   
+  rmt_object_type    NUMBER,
+  dblink_name        VARCHAR2("M_XDBI"),  
+  scan_mode          NUMBER,             /* CMP_SCAN_MODE_FULL_TABLE etc.    */
+  scan_percent       NUMBER,
+  cyl_idx_val        VARCHAR2("M_VCSZ"),
+  null_value         VARCHAR2("M_VCSZ"),
+  loc_converge_tag   RAW("M_CSIZ"),
+  rmt_converge_tag   RAW("M_CSIZ"),
+  max_num_buckets    NUMBER,
+  min_rows_in_bucket NUMBER,
+  flags              NUMBER,             
+        /* 0x00000001    1       SINGLE COLUMN INDEX
+         * 0x00000002    2       UNIQUE INDEX 
+         * 0x00000004    4       NULLABLE INDEX COLUMN
+         */
+  last_update_time   TIMESTAMP,
+  spare1             NUMBER,           
+  spare2             NUMBER,
+  spare3             NUMBER,
+  spare4             VARCHAR2(1000)
+)
+tablespace SYSAUX
+/
+
+CREATE UNIQUE INDEX cmp_uniq_idx1 ON comparison$ (comparison_id)
+tablespace SYSAUX
+/
+
+CREATE UNIQUE INDEX cmp_uniq_idx2 ON comparison$ (comparison_name)
+tablespace SYSAUX
+/
+
+rem 
+rem Stores the index columns as well as other columns used in comparison.
+rem
+
+CREATE TABLE comparison_col$(
+  comparison_id      NUMBER             NOT NULL,
+  col_position       NUMBER             NOT NULL,
+  col_name           VARCHAR2("M_IDEN") NOT NULL,
+  data_type          NUMBER,                            /* number, date etc. */
+  flags              NUMBER,
+        /* 0x00000001    1       Index Column
+         */
+  spare1             NUMBER,           
+  spare2             NUMBER,
+  spare3             NUMBER,
+  spare4             VARCHAR2(1000)
+)
+tablespace SYSAUX
+/
+
+CREATE INDEX cmpcol_uniq_idx1 ON comparison_col$ 
+(comparison_id, col_position, col_name)
+tablespace SYSAUX
+/
+
+
+rem
+rem Stores the results for a particular scan iteration of a comparison.
+rem Each top level scan will have the parent_scan_id as NULL.
+rem 
+CREATE TABLE comparison_scan$ (
+  comparison_id         NUMBER  NOT NULL,
+  scan_id               NUMBER  NOT NULL,  
+  parent_scan_id        NUMBER,
+  num_rows              NUMBER,               /* Number of rows in scan      */
+           /* CMP_STAT_SUC, CMP_STAT_DIF, CMP_STAT_BUC_DIF, CMP_STAT_ROW_DIF */
+  status                NUMBER,
+  flags                 NUMBER,
+        /* 0x00000001    1       Scan Nulls
+         */
+  last_update_time      TIMESTAMP,
+  spare1                NUMBER,                         /* current dif count */
+  spare2                NUMBER,                         /* initial dif count */
+  spare3                NUMBER,                              /* root scan id */
+  spare4                VARCHAR2(1000),
+  spare5                NUMBER,
+  spare6                NUMBER,
+  spare7                NUMBER,
+  spare8                TIMESTAMP
+)
+tablespace SYSAUX
+/
+
+CREATE UNIQUE INDEX cmp_scan_uniq_idx ON comparison_scan$ 
+  (comparison_id, scan_id)
+tablespace SYSAUX
+/
+
+
+rem
+rem Stores the column ranges for a scan.
+rem 
+CREATE TABLE comparison_scan_val$ (
+  comparison_id         NUMBER NOT NULL,
+  scan_id               NUMBER NOT NULL,  
+  column_position       NUMBER NOT NULL,
+  min_val               VARCHAR2("M_VCSZ"),   /* Minimum value for this scan */
+  max_val               VARCHAR2("M_VCSZ"),   /* Maximum value for this scan */
+  flags                 NUMBER,
+  last_update_time      TIMESTAMP,
+  spare1                NUMBER,           
+  spare2                NUMBER,
+  spare3                NUMBER,
+  spare4                VARCHAR2(1000)
+)
+tablespace SYSAUX
+/
+
+CREATE UNIQUE INDEX cmp_scan_val_uniq_idx ON comparison_scan_val$ 
+  (comparison_id, scan_id, column_position)
+tablespace SYSAUX
+/
+
+rem Stores the row difs of a scan
+CREATE TABLE comparison_row_dif$ (
+  comparison_id         NUMBER          NOT NULL,
+  scan_id               NUMBER          NOT NULL,
+  loc_rowid             ROWID,
+  rmt_rowid             ROWID,
+  idx_val               VARCHAR2("M_VCSZ"),
+  status                NUMBER,      /* dbms_cmp_int.CMPI_ROWDIF_SUC or _DIF */
+  last_update_time      TIMESTAMP,
+  spare1                NUMBER,           
+  spare2                NUMBER,
+  spare3                NUMBER,
+  spare4                VARCHAR2(1000)
+)
+tablespace SYSAUX
+/
+
+CREATE UNIQUE INDEX cmp_row_dif_uniq_idx_1 ON comparison_row_dif$ 
+  (comparison_id, scan_id, loc_rowid, rmt_rowid)
+tablespace SYSAUX
+/
+
+CREATE UNIQUE INDEX cmp_row_dif_uniq_idx_2 ON comparison_row_dif$ 
+  (comparison_id, scan_id, rmt_rowid, loc_rowid)
+tablespace SYSAUX
+/
+
+CREATE SEQUENCE comparison_seq$  
+  START WITH 1 
+  INCREMENT BY 1
+  MINVALUE 1
+  NOCACHE
+/
+
+CREATE SEQUENCE comparison_scan_seq$ 
+  START WITH 1
+  INCREMENT BY 1
+  MINVALUE 1
+  MAXVALUE 4294967295
+  CYCLE
+  CACHE 20
+/
+
+
+rem
+rem END Data comparison: sequence, table definitions
+rem 
+
+rem ---------------------------------------------------------
+rem Persistent tables for storing Streams topoloy information
+rem ---------------------------------------------------------
+
+rem persistent table for streams component
+create table streams$_component
+(
+  component_id       number not null, /* system assigned unique component id */
+  component_name     varchar2(194),                 /* name of the component */
+                                       /* component_name of the propagation  */
+                                       /* sender has the following form:     */
+                                       /* "queue_schema"."queue_name"@dblink */
+                                       /*  queue_schema   varchar2(30)       */
+                                       /*  queue_name     varchar2(30)       */
+                                       /*  dblink         varchar2(128)      */
+                                       /*  in total 30 + 30 + 128 + 6 = 194  */
+  component_db       varchar2("M_XDBI"),  /* database on which comp. resides */
+  component_type     number,                /* type of the streams component */
+                                                   /* 1              capture */
+                                                   /* 2   propagation sender */
+                                                   /* 3 propagation receiver */
+                                                   /* 4                apply */
+                                                   /* 5                queue */
+  component_property number,                  /* properties of the component */
+                                                  /* 0x01 downstream capture */
+                                                  /* 0x02      local capture */
+                                                  /* 0x04         hot mining */
+                                                  /* 0x08        cold mining */
+                                                  /* 0x10     buffered queue */
+                                                  /* 0x20   persistent queue */
+  component_changed_time date,   /* time that the component was last changed */
+  spare1             number,                               /* spare column 1 */
+  spare2             number,                               /* spare column 2 */
+  spare3             varchar2("M_VCSZ"),                   /* spare column 3 */
+  spare4             date                                  /* spare column 4 */
+)
+tablespace SYSAUX
+/
+create unique index streams$_component_ind on
+streams$_component(component_id)
+tablespace SYSAUX
+/
+
+rem persistent table for streams component link
+create table streams$_component_link
+(
+  source_component_id number not null,         /* id of the source component */
+  dest_component_id   number not null,    /* id of the destination component */
+  path_id             number not null, /* id of the path the link belongs to */
+  position            number, /* 1-based position of the link on stream path */
+  path_flag           raw(4) default '00000000',  /* flag of the stream path */
+                         /* bit 1 -    whether the link is on an active path */
+                         /* bit 2 - whether the link is on an optimized path */
+                             /* value '00000000' - inactive unoptimized path */
+                             /* value '00000001' -   active unoptimized path */
+                             /* value '00000002' -   inactive optimized path */
+                             /* value '00000003' -     active optimized path */
+  original_path_id    number default null, /* id of the original stream path */
+                          /* and it is only populated for the optimized path */
+  spare1              number,                              /* spare column 1 */
+  spare2              number,                              /* spare column 2 */
+  spare3              varchar2("M_VCSZ"),                  /* spare column 3 */
+  spare4              date                                 /* spare column 4 */
+)
+tablespace SYSAUX
+/
+create unique index streams$_component_link_ind on
+streams$_component_link(source_component_id, dest_component_id, path_id)
+tablespace SYSAUX
+/
+
+rem persistent table for Streams component properties
+create table streams$_component_prop
+(
+  component_id   number not null,                     /* id of the component */
+  prop_name      varchar2("M_IDEN"),                 /* name of the property */
+  prop_value     varchar2("M_VCSZ"),                /* value of the property */
+  spare1         number,
+  spare2         number,
+  spare3         varchar2("M_VCSZ"),
+  spare4         date
+)
+tablespace SYSAUX
+/
+create unique index streams$_component_prop_ind on
+streams$_component_prop(component_id, prop_name)
+tablespace SYSAUX
+/
+
+rem persistent table for streams database
+create table streams$_database
+(
+  global_name     varchar2("M_XDBI") not null,    /* database covered by */
+                                                    /* stream topologies */
+  last_queried    date not null,        /* time stream topology data was */
+                                          /* collected from the database */
+  version         varchar2("M_IDEN"),                /* database version */
+                                           /* same as v$instance.version */
+  compatibility   varchar2("M_IDEN"),     /* database compatible setting */
+  management_pack_access
+                  varchar2("M_IDEN"), /* management pack access, values: */
+                                      /* NULL :                 pre-11.1 */
+                                      /* NONE : 11.1, no diagnostic pack */
+                                      /* DIAGNOSTIC                      */
+                                      /* DIAGNOSTIC+TUNING               */
+  spare1          number,                              /* spare column 1 */
+  spare2          number,                              /* spare column 2 */
+  spare3          varchar2("M_VCSZ"),                  /* spare column 3 */
+  spare4          date                                 /* spare column 4 */
+)
+tablespace SYSAUX
+/
+create unique index streams$_database_ind on streams$_database(global_name)
+tablespace SYSAUX
+/
+
+--
+-- Table to track XStream servers
+--
+create table xstream$_server
+(
+  server_name       varchar2("M_IDEN") not null,      /* XStream server name */
+  app_src_database  varchar2("M_XDBI") default null,       /* apply's src db */
+  capture_name      varchar2("M_IDEN") default NULL,         /* capture name */
+  cap_src_database  varchar2("M_XDBI") default null,     /* capture's src db */
+  queue_owner       varchar2("M_IDEN") not null,              /* queue owner */
+  queue_name        varchar2("M_IDEN") not null,               /* queue name */
+  flags             number,                          /* XStream server flags */
+                                                     /* XStream Out   0x0001 */
+                                                     /* XStream In    0x0002 */
+                                            /* Uncommitted data mode  0x0004 */
+  user_comment      varchar2("M_VCSZ"),                      /* user comment */
+  create_date       timestamp,                /* server's creation timestamp */
+  spare1            number,
+  spare2            number,
+  spare3            number,
+  spare4            timestamp,
+  spare5            varchar2("M_VCSZ"),
+  spare6            varchar2("M_VCSZ"),
+  status_change_time date,        /* the time that the status column changed */ 
+  connect_user      varchar2("M_IDEN")       /* connect_user for this server */
+)
+/
+create unique index i_xstream_server1 on
+  xstream$_server(server_name)
+/
+create index i_xstream_server2 on
+  xstream$_server(capture_name)
+/
+
+--
+-- Table to track subset rules for XStream servers
+--
+create table xstream$_subset_rules
+(
+  server_name       varchar2("M_IDEN") not null,      /* XStream server name */
+  rules_owner       varchar2("M_IDEN") not null,              /* Rules owner */
+  insert_rule       varchar2("M_IDEN") not null,         /* insert rule name */
+  delete_rule       varchar2("M_IDEN") not null,         /* delete rule name */
+  update_rule       varchar2("M_IDEN") not null,         /* update rule name */
+  spare1            number,
+  spare2            number,
+  spare3            number,
+  spare4            timestamp,
+  spare5            varchar2("M_VCSZ"),
+  spare6            varchar2("M_VCSZ")
+)
+/
+create unique index i_xstream_subset_rules on
+  xstream$_subset_rules(server_name, rules_owner, insert_rule, delete_rule,
+                        update_rule)
+/
+
+--
+-- Table to track system-generated objects for XStream servers
+--
+create table xstream$_sysgen_objs
+(
+  server_name       varchar2("M_IDEN") not null,      /* XStream server name */
+  object_owner      varchar2("M_IDEN") not null,      /* generated obj owner */
+  object_name       varchar2("M_IDEN") not null,       /* generated obj name */
+  object_type       varchar2("M_IDEN") not null,              /* object type */
+  spare1            number,
+  spare2            number,
+  spare3            number,
+  spare4            timestamp,
+  spare5            varchar2("M_VCSZ"),
+  spare6            varchar2("M_VCSZ")
+)
+/
+create index i_xstream_sysgen_objs1 on
+  xstream$_sysgen_objs(server_name)
+/
+create index i_xstream_sysgen_objs2 on
+  xstream$_sysgen_objs(object_owner, object_name, object_type)
+/
+
+--
+-- Table for xstream parameters 
+--
+create table xstream$_parameters
+(
+  server_name       varchar2("M_IDEN") not null,      /* XStream server name */
+  server_type       number not null,         /* 0 for outbond, 1 for inbound */
+  position          number not null,    /* total ordering for the parameters */
+  param_key         varchar2(100),               /* keyword in the parameter */
+  schema_name       varchar2("M_IDEN"),             /* optional, no wildcard */
+  object_name       varchar2("M_IDEN"),         /* optional, can do wildcard */
+  user_name         varchar2("M_IDEN"),                     /* creation user */
+  creation_time     timestamp,                              /* creation time */
+  modification_time timestamp,                          /* modification time */
+  flags             number,                              /* unused right now */
+  details           clob,                           /* the parameter details */
+  spare1            number,
+  spare2            number,
+  spare3            number,
+  spare4            timestamp,
+  spare5            varchar2("M_VCSZ"),
+  spare6            varchar2("M_VCSZ"),
+  spare7            raw(64),
+  spare8            date,
+  spare9            clob
+)
+/
+create unique index i_xstream_parameters on
+  xstream$_parameters(server_name, server_type, position)
+/
+
+--
+-- Sequence for conflict handler id
+--
+create sequence conflict_handler_id_seq$     /* conflict handler id sequence */
+  start with 1
+  increment by 1
+  minvalue 1
+  maxvalue 4294967295                           /* max portable value of UB4 */
+  nocycle
+  nocache
+/
+
+--
+-- Table for xstream dml_conflict_handler
+--
+create table xstream$_dml_conflict_handler
+(
+  object_name            varchar2("M_IDEN"),                  /* object name */
+  schema_name            varchar2("M_IDEN"),                  /* schema name */
+  apply_name             varchar2("M_IDEN"),                   /* apply name */
+  conflict_type          number,                 /* conflict type definition */
+                                                             /* 1 row exists */
+                                                            /* 2 row missing */
+  user_error             number,                                   /* unused */
+  opnum                  number,             /* 1 insert, 2 update, 3 delete */
+  method_txt             clob,                                     /* unused */
+  method_name            varchar2("M_VCSZ"),                       /* unused */
+  old_object             varchar2("M_IDEN"),         /* original object name */
+  old_schema             varchar2("M_IDEN"),         /* original schema name */
+  method_num             number,           /* resolution method
+                                            * 1 RECORD, 2 IGNORE, 3 OVERWRITE,
+                                            * 4 MAXIMUM, 5 MINIMUM, 6 DELTA  */
+  conflict_handler_name  varchar2("M_IDEN"), /* Name of the conflict handler */
+  resolution_column      varchar2("M_IDEN"),           /* column to evaluate */
+  conflict_handler_id    number,               /* ID of the conflict handler */
+  set_by                 number default NULL,        /* set by user or by GG */
+                                                     /* NULL -> USER         */
+                                                     /* 1    -> GOLDENGATE   */
+  spare1                 number,  
+  spare2                 number, 
+  spare3                 number, 
+  spare4                 timestamp,  
+  spare5                 varchar2("M_VCSZ"),
+  spare6                 varchar2("M_VCSZ"),
+  spare7                 raw(64),
+  spare8                 date,
+  spare9                 clob
+)
+/
+create index i_xstream_dml_conf_handler1 on
+  xstream$_dml_conflict_handler(apply_name, schema_name, object_name,
+                                old_schema, old_object, opnum, conflict_type,
+                                method_num)
+/
+create unique index i_xstream_dml_conf_handler2 on
+  xstream$_dml_conflict_handler(apply_name, conflict_handler_name)
+/
+
+--
+-- Table to store the conflict resolution group for
+-- xstream$_dml_conflict_handler
+--
+create table xstream$_dml_conflict_columns
+(
+  conflict_handler_id       number not null,                   /* handler id */
+  column_name               varchar2("M_IDEN") not null,           /* column */
+  spare1                    number,  
+  spare2                    number, 
+  spare3                    number, 
+  spare4                    timestamp,  
+  spare5                    varchar2("M_VCSZ"),
+  spare6                    varchar2("M_VCSZ"),
+  spare7                    raw(64),
+  spare8                    date,
+  spare9                    clob
+)
+/
+create index i_xstream_dml_conflict_cols1 on
+  xstream$_dml_conflict_columns(conflict_handler_id)
+/
+
+-- table for reperror handlers
+create table xstream$_reperror_handler
+(
+  apply_name          varchar2("M_IDEN") not null,             /* Apply name */
+  schema_name         varchar2("M_IDEN") not null,            /* dest schema */
+  table_name          varchar2("M_IDEN") not null,             /* dest table */
+  source_schema_name  varchar2("M_IDEN") not null,             /* src schema */
+  source_table_name   varchar2("M_IDEN") not null,              /* src table */
+  error_number        number not null,                       /* error number */
+  method              number not null, /* 1 ABEND, 2 RECORD,
+                                        * 3 RECORD_TRANSACTION, 4 IGNORE,
+                                        * 5 RETRY, 6 RETRY_TRANSACTION */
+  max_retries         number,                                 /* max retries */
+  delay_msecs         number,                     /* retry delay miliseconds */
+  set_by              number default NULL,           /* set by user or by GG */
+                                                     /* NULL -> USER         */
+                                                     /* 1    -> GOLDENGATE   */
+  spare1              number,  
+  spare2              number, 
+  spare3              number, 
+  spare4              timestamp,  
+  spare5              varchar2("M_VCSZ"),
+  spare6              varchar2("M_VCSZ"),
+  spare7              raw(64),
+  spare8              date,
+  spare9              clob
+)
+/
+create unique index i_xstream_reperror_handler1 on
+  xstream$_reperror_handler(apply_name, schema_name, table_name,
+                           source_schema_name, source_table_name, error_number)
+/
+
+-- table for collision handlers
+create table xstream$_handle_collisions
+(
+  apply_name          varchar2("M_IDEN") not null,             /* apply name */
+  schema_name         varchar2("M_IDEN") not null,            /* dest schema */
+  table_name          varchar2("M_IDEN") not null,             /* dest table */
+  source_schema_name  varchar2("M_IDEN") not null,             /* src schema */
+  source_table_name   varchar2("M_IDEN") not null,              /* src table */
+  handle_collisions   varchar2(1) not null,        /* Handle collisions? Y/N */
+  set_by              number default NULL,           /* set by user or by GG */
+                                                     /* NULL -> USER         */
+                                                     /* 1    -> GOLDENGATE   */
+  spare1              number,  
+  spare2              number, 
+  spare3              number, 
+  spare4              timestamp,  
+  spare5              varchar2("M_VCSZ"),
+  spare6              varchar2("M_VCSZ"),
+  spare7              raw(64),
+  spare8              date,
+  spare9              clob
+)
+/
+create unique index i_xstream_handle_collisions1 on
+  xstream$_handle_collisions(apply_name, schema_name, table_name,
+                             source_schema_name, source_table_name)
+/
+
+
+--
+-- Table to track connection between XOut to XIN server
+--
+create table xstream$_server_connection
+(
+ outbound_server               varchar2("M_IDEN") not null,  
+ inbound_server                varchar2("M_IDEN") not null, 
+ inbound_server_dblink         varchar2("M_XDBI"),  
+ outbound_queue_owner          varchar2("M_IDEN"),
+ outbound_queue_name           varchar2("M_IDEN"),
+ inbound_queue_owner           varchar2("M_IDEN"),
+ inbound_queue_name            varchar2("M_IDEN"),
+ rule_set_owner                varchar2("M_IDEN"),
+ rule_set_name                 varchar2("M_IDEN"),
+ negative_rule_set_owner       varchar2("M_IDEN"),
+ negative_rule_set_name        varchar2("M_IDEN"),
+ flags                         number,      
+ status                        number,
+ create_date                   date,
+ error_message                 varchar2(4000),
+ error_date                    date,
+ acked_scn                     number,
+ auto_merge_threshold          number,
+ spare1                        number,
+ spare2                        number,
+ spare3                        varchar2("M_VCSZ"),
+ spare4                        varchar2("M_VCSZ"),
+ spare5                        varchar2("M_VCSZ"),
+ spare6                        varchar2("M_VCSZ"),
+ spare7                        date,
+ spare8                        date,
+ spare9                        raw("M_CSIZ"),
+ spare10                       raw("M_CSIZ")
+)
+/
+create index i_xstream_server_connection1 on xstream$_server_connection
+    (outbound_server, inbound_server, inbound_server_dblink)
+/
+/
+
+--
+-- Table to for ddl conflict handlers
+--
+create table xstream$_ddl_conflict_handler
+(
+  apply_name        varchar2("M_IDEN") not null,               /* apply name */
+  conflict_type     varchar2("M_VCSZ") not null,            /* conflict type */
+  include           clob,                                /* inclusion clause */
+  exclude           clob,                                /* exclusion clause */
+  method            clob,                   /* method for resolving conflict */
+  spare1            number,
+  spare2            number,
+  spare3            number,
+  spare4            timestamp,
+  spare5            varchar2("M_VCSZ"),
+  spare6            varchar2("M_VCSZ"),
+  spare7            clob,
+  spare8            clob,
+  spare9            raw(100)
+)
+/
+create index i_xstream_ddl_conflict_hdlr1 on
+  xstream$_ddl_conflict_handler(apply_name)
+/
+
+--
+-- Table to for ddl conflict handlers
+--
+create table xstream$_map
+(
+  apply_name        varchar2("M_IDEN") not null,               /* apply name */
+  src_obj_owner     varchar2("M_IDEN"),                /*source object owner */
+  src_obj_name      varchar2(100) not null,            /* source object name */
+  tgt_obj_owner     varchar2("M_IDEN"),               /* target object owner */
+  tgt_obj_name      varchar2(100) not null,            /* target object name */
+  colmap            clob,                       /* column mapping definition */
+  sqlexec           clob,                              /* SQLEXEC definition */
+  sequence          number,                      /* order of mapping clauses */
+  spare1            number,
+  spare2            number,
+  spare3            number,
+  spare4            timestamp,
+  spare5            varchar2("M_VCSZ"),
+  spare6            varchar2("M_VCSZ"),
+  spare7            clob,
+  spare8            clob,
+  spare9            raw(100)
+)
+/
+create index i_xstream_map1 on
+  xstream$_map(apply_name)
+/
+
+create table goldengate$_privileges
+( username        varchar2("M_IDEN") not null,
+  privilege_type  number not null,              /* 1: capture; 2: apply; 3:* */
+  privilege_level number not null,              /* 1: administrator; 2: user */
+  create_time     timestamp,
+  spare1          number,
+  spare2          number,
+  spare3          timestamp,
+  spare4          varchar2("M_VCSZ"),
+  spare5          varchar2("M_VCSZ"))
+/
+create unique index goldengate$_privileges_i on 
+  goldengate$_privileges(username, privilege_type, privilege_level)
+/
+
+create table xstream$_privileges
+( username        varchar2("M_IDEN") not null,
+  privilege_type  number not null,              /* 1: capture; 2: apply; 3:* */
+  privilege_level number not null,              /* 1: administrator; 2: user */
+  create_time     timestamp,
+  spare1          number,
+  spare2          number,
+  spare3          timestamp,
+  spare4          varchar2("M_VCSZ"),
+  spare5          varchar2("M_VCSZ"))
+/
+create unique index i_xstream_privileges on 
+  xstream$_privileges(username, privilege_type, privilege_level)
+/

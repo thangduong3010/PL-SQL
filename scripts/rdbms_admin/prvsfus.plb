@@ -1,0 +1,32 @@
+CREATE OR REPLACE PACKAGE dbms_feature_usage wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+65e 1ff
+kxUlZQyNqWI9rllUAOuyxcIZrBkwg1XDAK5qfC8B/2RT8xRvxTmi27gt0Nt3UhjNaTLCGBZZ
+Von5qoohqHklQPWp+9Wn3LwScrsibojCPug2lnK79v5Foz9IIitIA4e8O6ayovPOc/ge27rd
+xvjXtyW9AdiErcYCJn6J8Vem1aw7VhTma4cwnGOJId3NpHGVEo9mQsrJOBeyN0lSu58MySgi
+Wbik6pITPXxSwocCDG//epdSWXkcYjDomWA0dyHR0KRLxWN6fwdAqBPBAO6MDbGPAO6MDVu4
+6s5yg9ol+HP9FFP0xB34nSIR/Q4+lNTxn3pS/kbfbj3vEsuBN15169yvRqxJd1aEAL5fg2r8
+AHun8xNFbn4rpXl+THILa8JaRNryuqu1auXGK47lqCKiBbI79Cgl31hSZVltk+O7WlPjjCRI
+c/fUkWbXaHbWWIxBP3iwI8sF1HZZf85b5ZRohJSe+WmQP1xaUrVuwOtHbQqeLE8Q+0S5e8Y=
+
+
+/
+show errors
+/

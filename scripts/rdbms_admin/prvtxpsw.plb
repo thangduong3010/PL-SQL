@@ -1,0 +1,73 @@
+CREATE OR REPLACE PACKAGE dbms_pswmg_import wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+256 185
+JoFtiePGn5TLvINyCzvM16ExGJYwgxDINfZqfHQCvy4/Akq90iXNISMJ4L4q9n7v2nkQZV+v
+tKjY2NZzczEa2ac7kN1wMCX+QZEtEN0qr+uGuBjG68aldg9Ahh4F2g7VEEs2/UM07t13q28O
+dl+dwqwZ8/aK55+FzTk6YUW6PG3T3VHH+GgQzC/MDrV/oDRkHlyt7AFdKrC81tKrBllFfQA4
+yIjW9wN90bYA37rh78G6jfKZe2e2DsyrraJjADv0qu7CwW6bpP4s21SnLgxRF+E9k2oiQbZn
+MvnbNvL1EK3PGTqjYwpZaoYCm6j5BKPE0NrgbISJq+UaDA1jMfMfaW/pCJWN7UjtZXv/EsAM
+f97w8zgl8ZbeLUU6NtFhddk=
+
+/
+CREATE OR REPLACE PACKAGE BODY dbms_pswmg_import wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+9f3 4a8
+r9frJeHEVCwJnSnUl48RA1sdf9Awg5BcTCCDfI5V1eSeDAqiUGWepCUUVCxZBqmT0xdhhNle
+oDseRiGD5fUKGwiGv3lJSh04PclclTNzesGHmpFXzuPBNtdUU2B4D2GYBjj+NHOHfmEo/tCu
+4xjR5j0PHmEefneXV5ladcesEfF/0W1ElPEIDer5b2424bOOOP8I7OlDKmhlHJ4sepBU3kFU
+urRy57se0t2sUYguf87oJhTHFbC4xH6+mVRBlx5vNdHnW09jDzK2Nyd9bsFZCSlujQJNfH1q
+oNrvx+z89RucEZHxTZ8BEcd3+a19+4mzcHD3lV8B32Fc6U3A2PQ82RodxWomAYonNQvhqCTD
+r3wwfxgO6q1kb/B0OSAxLBHOV6gOwSv6jEpa0Vr8b7BRdMARkvq33sSG6Ffse582wFH3PFBd
+VrP9gDWhXEEz4cJx5itsDmoUNvShyjLksd1jkd8K4wOiLP+pbxX6Uro+aZywUEWI/fUbHZkt
+rExrecwJGi7ctvxATROMaKTAUQTr+B6pkfHCGDbdOdA3lKinU3x56w5aDy7R2Rv7ro3qjz1N
+hELsGyECNgHXyYE/cnouA9BlVtuUND0jsBW3vAwInsat84XVPpvQVEvcgxmYd6njsSeRUTrt
+KthOFK0ohKBUcV9JvZDnsx7+YnfxoEVj0kwLGy6Yn6TwO1lxlNUV3qDRUY5CytCPQinl4nwo
+b3UPzk0FKfVWsUKrTSWOLqRjJS1lAMnVWJAP+7L3gvBX97nMiB/7SabaekWxryGG1LB4q4df
+Kr3Fhp3j3p7pUTioFGQFl7TuQqwe2nW3wyNKRdAZSsZq7pg/AAiXr8MHRivLF/QWDuBQLh37
+GtQaL0/gYp8xVpkr1kKvoDXH3nG1XhBVj+yeBINSijNXxsMvH6oDAfz18v8ePgr8w2NbvbJU
+YCVmhb5w1AeUkXWZBjdF0CPUmaxCcqFvhqm0dBIRnb/3xD/4Z2MHoMkddQ9buu27eIxbf7Ya
+RwxsONsuWsm85B/KdgwVzJPm1mvR5D+7UX1ztH54rn3uTkj+z7UwXuSSM1O+c0xo+TT4kqC+
+nQNLoM0k5nt1AiOORS7N3CpMmyaMhWeemiDqwUSSbrnC0AgRMLxafTUWnDzIA4rD9qBpx87e
+Tcx7x+J/2w4NPR+PPSwZZEx9
+
+/
+CREATE OR REPLACE PUBLIC SYNONYM dbms_pswmg_import FOR dbms_pswmg_import
+/
+GRANT EXECUTE ON dbms_pswmg_import TO imp_full_database
+/
+GRANT EXECUTE ON dbms_pswmg_import TO exp_full_database
+/

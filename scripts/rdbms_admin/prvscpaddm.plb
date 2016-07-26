@@ -1,0 +1,32 @@
+CREATE OR REPLACE PACKAGE prvt_cpaddm wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+663 213
+YydufnvXr/V8xahUTcG7nbLviXowg9dcAK5qfC8BuWSltPJ04/cY7uAPXm1dfjods/rm9enl
+Lwb+C5iyeXHvZkV3DIk0vz+7Va30Ofk2YsJVxrEXMAXtSMS7dDS6DK9TeDn6RCCzR93/yV/e
+jFeeIMgNfaxsUJ87bpCAFtGkorYeFH+bENaLnzBW+kXFUHDVPlcxC+FEV+Q3yNsccBdQvMUm
+SVpC6kgTJ4JH1EaVZQJUQgbc5ecvyfQOs1psyz7gADU8pGRT64IEvEA1F4W6qPLAtAa9CBGt
+dtUn268jV1VTYFkARAYEM7PyZhIwkb9thd99NKgzJb9IjFJopuIjsjmEitEhcLMcushIcgZc
+t2zgiLvq4IhkYFniG6EXBo4pWW5meWnVhgYBAgh9x1Y5qk9F8rwe6N+fBCUyId+22cdedlgK
+BIQb3N8j+lBUMj1g+jXGCVknpH6LsPwIvM9MgCwaRcaZSj01A6DxwdozXi3xE/hJHrVAhqmG
+qgYxROI14z9CTrJYbUY/
+
+/
+show errors;
+GRANT EXECUTE ON prvt_cpaddm TO PUBLIC;

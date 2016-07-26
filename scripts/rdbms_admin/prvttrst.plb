@@ -1,0 +1,34 @@
+CREATE OR REPLACE PACKAGE BODY dbms_distributed_trust_admin wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+96c 312
+n+ET1kEcGm/U1ZK05Zi99nUU0sYwg83Dr0qDfC/NWGR1hGOm2Sv10P1SuPH72BvfwpBjbmYr
+ypQmab20AM3Gv3ZJqAI2qA26gWkPbl8AThlHztdfAg+0NqjIs+ErcgWEYYN2SvjXTtlS7ZdK
++Jxqf7riYROkuFU+H91Z+i+Mw6iiFm+IbQsSyy+PRpmDN4p/q0Yt8b19AvmRw+WyYJNHDTp9
+wepTUE10eWCHhzdJb7BNax5V/u03sf4j/z6JoRXwc2DzXH0/tirC2Tr4wJiYFTusZIUqs+91
+ScNMxPMclSvuiSYHQQuyQkrf9GeXBFi4ac6N4xEY4sjMwT+tA8vy/yo2cXwNhRa9bg7AB2Yu
+o//cge4LfBhJRCYcX90bnglMdSZ4cOh9aBE+1CrJft9tQoV0nGaEYxr8GSR0B2pyHRa7s5tH
+xCp2PPixgRyf2c2renLWxHgWxTUPPEut3bnG84ecmngKwkdhU8+Kv5ssLu10so0ilOgFu75K
+XJQRSH9HsBFPSMpUrO8TRg+LTEJKcFTCDb0rTDB2r3WVq5nF0lwkZgQ0jZEx9LpXRVHDVgyx
+x/EXZFE3HkPwb5fpYn6HX4rm7Mea5Zyt0nmsUkJ3FIQafiKO7UqflCnlIwXZK8mxG3frVTx/
+/g8KtdgrtUbD7u0Nkr8ag1ZBmvHcjFoFgObNjUwsmek7TknapuyeSqOJwlOlv27caVUVY6oF
+x77ZW9cucYOAwx6PTbJEnbf9rKIX8wJeelp5fXZmC8wVArXuSYwf3E8=
+
+/
+show errors;

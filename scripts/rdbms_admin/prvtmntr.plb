@@ -1,0 +1,34 @@
+CREATE OR REPLACE PACKAGE BODY dbms_monitor wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+1782 33b
+lASQea5GawYCMZjeLh8u1k9czGkwg81UDK5ofC+5jeQY80nIV/Ufo6NSqySgVNeD1QWZQ5G9
+Ny8nPgm6Jqqd/9E4sZMGFNzlrI6aBkLbgvmLE/cfWp2PXx3Mip5I4iw/vgfGLP6dLKqsfJM5
+mTsWFwzXN4usDB42x9RRMnFm+jqvTtHnvR9NKa38KTg4meQKQ6PgQTfbrQdzIMSqSFUIVb94
+MXKPCbTHDvKjZEO1rIMKMDIdW64TgIh+ZNeqGGNNfCuZrW0nvfo26QohBMDAdTXR42AQRF9H
+8BPVPjSFOtcDVG5ZdV1nsGR7aWqBApxlB3c5v6PnNkNIlNcroI2Cd1a7UlgkiL/EMxfz8rmj
+eJGSV6jrNXX3ceqBrH7q9daP7yIKI39PNfJmIgojhGtR2Kk/S330bcNwbl/dBOcE/YegqxB3
+LTm4ic06RLj0FezmZ4mXrZfAT87vRvjXplRdFuqpirj4LPlb++ohsa0WsfFZjJt1sDI8/AAC
+m3WwLtELf0Cjag7ortpzzp+D3mlmZLdX2aNGkmUCoPJMY1CGYOjGbgmKsO89xiYi8nrXd3cC
+buwp3sYFGZndveEQk2sA1w1sRfu9cA6zJpZEolemko3HhKE/qwzCJhQHqRBb46teduglQTwT
+HoeKCnf4UhUP118eyanO9i912r5usFS7n0EbbbmyPmOcz9zhucccbWSk3UabBKBhwKOG3roi
+y0/Nj7yohiIw0OG8Ke4ec7oCXB6JgqBaUKXI4Cc5R0buwnJwWOY2t4nGl1LCq5/C5anlVl13
+JpElm0wzmsTJ0TExmJ1pB3zm
+
+/

@@ -1,0 +1,137 @@
+SET ECHO ON
+SET FEEDBACK 1
+SET NUMWIDTH 10
+SET LINESIZE 80
+SET TRIMSPOOL ON
+SET TAB OFF
+SET PAGESIZE 100
+create or replace type body XMLBinaryInputStream wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+e
+881 26c
+cTms1PWquDBBuSqrVIv/xhyOz6Qwg9eNAPZqfC9A2sHqaASEFmKJ5v17hTyt84WwDtCgQfJA
+y6Sr8loH+fjyp5B7Dw1e56LW8/G5uRBPA2K6/y8JlQwwPpGSvHHYvJWbTvZ5PArElVt8HR2p
+WfctgwEr3oWkASsW5f+Z4EWOIcc8u+/VcFdENQ4xToUHkHxNywyDOKs76zY5ARxGESHcoySZ
+Fwlu5+XLrohS9KXONnpiRwqclVxSkEKtbyj2GpF6ztcP1/fOMI9JJ0qjmdER4URvPmHkwq22
+8WO8d0sJXUTVFzfD6MlDNauhIDkNXjVvSbzofC4U9jzUBehz1Eru7fxi7fPMzUU+1NQ/vAjL
+qhP+vULN2l9Iu+2SruJaDG0bXfbwOR3GbgJKmhvMESxG+aSDj4ZHwkt8NJhCU2RVxC/Uc6Rf
+r31rsUVmV4MWSFTfAYTlU47eQXvLJU/ejai/q3JGLGbk7UbtJJqftebPVVMaKd1vihnI+Ott
+la7ntN6aCGT5BrMKengRC+T5sE6dM3nBU2jRYLvBeRIbja3urpqV5fK/jiuw4teqVATACUG7
+OfKN8YURHjnlsXsgDlTCzLSG/73QCixwXdes
+
+/
+show errors;
+create or replace type body XMLBinaryOutputStream wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+e
+91d 264
+mmuPhlqTYPtkPx3luzMHj17qyrgwg0NcmNxqfI4BuepoLY0v09Xz1raaoKduHoUo8ht3Nzf7
+RuWfj7tSbgTs0o1N/KmlL0PuEs+5rUlhO/JGwwieQZlYvBDYPA8nmDpoSEfJc0UjW8kbplhm
+Cw3Z2CXI2pfYaY6LmeBFCf+n/5K9hZ510WcvEWE0gTILOQ0yAwsyqzvrNjkBuZM6gIYaec41
+GMc1Lu6s85znKNDd6xU0MKdxlL9YSRcI5wHsbLeQbBUd064b+WAAazysmeyEN+kY2uFWDUvn
+62dNHEGdxkQJWMUKapt0tmw7VuwQ269R8dWr5w+dgjaTbvg5V4vYp7k/rvwrBlfMNnn2U1An
+23Qst0GKVaEAgROWBxXTR6v9jR3gTDbzgfzUDgUlWGmJowGFkNQeYwYGVPXAzB31x39tP7tT
+e9TpBBfmisnDs2Repmu50NpRm2gOeaYztXeqC/aJ7pKThWOCbd+ZHcBpbXhG2aE3auzGREi/
+kN35W83DKFjDOYAzUAU72oALsr9Kh9m5294WdK0+gFCrijKYpLDyoZGOhopbbbuSB/MeLGfX
+8ffggP7ncvE8xug9kiNOsnVWHnQ=
+
+/
+show errors;
+create or replace type body XMLCharacterInputStream wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+e
+a4c 2a1
+Jglp7dzJkfoHgSuNm0Xpilox+Lwwg1UrLvb9fy/XQqqVdu0v5r1jUOx2oCXYYlBKXyJozo5Z
+513xCV/4tQpM3tfJtgXV1mvDWwPTQVj+GXoQU9eeayXgHdDwBmQFVTNCtcK3nT+1MQVzuQH4
+OUdvpnG3MtTHsLJ3QVO37EXjbIJf2iHxKxkCncr2cGE2oXC0cgUvWHgW6aeGWtb//eFt5cvj
+FXcjQ2bfTbioPjlWiL0CpYb7oj20sKlpfYtKW1TL0BVjwId0GPW2FH+WFQeHjH8JWqNn1i4C
+HZJ+1xrgXBZ4HnBEXYPayteBJ8dZbsDCFPQtFAdtaSufwzeBmfObqXv43ZK3mx1HzOX+dzeV
+KTYzqBNa2wV/9OQUJMggg1QF6HZfohIJnmy99qJ/8szeO8jz59iTHkHsPm1sjuurLcnolTKa
+v2Z+GGqDih6cu5qXUgzOU+87yYCfWdJikbt1hzuK3YeMRnv3XRdHnWXsjKU5ZLGq41W1yAOx
+I6Pxa22DFB9TFutgwPVvTGQI7Wetf5zOXe3p+R1efUVhfeDxmdCnqt1UQv+XewTxl5N/oXfY
+dW3cO66K5xfkhY1hQrFO3g2Yz7BdHODaMhLyDIcmCiJ2I3ik4gql5lr2TgZH66inijUcQj5G
+ux0xM8GLluzApLA=
+
+/
+show errors;
+create or replace type body XMLCharacterOutputStream wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+e
+acc 299
+VsVt2wh9BoZcN8V/8Aw85stzj1Uwg1WnLgwdfy9AAP7qR7Os5yOgMIUbA3nK2j46aRLxZqwf
+NfJztckDE8KYg+x5lNt28oP6NEKCTsh3O6fnAm/VME2OqpMgPK4FwfA/mrztIM2fTjQ/RMlJ
+pnG3MtTHsLKJQVO37OCXrIjUpKvNVSWYSzmTRMGZyDZAVQ9Gd/fWg3feWSp9NKhLTZdwFM8N
+h77U045XnI7qYgS9ArjHmVFNigulbPUy+tYfB/guJfU8Me//99t+0xuSy/D35iV2xdieinaS
+GVoHuBykPe9TssJn7B5DJyChm57MsINyUb9Hd/ceevObXIy2onuE8WpCV+Pd8T0qNJdeXvFL
+oo4dDeb2Al+fJ2xeb7BQjX66nDONYfA5qi1A+pF0cpKypFarIZ8fOhg04xXzaBCz415cCUnc
+PaEAEUIujc09Tb3Nwb/eIYDusvnF3SSEuCjuo2PQuOiFV8ABNAlF5/llwID3UlbMHaz5vRtF
+VmJFYENOLv6xkx4O30ohBBJ/YyfQWQxDpFifFIwQosfnYo3EbadQenudPhCOelSSz8dx3m2M
+16/7v8x/66R2+SjvYkJj1L7Zucn4e2wzBW0qdKc//SIzfs7deLobnFVqzV0xVke/100k/yKm
+4o6tlg==
+
+/
+show errors;

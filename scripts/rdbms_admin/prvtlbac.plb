@@ -1,0 +1,1919 @@
+CREATE OR REPLACE PACKAGE LBACSYS.lbac_standard wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+6dd 1de
+AbNISdFndsyws9lBiaJwpASmHrEwg83xrq5qfHSVrbtezrShmEse3EgGn7MlIcB2ObARS+8G
+ps+q95+Kllk9L9Ph94RcDTo67RcFjKNwLqUwnSNalmQKsIH8QrIEYMbGxwpagBtwITcJApdU
+77/0dbpAZrWxzL3SxldTNSvHXSmRNh0XuinAwpzc0d9sUoAj/fFS5ioIfDTKmz5a3J33YgU8
+03tQwzig8XkxZ4aTy0oy1t2ORvDx28Pzt16ODs7YlLZwsGo2p3O3kLuaEIVj+eD9eHzAEBAm
+irWmPzCm2sCS/WDELHHKoRV/5ymJnTxpNiqwObdqQNHnJS39ixb5qbtegU4igvku3J38gYzW
+XsRc9fJZHsBeXDNuwxP+uSsY3MUwwxdMUZG+ZfKqOKoddmK6mlyiEuO5K2rp9sZMpBv0z6nL
+MnNQGZ+EpxBvP3Lm3NZizDITKSHCQUzt+3/68MQ=
+
+/
+CREATE or REPLACE LIBRARY LBACSYS.secure_context_lib wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+2e 65
+5vC/qhVIVy9x7V44WHar6ht0kjswg04I9Z7AdBjDFtwu0WLy8K7/ctWhOxb0cvpZCee9nrLL
+UjLMpXQr58tSdAj1YcmmpvXSy+4=
+
+/
+CREATE OR REPLACE LIBRARY LBACSYS.lbac$std_libt wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+29 5d
+2E+IvmZbzk7zdYxmPsjUCbcPyy0wg04I9Z7AdBjDhaHyWSs+0aH0cvpZxcznvZ6yy1IyzKV0
+K+fLUnQI9WHJpqa2UXT2
+
+/
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_standard wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+bd6 312
+TfHKVLEh85k2f304NC2qpklHY8swg80r2Sf9f47Now+oWR/LdQkTuTRFjL4cbYXsNSUhUngV
+LiUu5hZhH2wPD6FOiUmVKPIMDMkLi31B+Ff+DlL7iqtlGqFB4inrsdeQVc14cv4TzQBELlpr
+wEDeJsjFj6vN4QQfaNhixY3Ve5/B3vp0siic0oIWYTYqEy8jXd5lkHJ0YztW6r3FclZGYXGr
+R2mkSQ/vbyv9eDJc3/rHN8reGJkWAlJ5vfDqibguCDwO8crP3Ptl1e3cX5LqvdUajJywxgfN
+asbMqTaujk0qlL187Tws5LsSeQkey1njU+7JoZO5e+0q+e2mQyVTq+xKCrweaiMYWrp5jpwx
+Gh1El0dWSflfdER5FbpLy0mERDKb3iWXhEBmjfqg5mSLtWssxWVNfiNIMetu9XAa/4AUn7P1
+w5Tk69+eKnIDCdDA7JBm8BP187T1uNs/0teqZHwXqrG+A3jBYf/wn2XjT0yL9fDUq1wn1iYy
+EWDG7GJSRN9+7tLXEkiV9OTTb6R5xMQZVfn4fX2xzfFVM4ARjfzWjWnDTpYREkARSX39UUTv
+8bWH9323Ap0Ml22gaPmGo9Hy+nRyY4IUx8CDRfQt0LFESw+e59RjrvK24UXnxQgbls9gLy3j
+QRpQieUdHZ+lsNg8MwhDSLUL/s2+RQeSBrIaStr+rFvcSaVTzGH9xRc097D9Gh0o8CUs5YDw
+Fy6tHbf41Rd9oCOlP8iYnCeg8r/pe9DXvZchdH2W01is8sG7P+F2n2Qw
+
+/
+show errors
+CREATE OR REPLACE LIBRARY LBACSYS.lbac$cache_libt wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+2b 61
+dwBowGbslD5CJ2uEfzAeo+fcHE4wg04I9Z7AdBjDhaHyWSuh3Fn/WvBy+lnFzOe9nrLLUjLM
+pXQr58tSdAj1YcmmppZJso4=
+
+/
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_cache wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+5cdd 1250
+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
+HJ/8tYa1Ax8MLA==
+
+/
+show errors	
+CREATE OR REPLACE FUNCTION LBACSYS.to_lbac_label wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+145a 6bf
+8oqFT+LfDL4WlyMoXQrMMVvgQyYwg0NUVSAF3y+aA/me4aRw/VBfFM3fIRgdfNPNL40+Bxol
+kZbmCaDpqc90k4c50tCazOR7l0qGjgWH5Un0vySbIj+/gBIZGAlOYMiwB7kzkvxevxIyczqn
+kV0xFzQnJ4eHn6zRiKhxyMfF2V7FKJtiDuxBS0Veo8AtMGwRGYVsPb3jw37cBaO2szyB2doR
+RX2dcFvRIbp8ofGkGxS3WcQJyJJGp0woZnEB1aEfDPIRCv2zVhMrMqMJaxEsS2bZouu+VEsl
+Qerf5t7FIZM95U4XpP+F+a+Yc5qeHaYtd82X72GmMxkfiB/BoIuNCN2oYabLP5bCGTNOSky4
+Y1woMeHOgXn7It9cuieOA6alsxydVRME21rZK94r8Bh+3AyHxxC+mZfb9V1WHosN2ZVv6sue
+5m5FgWrlA23xO35dTOAVng6+HAta3D8ppG5n7H4iAO/mQG2KRm3R5xI1VC3mlbVwAJ6TfQDz
+zZs2ii4U3Tmd3OMQLW3Voz8OmbSZgLCFDhxR+zXSSCBy5zixwQI5KZlqmc1Bi1Nr26TEwmz2
+TzhBgz0YoXEFG/VJfq/pp77mZSfoh54DFcHfkWxirjH13ELXxYC5UqpQRn1eG8IEMreKGJcn
+xT7q2E52/HWJ8HaGxZ8aR/Sx+qEJe60tSY4cpnAbxUs+dW+eT9Xdg3uAOWzFgILCgKv0K0r6
+Ev7KR9xIfnwAYgZQ4mBh6yJMEKQ1TWKVkCj0eFdryKaO9ZxW1fU1lnYV67iy7hQdMq5QN0VM
+6UVTxQlMljWXqHiog/8ot7chLONyP7qViayDQeAUg249GHnbZjJ2+tvsj0D6NC0VsjS083w9
+YtggNdh+Ku/PvpGUsKXf/NXbZYRM5Snjz/hAHZ5XVAQu1/UqKRws+Tq4Ek4pu7n5/LnH3Mu1
+IyM0vrWelg8cHLviQY9DkosZ5RX413O3EFvo1iyVheyzxXVRqLy4zyyNdmSPQhPn4EvxQ+g9
+szoWf9lrKGMtSzuv1cUrgnVmDv7Upqv2Zy9yAQOKC9KC2Ac90LBZZbY7eIKik03ir6LB32yC
+fvJ708JTjHw7UVHsrBNiXbzBVGi46wWjnVq+WCN9bqYjQQ1ZiX7FtAJA4YBIEq4jZAqnPC0E
+L3kIspX74RCvL1+hPopnBwNX2d3j0EzkdoZMSZVg/k9Dm8fDQHKpHC6deiJovpgGU50CqGHg
+e7qssORMwUuwOEe4vNFt8LjKIVayjI4SE8B3eLgFZFNpWSd2ZHYq/3qhWUiW7AVIlbzzvpBR
+LBSHzxtXsIT86DExze2wEkTv886xgbEOGEzYf7F6c9hmzkDD2Lt3pgnl187o3y34abSQCcDU
+KT1bmmlutFZnAWu5emoDVkHxbg2nwpwT2WFvTkVgHYA6K9b9EX9p1RND8R7u5bW9N5LrYXEg
+9uodDekdImp5k8ezwq88IpK8gHakQpWGhlb9WSqxZRW/fv043l/23dD6uCQ6s8EPYTw/VYEf
+xXKVlooG1ouw2YJ4s7LPg90auCzkqgcgkZ7aHneIMBdM1uExliVKoE5WGbTZP4Ut5CCuQ86P
+OnrUbENggf5fFyH0eMOX/2ojTkf5KGAzizikLsaGg0BDlLcjV5a/LMj3V9+7Tc5bMk92aCx1
+5D4lLAzCu7U4e+RkFnI8+eUDUjAxMUdTGv3bgQawqqawRjsf
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.to_numeric_label wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+1b6 124
+0gNvwC0hgdf60AwOQJGp0V9j66kwg43If5kVfC8CkE7VSH5rV1ejdiUzox0pXCXDuJ7FpEbl
+ypK1AOZjyWl/XoeHGZy/PtqXOyfnueq/Qm74BSl9QHNrLDbPcbPos8WarfEq4RasOyE6o+zp
+m2waAUCDDTwW5fl0jfAmY7LmaXA+2nk3ezuqttjYNOCsZm2Uq+fnLXwR2oRW/F8uPZ4sNpD6
+aDp5xWXYjvTzvnEx1C65+JwUr9ihfKJllBheyfBy3A6tCzFfNI/VWkSl8/7mjIdcya4I2cmj
+
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.to_lbac_data_label wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+6c2 39c
+BPPOBoly7Bd5E+zsakqFucWYZc0wg43DDCAFfHQZMZ3mZ5nb+6zKVL/l99Z+6/Rpk8CBfUW3
+yJ9VL8ouB9+c4XMIjF2/JUR1y29i8QbG0Bqe1WVqGsoHH8QStHpFTxNq1M3fKK6Y4+THlY1d
+VvjuNmI3LxuFpFwx7OVkA4LcbujdkN8Y9D2qe4hFnqp920Y3lBbmwBZNQ0Dn2TohCXDY00aw
+IcevB3ykXBji8vJNKgmFCaPNX1Hm68hS0+kRMKtLmKj02CvRsEA8teKP54wGgw0E4pxdxfTI
+mepaXAnrmiXobw9i6A0CSwH8OMT2uK7TY1khTdCp9RgU5oa2E9FHxJVmNuWZZaOEFhwtO8Vp
+auFRD4kVGL1WHdVaduEXIbpqccJoNw4+B8/yR6uiTXcWODRSj1BxuvbQrKDipLZJ4vD8tp1v
+Tw/XOf7Ikx1GjWxdX1EhvSvbxAgF+AXP5iIiUfMTLsrsVVCUX1F0LknHJJk/4QYeJJaYzYaY
+BSBBT8ldks2lRVW1YO6x2R5Oi6kVap8PE1E0VSwnvq9fL+lBWasxJ374YGDIN3QsI98i/cv6
+9+WwEA7IPMjioYPHqrQNDGXoOzEhuIVfKL/uLmOcezmebNndtEOl0virjjCOH9k1iCaF0NSc
+PUxFiqgw7wawgIYpSYQ9CDJPNUMXxwReL6j2B+ajNLD2akDRmmD5sk2WCIlbaxAvEfy1N/ZX
+3hR3a2T34k86OF5H1JXnNclz1l3G6KFTZ+PoSH/2zjRy0dS79V+0K767PadMVkatgLKt/lfT
+RlI1/D5FojHeUw3KZXWZU3i/iSw93KCNrxBKQowMaCoeEWAVsR4yNARhgouDY5D6wpHoXEo6
+Il4u9PUWpFqo8sAs0ujGDhbrfMUB/T27eTsj8fGWqvtKhtD0
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.to_numeric_data_label wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+2fa 20f
+aPlgqtVPyhb1NmD4uXf9EOhMJsQwg43MDPb9fy+5k53gyq20S3XIGUXOfNXQsVGDsysoxq29
+SQioj2FpJbWa9zTU0Ro3uTWKfE7X/nUy4KTwCzD4WKrk+T/OgZJuDzMg+M9oJKRKnvk612AX
+8D9HXx37BEBiI+01qprPpsK099eoI2pzqqxmMw3TyO5aAEKplDt/Medu2JDVrn9Cp+B9Gt6s
+qwAzHeHofbSy0QJ2AMDdJ1Nc8m+udKT8cd6jjaxy1V8w5U6DnrsRhCK3P5MVwStSzdxxO/xN
+eNjcowHKRc+TQqTDTurhLpQZcXT/6cMtUzmfCBrF6ZhThVj62gdTqEGb8owhJkoZb9o3Zo76
++6elQbc5Iuejjmjn4tG3tXZ9umY8oHCDlWKDgjM4hEFwGHCTXZbbLcrJ4I/FzPAjhG2Sp0h1
+VS459OrgwkcneHQbK3f1vAy4wWOVx1gOkOgtbtwuZgRuou6EsjY0A0T4gRSvjL135RUU9l3c
+XfC8GIxz0lsdR6Cz
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.from_bin_label wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+499 2f2
+s+dyv+LkcavGPPOW6zs2Hu5LtUswg3nDBSeGfC9VFxCV3dG0+7YloK5/QmldUmY89wmhud+u
+ZmPN01pehacCAj/kSl3O8dM4uHoX0Rf/EQk88lcmlDRBGZrk6/l9KJiwnB0amSbPlR9UN8Np
+YlOlkAHbdEWDbtcXSdl1wyg08em7fcymqVCXe+J2fsUeY8BToh0DrWhZu0iwrQsurDCSRq0F
+fZfVvGBlJLjvK2hZ6wX6Fhc8iA8nA4u5nrjcPPu/t6GptOGcCX9gbFEdjdANNh/VdpwJlC6R
+mt9E+4XTgzNn3lvl4sW41cNWS3lcEc7hDsUWZihcfd7FOSRtlJ4f5Ly3ddx48/PF8IeAGySF
+b2KdKxEve6sLNP4zQTAqGot4fwB0Mbqwst8Z3/BkisJt1VksREgVtO+rJ8X8ch9oUvFh6CJF
+GylLM1uggljXW4H6FpXfgxI6owpW/45RL1Vd4mwRyKA7f5dbAgjz6c0vXSPwAl3L2kbc02NK
+8bQ7pEmlOq13F2qVrrzbIn/uH+6GMP6G7a4XVZ6RUoOIR/nPbuQe+Cl5/rPPitCd9P2y2q5F
+IQ2NJ61Z8s97YsKWZ5ZqRFH2W1WUueltTwO+67yaSuKc2NCFOUJb7KqkENpILrbfM+D/8BE4
+6plIGC3uJVGWvsiN9brQ1BG3y7239f93PDj3kaHjLmVTMyzIbPiGmlU4tXQUubnSKFG8+n00
+gq2Zbbbfa9CXnXNbgN9mug==
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.from_internal_label wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+58a 2f2
+YKNoQQxu9SKMEbHkinn2LiOvOsMwg+3Dr0qDfC/NMQ9/CdVs92bb0RJmBnBu+9gb38KQYm5W
+xc0rWlbVzEr4CDJ28Vc+EuV3dspYwUKCP06KXGx17gndHkNz1xxysZzZOrjCsGpynLY3+K5H
+AjVsETiZRdvhU6kX5bRA5cZGFiGN02lWPvY4LucfcqCPvqTJo5FKSqFrspQ5YQIzmTxNcLyp
+B8awKVbvGjjeQUHf77opBCAIyg37tBmeo+CxVHoTG4izYDGNw2wquFvemTKF6/WjC5H09tHj
+t4xCJpknVsiIuD4PVfnwNk+Ka43xYyDSE206hdCyxTYZpZZwFuZg5OwrxBs2qdpABSNl1452
+AqaoedyyMrpNosvUAqvIaPmjfyc4i5nvO02XbOVU6gzEnbO0JQf1pxSTdfW2ebylZYKX31e9
+Bi1J3MLiaZbB7Yk59B2sew3XlaTCl1dcl9PH3LI5SG00/4eE7bG35yIiyl2witpMhqkxYr3N
+qy40T+3wC8yU6Z5OjLXAlmS7nMRqPe3kvIdKwQ/i1Y5Cbw06jYvgpMi+3GCXsq+HAi/IjTf/
+w5CX7Ter2rEOT8Mgiri63q73OTKSJvBxJa1sZGE8kFfVAtpvrbnhA93d1bU8lU3l9VyJ+Qqn
+FzvQMNxcIsyJ9qDVlzCv1xlRCQmVagobZeUlOU4W8PxoFgKuu9B3YpVnKHiF4goI95I02bXr
+ayD/c8794KB8+JtbBZ5cPg==
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.to_bin_label wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+203 199
+l3Fxqid16r6macQ95QW/tRz84CIwgwH3r/LbfC9AAME+i8qgmWNpCJEIyBvr3y9JDGVMgY5x
+pcpWIwhzf96YoCfROBu1JE7XGk9aLVI2mg8I5AiIliDB/pmJK58Rry+03OVXgFvu90md6HuE
+UpREqHSQGioj+qLDS3ZDFksUQIyysy+GqRwcHGu+mCDsK34qP5x+An24fBQ23eihvJPoGqst
+ubIp1y2lHIORfACKMal2HS484dBaZl47C4qD+8opXX7HxqlvlIS/TPuYLuxBErtBycgFiaEI
+TuMcN28y5ke/19HCdpeIfaraN5ae0EIebU/dbFcs4uNOdUJSoyNMEt7h1IfFC7KdYNIZOgnd
+uY6KsN1NbeWFPFGsnbXMbEQco6l32i7spd9uEywY7TcV
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.to_internal_label wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+1a4 179
+BjZHrrJ/xPoUq3JCMZ+qCJHTzPcwg0xpryfhfy/NrQ8IywJMNaKVXpWER0qrWkllWA3NPlSl
+aS+ZlbWwMVVhw8HIfNBCIBk0LtncEJFxJE7GQyOSRXZyOs/PJJDMW5jopnLn9h7AmvBfyGEV
+V1RS2tXHzpFfwdayvIhgZa10Q2ZJDdi0B4kA1XmhpaAVfrx116fohEZ5BBGqGIHge5BKp9TY
+3h4xBMrMyrClnT8hBqe6yd/TTxJP0EQ+c9lKRt0dAQL5TxFHJ8Qy81s/uVOUxbopPbO8DJEv
+OKJiCb1DzQ4iGLnl1PKC8x62Q/AyIjAQ2RTTY9/O6o3yE4nsJ3Eydydf+EvUAaxgDA6KizmV
+hpCwByDIjPYR
+
+/
+show errors
+CREATE OR REPLACE PACKAGE BODY LBACSYS.to_label_list wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+1a61 2e6
+6E+3oji8Vb3s3w6RxwaiYpwqZM4wg83qmiCsfC8ZgqqV7T70f7bIkfEAiaNMgn6hPrrPJ2GR
+KAxZM0tztVjpRH/od3PjR7NJUxnqEv4QB78+Ff4R3MqL62zPNCY9607Z8juHmiSpyUqHXwqJ
+SY6WlK9pVkeTG/O3yBtYUVnxrfN8vgL3H18VWh08BeaLKcs4pnGaotzFziHG0+Vc4RzI3b9a
+MBC1gz3jQY5CG/qgH62CRt7mQyU5jdvn/lHwnErep4JWPhd8ts9roJbSxDVloMpnk0LU3Tfv
+9tSV4frsLHYyWWlZ8bO8jB7nZsevZw/ylPjFa1hWm0x6drmi3FmLiTtysSC3BdbNqO/Q/N08
+JCOItBzw87zvajLdGENtdeNztEx4g/lQfNcBD5vtjP5zOROFORNZU9bMNwUCK2jsS96Nj32g
+2NZ5g2IDSFHG9rIAnUdKYv/VUoeCCqrWK7eMmkGboHembjU2YVed2zok+KHO3im0xcYJVzmd
+j2jhmCEuMQas0x/1o3pR6daaUy4sldydr6FTUvT9v0W1QLmyPzgM/IzV8LuNQGLRVlJr6a7P
+acOVvbCflVy+w/57Er8jRRlh5WXXBwIM0vah9nbT0UmdMgoXbpqDt4HU7oolveW6EIZd0myD
+ipMDSdfsA+iqQ7X6SFWrBEmJDIs0Jh8ed8wmjEik/Zj43IKyQTi6dz3cXD07ay3NVd4u/fUs
+TGN9/LZmgxZL
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.to_privs wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+5b7 32f
+cZSETvQU2/8mb8q4LieEfsh6xzkwgzvDDCAFfHQZk52seAV1HxRVo3B/wGmRG/OLWkEc3sdl
+e9gH4RJrHiP80CxDsPFrasuCrLTTJAksJPGDMGxud54cnXgkHLlPP+aXjwKwPI2OxmAIABU3
+/S2Gi2aqiHldNStT6dqsgslQQowOo8ezNqlE3jd/YxMiVxj/uhEBpOrL/JffCa0YC3C+rJWV
+mJVc83aFfm5kW9CdV0eaH9jfRdIV6eRgBzdMkp9BRNDbiCCkp6Gv33GF8kWGnTACbvGsyl89
+g0rFWX6elxnLdGD+bdnZVlC3B8eZRLl08Jv4TmmQMM2C9JN8+C1mOF/DBX1GOnqi4PZo8pVN
+h8DrOufRn1ceRsb93pAujNMXS6yyZFasBWvg68yotfETwMlToLR0qyoRX98L/tKswXy0x+MK
+bsZVooqmaY3b2M63j0Be/Y0Qvq6I+YDJXtqQzP3FiMxfYUV7aXOwxUeOh3jrZQA9e47H8IsU
+0N+1UCGOFxy8BWBrlSGEOJw/sdqjn8mrdmOkFg9cad5MAz9gBRbxRXca+5xJQvGBiaGxcLCE
+ZkOSzEzi4SOXYtinCi/tmoQnAoIoHrGGf21u5p2TkcHz4HSoh9DjVEc/wTkCv+fAncYJwJLy
+g0F5DQ2A2gyPOq28IOABvs7dxDCDHLB9kTP1+EP5Ts2GTBLrY9mlT4T4J7xzkpIpuTflLqAY
+GsdOp4sRX2d6g6Cw/a4SW2rP1EL1THCzDbLIyy+eHOsp+D6J4uecYC9WcUpiGWB7n32pMkVP
+Tuqd+7M0kyU=
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.lbac_label_to_char wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+599 33b
+SwT869er1tonZNlx7Rpk810m5Vswg/DDLtCDfC/NrZ3gGivhGhaszUHjVwQXpgrUNWEDTNxv
+2EXN8n73fRz+xr9+wbfCCfMJG4ZYQoK7LjTljsRRw7h7HEFoKbjkUsAgF/7SHrg3UuF4P/Fi
+zOHnRMD6U5lkKdeFXCbER5KFW+g6QCnaFriVxd41XAnc0/BhJe1eOPGiTVsb6fMee12mNMPU
+ZQE4SfC2lwarKt3P+wOY+DFWrp9FVsVIEt15YF5C5DJ7CIjvCtULLQRD+hhSqAJVta6nLIkJ
+pvFjaeIbylmavMF3U3lKg+H+6yn15qSnJSYnHjUjgnc/Yemp+8lBBAok5UPQJ+AHrfrTseZs
+d2NUPWa9tuM5mDWUjuW9/twky+WsrMdP66gl3QhuNC2RcMYOomZYo/luFWXly1E/7KVfNyFM
+vYHbjjEvieYMaYNrlYmN0cQ3cpZdX+K7/XfnxWGg406RYfWnO8a3UPjvxpCaaN9Bi8VMr1bv
+P8Xs2JB7fjvq2dm6fEyR7L3W4pP7B6OckicFHjvya/SbHXTqx/HrYDZv+qVvc/2hwW2phYia
+cGDcr/6vJOJYvYLIadd4wDuO9Xu3yi0SIUCL12bPev14MPe23qVgnyHiNkmKGcU9L9afZPMj
+1z0Sd5dXNsaAXY3pLwVib6z3Kp5tjnxHGZHvMKqdvH+Szl+qC/aKqLX9IpdBlsGxMDjwwcal
+WTj5JQRywdke7vBfJCCcnJokocWW6xanJl9pHofpJzsF62uduoNrnYbiqmkrn1qXgHE9e1CX
+MAOYWqQ7U7XoTq6q+/uMVMA=
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.numeric_label_to_char wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+115 ff
+Wj8Vvo4Smtem4UAE0nhnx6rol5Mwg3lKr54VfC+iAMHVM7TmCI+zBqjeeKtaXlS2AECjnp5c
+a321E4nmbfUomdk0kIgpWThceY+BEJ9qjIEQxx4jtUL4Mxl0yHxUiNdEJ6YB3VPyygEKidgm
+Bt8JH9yV9OvL8olo3v0ZoNyIazKgaT1YRBdQrB8/X4VY3YxlfllGczioebKHc88bhtxOqdzi
+A4t5zQtnkcImXMqziS0i8ZKGm9codHvpqA==
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.lbac_label_tagseq_to_char wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+5af 34b
+wcLn7OaH9vRwfdywMOjLo9lms1Qwg/DDmiCDfC8Zx/kYt3u9yGk2TE/jMHz/RNhEBzHc6kFW
+TYPi06SrQy2q5P+fP2XFsqhDz7yYu7mYlvry+vAWFHYzmIAStM1PyzM0EkKqkgtygPjO9r+s
+ODbqP626cMvKFF2Z1DskSmRgyQKjgoZmu1gG1ehIqJVfjb77k4s6FgkR8j2+lHsYRjQXvlqE
+TG12qR8J/RuyfsB5AiFTokR8E2rSM0h7LlHwxSXxE8u4t8zqHD8TX3HU3U0J/VlboYl/0cA4
+YbW3QzljjqkRqBo756XreMFGq3iBXF6PSGVYX01qZsTCcdrI/3SNTzvzDgdYooNNcie+Chi0
+P9yg3WPI8zI+wieh5hJRr9hpkrJcRtqw/VsB8q/02d7z3o+4rhlpJQOMf4BmWKO8iGpmfqSi
+gXf5iOHeReHl9D7CGxF0sjWGb2IakeVUEiKd8YJTP+JpOIA4LT7YONlrJF9wy/VTCIJ6uGhX
+qHhCIQ84XskECMMlRtfSh+3iUbrHl8Or1Rshg6Oeb43FdwL81TLwa0rA1tJse/JaiEEuZW7p
+tSMNA76AXV9kfBuwj7q7LCt08PFLS5JMvmgEoPjolUa5zPbseMul7khUhjojdfY08aRfbZW2
+n4AJlKJkVQxG3MeNQewyM68I+0LeL9sj8CZwkbI0DnpAGfwwpiwsnA9K0SKGmjHT2oW1QCgG
+wesIYs+dQAPtqko4M6P9csbrBblZ1Pg60pL4AitDPCHnAfJiXcJe96P2gYP+xAbN+Lq5RR/p
+3pIaz9RcDVvxX4K6vto79uQ4oYG5lK685ERgjw9u
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.numeric_label_tagseq_to_char wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+12c 10f
+T5pHVMC4PQkqtKYCifMeMXUh764wg3mur8usfHSBNGS089MGr4zbajlEnF/zxujGOb3Mtnfj
+zrVINzbL0ne8/pKS7JONBMzFkpIABfmzcOoPBcsHkjN5JFc0Lb6xALLnTD5qm57ciZ7pjWJX
+fRFcp41FcNQK/1lJgOi/IQJfk95o7Imos3DYh0tRZvFSxa0MUCrKCxWoH5e+Es+qVGm6RB9u
+xnBHjtTc2jH/FEoU7NNza903s4n/Yqnyc/0OlUV6GeT7b68uHw==
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.label_list_to_char wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+28f 199
+kud+ekj8Bxu7vhPMxjauqS7XPf8wgwJp2SdqfC+Kkw8txINpX7oj5fqvnwGAyis18ceU3r0a
+cBagrYuG1fojVyFje6GDWDFYiBuKKrbnTu7NVxM6hvh+/0+Lc/XOrKzd8GoFSsBqWCXdLzCx
+MxuqjaIJAKFGENX4edVPqT7maNvSTTjGjThNKVoBhImnbVnhH3IyTJylwvtuVyjnsKTzmQ6o
+GozvhOE8yv3idj6uRO1jfVVb2m0cppXq2Uvh34AhAbEBAuUftidbsoPzDTeSIFziFgjWNVpw
+4pzG5fLD0dvRw1i2vju+2mJfcsRlZQlMS8J+4esjoQJz8lgNVbTymgUdnNknTxBTchbBVmp5
+SEXal2qd5muzML84EzKhzLnlP9BZkwvki7lbYHJBlQ==
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.label_list_to_named_char wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+5df 306
+P93cLZTD9XJ8hCtSLdKq2fcHtcAwg/DDLtATfC/NWA9/APsJRrTQXi9b5nbgPX/nR+Wtk979
+Jo0lKDLHJqAkvIJhf8gBY0PTEnpOi9cTWIojk8WHDFNuvG6WkpuGOuVknYFk63JOeHOB+CmW
+ovtWz1G0fGtEu464veBeiSMhO2+Edy04M0bzrum6uW0zIsuj6JKfIaa7rA4mAqdzN8/9s97R
+lApUE5MSUsp1ryQjWoZWDthFifzf3cBlWBcz3A2n5DZ9fy7rBDythYfnwebuGZUjtJytmQzg
+S7qRjPSdyTVLOJSc+w7fz3jrZIKINc1YIRWt6VayphvEBDemTZJpG8J28/HCuWOXdqWP8YSS
+HFqWgXbT1zR6J7zXOSzFdc9N2MIW/n6la5yFr9s5tt4E+sfnxBO4kfu3n8p3kGtmRfQSmi0z
+zan4sfsuuurZ+321j+Qx07SGw+cOYUeSwcHdgy6wG98Yc0eXh3+PBx0Fm+Gua94t903an6Hn
+lpaC7RibXsytO3yuX7sDLr22mAKgEHKzkpK7ckIN6G1vU5xSYPUDL4SSStmeQFTyKQxOmOr+
+J4fzs5/rH9eAPS5wdDISTpGAmSKLP+IG9LTZXumTpWGEfNxoufHbKGNNHtTzdv72dcXqojvX
+8i5ALeDFBlJuvlr+1jLO/zSDa38C9mjYVqKMGUZCBOwb8HGFGJrIGEBbGTkhF56TQnUTdm21
+RruFHsEldqHfx1IYKL5SBUcDnBh37zm6jDgz7iR5KUiW
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.labelnames_to_char wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+3f7 264
+oX2fQhUN3AGh/XpIaDxAxLjEbQEwgzJeLvaGfC/Nk53meAUvWYPNPuhbk8x2zOmekhbXoZGc
+Z5lVKGG+jpKG2qvaLem3yGoRi9cTWHiGXFBoDIwpBfnB7s1y+f7uABy11A+W+LWgFNIVIPaJ
+XZhNMWBpJim2A8/XilWKZrS7YQaRrt2ULRVb2ntN9Uamx3c41umJbQkSs70FL5Wja2YJAT/B
+ecMlQt1PMJf4Os+Hs5UdPTUmHPF7zVLlAc/P30agUbfsaaxegQ2olDhuCA1NW7/Vfq1YmKzD
+dRc90P5nbQG6aZ1vRbFwJZZLVd+PlJcuj6+9EgDuuRIVPOy5wOGPqnQwUvSKHNYjvVUbmflY
+FBdrfBRBRCgcPEUx42ORcJRNL8UGn+LRfcEXGyiG0Ni2WN+m+txrTQigZhkrvlc/5NpHbynz
+PR74LScJvy77Pq+hVcxlh9lX+jpTWaU6pibHg5aMR5xipEorLpH9SrkhCMoMZqmxl1TFXjEF
+Rf91J0isQIZ/yQW/Ww3/sHjDWI6IC8pIYMOXngWVAbPVEaA1Q+BA4A+oV5YhkyaCNIU4vLay
+znxukVl20SO26xclaM/7S3z+Zw==
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.privs_to_char wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+372 223
+yHDPTJePyeEQiVTn7RtYg78TDlcwg40JAK5qfC8BM2RTYvRGUeHg9I2vMlV3FVLltCZ9kVzn
+9MvPTTt1koYtpJjeFsrubLxomP65QSAZoeVC7+4LxHNoE2qYQiMxisrppWqTYc9jqQwvXubw
+0GV3ZVUN0ysaY5klGeHq5z5VMym80Ysl+PoU1lE2Mb03APLx7IivjUBB9eNtwoBi/TiR6k8j
+L5e4JpOVg8gDlKUuwUjxOEbo2AbTMaHOemHiNCF9RLc/FVDPZDbdXUesLQq9wukp1cf9wEXf
+z0AL/5dvY7tY00Vw8+75sGtXTlmK97Pcgo8y18lutLoG2k4dCg2Xtlcc7m70UFsJRG8MnDHk
+fQDxaO2nQgU0IrvrFRBftLkoiJ8dj9vg2pUBRC1NKSFfR9SvjQiZ5GqQQuvhvxO4t8Hv8W7f
+kHfK7MmId4w6vsny+DtaQt8RokdLZR9524Jnip7ww2LvHA5ZFjMS7pORea7i7fiqLQImlma/
+MseSprKfkM47XsuGu2B41M0bvJLhnNu0KA==
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.numeric_label_to_lbac wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+b7 b6
+ewWAX2C9LgwcznBrvB3fAyd6fzMwg8eZgcfLCNL+XoXV1y5il1lKcqFZ8tf0lvrQcqHyWStQ
+jwnd4eTmEEzWepCGEHaQcRCOenNn4dziNexxNeKoazU/niLcSrj6cNFJ6r+uJA6tBPEjP+Lu
+COfiORgt7Dxx4j/RTSuVB87WPbqCpqYNwHyv
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.lbac_label_to_numeric wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+9f ba
+NbicpCUH92sRewr8QUZBWQQrI28wg8eZgcfLCNL+XoWh8llKcqFZ8tf0lvrQctXXLmKXWStQ
+jwnd4c92kHEQjnpzjs9udpCGr3ou4sqxyFDKJESdaQ9JscpEcnDRSeq/riQOP0025juH46rP
+44yYOaKMKpwKT5nxfnppbxHj9siwAyodptrePms=
+
+/
+show errors
+CREATE OR REPLACE FUNCTION LBACSYS.oid_enabled wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+8
+94 ba
+LAPuamjkFAtXdu5+XQzVUS8GIH0wg8eZgcfLCNL+XoVyWfSu1wxZl6Eu7p7Asr2ym16l0plS
+Mr+yCaV0i8DAMv7ShglpaaX1XqVSwPVKv5/1M7g9Tv719L+Bx/WbUjLMaecIuETV++FN+0A8
+yrwKrkvV5VP7omhyRBFuKh/jYGWF7PumK6AUcQ==
+
+/
+show errors;
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_compare wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+b3b 398
+1ZML5+UzXM7NSNHStGiOOGXLZgYwg5UrLtAFyi/NWA83Kzvf91EWMysAd/z7hr01bMjhud9J
+9v0N7X495cb5kuH5FR53g1xWAreIHM7teIZ/W+Yk0zlX6pXzJD8QV1ywDySqJOQ6QL41gY/x
+5XM3EfGZTTb6NXWeFujyqwwalVt4wSXhHfCaqt2hkt++2cjDPTW93NAcBdAmTLtlRsujlGwN
+86WCs/WA9UVa3wzQNA1FIW8YBXR5vUOsBYY2VF1Gexr9b187NNOGEc64APrIjJP6wA9ObREB
+FsHCb26gukVaoHVBk/WAdL+8nwMqKGt4MzCp5/H5HwbUYYl3wGx/Hbp5DYNbPJRs9Vs3Taei
+VuzqUpO2veuUFXKrsgevGWwlcAxi708veMvFkykKApIDbDEdvDr4zjCSCHP1RQior8cu0n9+
+goADy8In4kj6I4UAxNpPlpkPFWgfPBxuy9YfTWLznbSlZGM7uEktj4lUYy366wTx4iNsC1rv
+F+AmFiq9YNWXBcH74FguFwt/8qY/QDvugvblm97Mm2aIPAukWcavyBjiM7vfQfbLXwxdjqVi
+M3d0p2MvtN7+oOxYVTei95kAAg1G+MXgRqR0ke7c2eRrKgH+Ai6xAcLTKWV+EYdQhYT5TYK6
+ByqWVj/0Cr4J4eN0p5/8jHL5egVKkbjlB2RqjIxQQncnuLLnemgq5t3WjWJSa1bAnltrFcn7
+Q285/MVOoTRaOAV8EgIyI3nv4IlyGkOIW3h/auxPF5vbElO8/nwH/siyw9eLrXF9rV8AF7H+
+btfurdY4ZG7Zx59rwYpuwbG7f35KHGqK3U4xI5mYS8RLgu2V5fniw5pM6Pm3pKDt8TM3s5DY
+11ooUr3eIO+GsUBfoFjN0L3bC/W2/D8HooQz/CwFJb68
+
+/
+show errors
+CREATE PUBLIC SYNONYM to_lbac_label         FOR LBACSYS.to_lbac_label;
+CREATE PUBLIC SYNONYM to_numeric_label      FOR LBACSYS.to_numeric_label;
+CREATE PUBLIC SYNONYM to_lbac_data_label    FOR LBACSYS.to_lbac_data_label;
+CREATE PUBLIC SYNONYM to_numeric_data_label FOR LBACSYS.to_numeric_data_label;
+CREATE PUBLIC SYNONYM lbac_label_to_char    FOR LBACSYS.lbac_label_to_char;
+CREATE PUBLIC SYNONYM numeric_label_to_char FOR LBACSYS.numeric_label_to_char;
+CREATE PUBLIC SYNONYM numeric_to_lbac       FOR LBACSYS.numeric_label_to_lbac;
+CREATE PUBLIC SYNONYM lbac_to_numeric       FOR LBACSYS.lbac_label_to_numeric;
+CREATE PUBLIC SYNONYM to_label_list         FOR LBACSYS.to_label_list;
+CREATE PUBLIC SYNONYM label_list_to_char    FOR LBACSYS.label_list_to_char;
+CREATE PUBLIC SYNONYM label_list_to_named_char
+                        FOR LBACSYS.label_list_to_named_char;
+CREATE PUBLIC SYNONYM privs_to_char         FOR LBACSYS.privs_to_char;
+CREATE PUBLIC SYNONYM oid_enabled           FOR LBACSYS.oid_enabled;
+DELETE FROM LBACSYS.lbac$props WHERE name='POLICY_COLUMN_DATATYPE';
+INSERT into LBACSYS.lbac$props values ('POLICY_COLUMN_DATATYPE', 
+            'LBAC_LABEL', 
+            'Determines the datatype for all policy related columns');
+CREATE PUBLIC SYNONYM label_to_char  FOR LBACSYS.lbac_label_to_char;
+CREATE PUBLIC SYNONYM tagseq_to_char FOR LBACSYS.lbac_label_tagseq_to_char;
+CREATE PUBLIC SYNONYM char_to_label  FOR LBACSYS.to_lbac_label;
+CREATE PUBLIC SYNONYM to_data_label  FOR LBACSYS.to_lbac_data_label;
+CREATE OR REPLACE LIBRARY LBACSYS.lbac$event_libt wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+2b 61
+uZ21djaeys+5DRvNseZt68wSKVMwg04I9Z7AdBjDhaHyWSuhYgzX1fRy+lnFzOe9nrLLUjLM
+pXQr58tSdAj1YcmmpiEUsuY=
+
+/
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_events wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+41e4 14f5
+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
+xABOLNARfSfGGhGucZ0HYj+ukNA/TiykvAM6
+
+/
+show errors
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_rls wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+1a66 6f4
+Zpwo4fSnupx65Em+TjZa0Hx5bewwg81UzfYFVwSdZE4PqFOkwN1GGva7agJ0joDe1476t11h
+OpFhJdbm3tAN1tWK0J3BzHaAp80azUWGI0dQd/dBnJpO5X36k5I3pMdlXk6UvvnkKVHkwBCA
+dfTlB8hxCkL3owYAJvHUZd76PuspvetbCJizqeR/bHf8FVQisLZwcUshtlhMABjMR1T8U2Xe
+vqdZiXH2YwxBI3G+fGy5LMfwWYbWagju2zdxjmUNWPGpp3IDiZOH0WX78Vp+Jba8kWORDMsV
+9tehop96p9c2qmau4qKn4vKN7y/WzxwZVdjm+obCQErYgmM2F8CmfuwF5iA1DtB0z1q3HbC7
+WvUP5UZMQzQNSm3CVJLIuDHPjkGHdBW6fGrLHg2ayPM+RBNST2EruFerOwsWmajIZR9xe6oh
+XD6mfOtWgVTGsrzDFmq/aab6XywXZcDi9Sz9Cqk5LZw+1nAor1uVCaeUm2INrqxPYwHGG2C1
+ft5hLJlj9N1p20CZy0SmSogVmmT0EgqJcBhTRHIXFOOB5gpjXkgryVMIf5sUO1ywlUDh/9xT
+QNPXDueLf8UP52dBqccO5+dW4vtNgr29JGw/1GrJd/Je2qCCLRlPkiZK8WGjfrouypewOyUi
+vZemQtYVfUZdepjoDbkQpulrmxGM0wMQ60kZCZvN/SZUj/CnyG7iQo/rWd5HdAoDAVZhCDE2
+bpGZ57mXiVBwViTEf2J0V6NBJUZpJrSAbEdWsBHhyco3RqWpJEr30XV8docTK8ay7XBxCVjf
+ukNHBA6qrg7l7KsSLatIdFNh22xwlW5jXMm+ec54BHTjAO7Cb8Qme89XZ9h4/B+l3OucWKgJ
+MQ2WaafQsuNtesF735VHVM7BxxuRbsi/qaYxpHulOS4WdYAdVJDzosAGrBm07DBxEeaCACwH
+50bvGN/nnTioRnXcrBBkD6ivysqPqa26IXw51RO7s/3dq3b7y9DGuizGGev1tegf4Dth2L2Y
+eKfpS0YCoieAsdRbYJgVTiMPEhPmnGEXdiXWn34ZAGiNH8R4/pyqmsaJe1xUg1PpqO881R4J
+VMklOBqPg9Eqyx6/5XDBlg4V9MDAdMUROoUtdBmugCFHtCxv7/wsVmO2gnEFeZQcElIs8pKC
+DpD7zfURBw4AuXkXNbS2fNWrMpoWwELFktzLBz5cAqD1yF9LA/Dky/PfisFjdqSuKBb0GdK1
+iYFOZVr+sAYsW6VqM7wDhhCuACp0aOsI/Hfs8bl6zWuaXHavNdPfGB9+lJiD6Sgptv2FnY9P
+MzX9I4oknFYQpIEBmPz/Yf7CVYGI5UG/fvkg/O4Xnnr4DjtGzf4QIJ55P0K7VCdizh+MfJgV
+CszSXXd+DyAjSpPKBRl6qyR2M4e0UUmHSjOHPWhNW2IGm7RBIWN0q9G7wNaYnP7hZzHWNgCG
+DPzthDLPlZZXok28IiJ+a7/h31u7ERBC2KMYxnbOFI87eTHByKf/jNyczvmlmlWAKq10oqg1
+XXPCRrXkekNIe7ZchhuhjnUa8CB11Vp22/9YQSgq2XSWeIIZgaDfGdQm7KtJgY5X3q6ftiWC
+jmMG68HZ9uDRlrw/vkWqyqpVhw9MesgknRlxaA9VGXc8gLoduDlvXz9J8K9Li37578kV2hug
+Ht5jH+Mva9DvCF2YNsfW7xc+q8GvIINE0yUoZMZLmii9Vn3g9lggZ9qRZNc0jOLdABnb1urg
+C++sYu/dYLESLTgROBud5B07V6VY
+
+/
+show errors
+CREATE OR REPLACE LIBRARY LBACSYS.lbac$user_libt wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+16
+2a 61
+UDtyTfc1dW49mrfa8jbqA0yijnowg04I9Z7AdBjDhaHyWSs+YtxiGHL6WcXM572esstSMsyl
+dCvny1J0CPVhyaamFOh0mg==
+
+/
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_session wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+1ab0 56b
+7QYVG8L8jDkcgEghnVdmfYcj7vIwg81YTCDrfI5Avv9kSzlNJsNcfspn8J/uFLCQAh6iYYIr
+SFFIkQlj3cXCqDfOCFefg3tzWsTMoDIvJvbkUkrQTzTGSpgEWyylpsgsAu+JT9CWJWbVGPo9
+6kYCC+J1gDjTWqBTrOO99FiisHVbSXUsvmQPDcy7BA0UrkZGS0OtEHYv8l193yt3xjdlOMyr
+gIk2jI6sbLd1GIl8vR2PY5XusxNqxNSpgNZC/snWv4PK890g3qUZx+falYlG3l+tHBgl4q+P
+WvAO4j8V4aFmQBYzN+hz4ygtokgqKkAHqecThBHadpEVH5TL85fxsvGbLTaFzDUnE9ZPQj+3
+Dxx9q/LPSjrnjV3bWvXZux8jJ+Xp/NEs9Ho+jI24G9nCQeFaj+G+/365AQvGiYrOyMhuSzWw
+h6E3somuNSI1ewPlrHgfOKi9S19X0/mzRcuCKPkTMjvJaetQPBYfVhcVcLSwS6ToLOmOfPaR
+re2XA07G8F6DfItW9XB/SbBGxYH0zSGXKREds+ddyUVPBoN0oRePeftY9WOihcnyOrZRFGfn
+gTtvZWa96NrMXKTqf1gcfsYNT6D5Z4cTgVxZM8NwEWKCff41VZAVLBEK+yvfVR6yf1lXPHVR
+qUe5uzYyWwlo53gS5fLk1UITzdXYO6txDILb0/hUip7JkEPBzyz+X4HCCjQHoolk4u6QGUx4
+4ew/PxZnMiJNIlhiCkxzAiukVeFprB0NZJf1Tjj6QMNCVbg9z3dQUfHohs58yqP/uDk1ZlyF
+aqhGNgqYp0jrgI8GgLN5aw+dyQveQzlXVzdIfkrZn8/N6XIrxIXi68/PQUMpQz3Elob2xBe8
+BRzhbyM7wgtmi7BuZVraEXImKEmOWVqEfYZGl+XQAJ/G39Fr5TUrESP/noo6CVPM8LIOCkZJ
+1T5VcIzEwCHEs5VhPxt0Iuj5FtTmKrqAJ3LMN2OUuYOWOegCRm0XTuZc9T3BOgytGK+6esnZ
+6bsw2V5Ws5qhlANYkzjReKsAkZycMZWBXRLJicxT7SmxCJzY1iPo2Ej/qlnG6Tj02yXnOJ/x
+Mm7sSKJcStP0bxSUrCploxm1KwIUe6e3YTObxPdZnS68uqL1CEFnoE25lYS6PLjD/yu4wyUe
+pLFvRFz68Wsoz+nMK5YkqCFZCj08Kkp73wpjsyfUkiDFCGdTB59BcsFQiV0FYX2L6Q1/Q7XB
+pQty7oDYMSfLGcnu7HmGGUVMn9LQICTacfachbkRPUwzRSTyPAgjPLqdUtv7mvkCLPPu20Xr
+myRa8VeHWFVZkdQH9q4yIqAKVQ1cu2UG6XMnDnUlWxhe8DTRWVxMNzxvPZYgGQOaEHqwaA==
+
+
+/
+show errors
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_sysdba wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+27c2 ac9
+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
+
+/
+show errors
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_policy_admin wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+46e1 b37
+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
+ePtR4b7Y6VNk1JiB67W2kire
+
+/
+show error
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_user_admin wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+5d05 c53
+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
+oIA34U1OarVkZE38
+
+/
+show errors
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_audit_admin wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+39b7 1051
+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
+eF+Sqvgk5pqEbQ==
+
+/
+show errors
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_services wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+4a6 1f6
+BixCd7iS2U9clhT10Qa3+M/175Ewgw3xLq5qfHRArf7qVLYHLuXIZ2if8l4KA4XxxSzWwPTU
+oB0lyxG2ds6BFHlbHn3UOWacl1IPBUJziV+aLeGoXkJECrA6FSCnHsTBlcAdRxTuiaNSR5Bg
+cNFJHgwugtMEFGoJvQaNnH4YphQ41CFPfBC3G7jOIVwExBqRjo0VMPHfjneAMg8Q+/+ziMat
+q+s2NZw+bMj6jKvi6F6JPLrPS5go/WyRZ3yTUxGIB1SMP3OPEA0jkJ3YW4GNDlmCTDeFBHiN
+vhiaDBdp+MgtgZb+kUlr8F+k4HFlpPxUdzlAodqEkH7BilR52BuTGlUMN8LnKrIAUbte90f0
+ggohdX6Ya//RcZ8TuVNxB7pOcZ+QG5o7Mcslvor9kXJQkKFghiKF7PfLHTkHYbG8Q8cFsGnA
+0ahJJS1bxs+lgquqbIwoXw9Ss0UEiFp7HHMs5y4iBqllZHMIr6eIAmGGbSiCfpRw
+
+/
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_utl wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+3f4e 106d
+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
+
+/
+show errors
+CREATE OR REPLACE PACKAGE BODY LBACSYS.lbac_label_admin wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+320b bd9
+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
+
+/
+show error;
+CREATE OR REPLACE PROCEDURE LBACSYS.sessinfo_cleanup wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+23c 1e6
+zX3pdeBGGdkhOld41tmECITOFeUwg3nMs9wVfI6Bvg9StlmmC+d/Ir6lfEXaEWijftqNsAEG
+FG1851VZ5BK6PPMuaAxyAMEz0kGYjY6OjFlmdSV15flXXRNMk3fN90YYafdS8NNF0BcpdgFn
+d15R9eUA+HbyRXRDVX0/e5BKHWXGRIZGptJ5KIIExVnIJ7R2g0WIVV+op2btNOeLb2EPscGb
+aWozcVwN3hgjXuZElgz1Ti4i2SB1r9ba5hyTFYFdMpiq1a4rtJ8ygbk9PIlJulevrzew8MFH
+Y7OBlJg1xiOKjehXKs1/IOUQ3kP8KH90cZdUWlqpUgQ6X9BTuQZsTsjlDewWwxgIVF+o8+Dp
+aP+llN7o81Ts4NvmbZIBf+JE0vZyiu1EFLb2iG67Lc5R13CeI/Ru9aqvLPeQr0Vz+CIWnaFD
+dDuvlgugUpOKS4RI3AcmWl7oeVmAM9+tLnxdMcVTkvu/WUG2
+
+/
+show error;
+CREATE PUBLIC SYNONYM lbac_utl           FOR LBACSYS.lbac_utl;
+CREATE PUBLIC SYNONYM lbac_sysdba        FOR LBACSYS.lbac_sysdba;
+CREATE PUBLIC SYNONYM lbac_policy_admin  FOR LBACSYS.lbac_policy_admin;
+CREATE PUBLIC SYNONYM lbac_user_admin    FOR LBACSYS.lbac_user_admin;
+CREATE PUBLIC SYNONYM lbac_session       FOR LBACSYS.lbac_session;
+CREATE PUBLIC SYNONYM lbac_audit_admin   FOR LBACSYS.lbac_audit_admin;
+CREATE PUBLIC SYNONYM lbac_label_admin   FOR LBACSYS.lbac_label_admin;
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_policies 
+ (policy_name, column_name, package, bin_size, status, default_format,
+  policy_format, policy_options, database_labels, policy_subscribed)
+  AS
+  SELECT pol_name, 
+         column_name, package, bin_size,
+         DECODE(bitand(flags,1),0,'DISABLED',1,'ENABLED','ERROR'),
+         default_format, 
+         policy_format,
+         LBACSYS.lbac_cache.option_string(options),
+         LBACSYS.label_list_to_named_char(db_labels, 'DB'),
+         DECODE(bitand(flags,16),0,'FALSE',16,'TRUE','ERROR')
+  FROM LBACSYS.lbac$pol;
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_schema_policies AS
+  SELECT pol_name AS policy_name, owner AS schema_name,
+  DECODE(bitand(s.flags,1),0,'DISABLED',1,'ENABLED','ERROR') AS status,
+  LBACSYS.lbac_cache.option_string(s.options) AS schema_options
+  FROM LBACSYS.lbac$pol p, LBACSYS.lbac$pols s
+  WHERE p.pol# = s.pol#;
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_table_policies AS
+  SELECT pol_name AS policy_name, owner AS schema_name, 
+         tbl_name AS table_name,
+         DECODE(bitand(t.flags,1),0,'DISABLED',1,'ENABLED','ERROR') AS
+         status,
+         LBACSYS.lbac_cache.option_string(t.options) AS table_options,
+         function,
+         predicate
+  FROM LBACSYS.lbac$pol p, LBACSYS.lbac$polt t
+  WHERE p.pol# = t.pol#;
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_users AS
+  SELECT usr_name AS user_name,
+         pol_name AS policy_name,
+         LBACSYS.privs_to_char(privs) AS user_privileges,
+          CASE WHEN u.labels.count() > 0 THEN
+         LBACSYS.lbac_label_to_char(u.labels.get(1)) END AS LABEL1,
+          CASE WHEN u.labels.count() > 1 THEN
+         LBACSYS.lbac_label_to_char(u.labels.get(2)) END AS LABEL2 ,
+          CASE WHEN u.labels.count() > 2 THEN
+         LBACSYS.lbac_label_to_char(u.labels.get(3)) END AS LABEL3 ,
+          CASE WHEN u.labels.count() > 3 THEN
+         LBACSYS.lbac_label_to_char(u.labels.get(4)) END AS LABEL4 ,
+          CASE WHEN u.labels.count() > 4 THEN
+         LBACSYS.lbac_label_to_char(u.labels.get(5)) END AS LABEL5 ,
+          CASE WHEN u.labels.count() > 5 THEN
+         LBACSYS.lbac_label_to_char(u.labels.get(6)) END AS LABEL6 
+  FROM LBACSYS.lbac$pol p, LBACSYS.lbac$user u
+  WHERE p.pol# = u.pol#; 
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_programs AS
+  SELECT owner as schema_name, pgm_name AS program_name,
+         pol_name AS policy_name,
+         LBACSYS.privs_to_char(privs) AS prog_privileges,
+         LBACSYS.label_list_to_named_char(labels,'PROG') AS prog_labels
+  FROM LBACSYS.lbac$pol p, LBACSYS.lbac$prog g
+  WHERE p.pol# = g.pol#; 
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_user_labels AS
+  SELECT user_name,
+         policy_name,
+         LABEL1, LABEL2, LABEL3, LABEL4 , LABEL5 , LABEL6
+  FROM LBACSYS.dba_lbac_users 
+  WHERE LABEL1 IS NOT NULL;
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_prog_labels AS
+  SELECT schema_name, program_name, policy_name,
+         prog_labels AS labels
+  FROM LBACSYS.dba_lbac_programs
+  WHERE prog_labels IS NOT NULL;
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_user_privs AS
+  SELECT user_name, policy_name, user_privileges
+  FROM LBACSYS.dba_lbac_users
+  WHERE user_privileges IS NOT NULL;
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_prog_privs AS
+  SELECT schema_name, program_name, policy_name, 
+         prog_privileges AS program_privileges
+  FROM LBACSYS.dba_lbac_programs
+  WHERE prog_privileges IS NOT NULL;
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_labels AS
+  SELECT pol_name AS policy_name,
+         slabel AS label,
+         LBACSYS.lbac_label.to_tag(lab#) AS label_tag,
+         DECODE (l.flags,2,'USER LABEL', 
+                 3, 'USER/DATA LABEL', 'UNDEFINED') AS label_type
+  FROM LBACSYS.lbac$lab l, LBACSYS.lbac$pol p
+  WHERE p.pol# = l.pol#;
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_data_labels AS
+  SELECT pol_name AS policy_name,
+         slabel AS label,
+         LBACSYS.lbac_label.to_tag(lab#) AS label_tag
+  FROM LBACSYS.lbac$lab l, LBACSYS.lbac$pol p
+  WHERE p.pol# = l.pol# AND BITAND(l.flags,1)=1;
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_label_tags AS
+  SELECT pol_name AS policy_name,
+         LBACSYS.lbac_label_to_char(lab#) AS labelvalue,
+         LBACSYS.lbac_label.to_tag(lab#) AS labeltag,
+         DECODE (l.flags,2,'USER LABEL', 
+                 3, 'USER/DATA LABEL','UNDEFINED') AS
+         labeltype
+  FROM LBACSYS.lbac$lab l, LBACSYS.lbac$pol p
+  WHERE p.pol# = l.pol#;
+CREATE OR REPLACE VIEW LBACSYS.dba_lbac_audit_options 
+(POLICY_NAME,
+ USER_NAME,
+ APY,
+ REM, 
+ SET_,
+ PRV)
+AS
+  SELECT pol_name,
+         usr_name,
+decode(bitand(success,1), 0, '-', 1, decode(bitand(suc_type,1),0,'S',1,'A'), '-')
+ || '/' ||
+decode(bitand(failure,1), 0, '-',1,decode(bitand(fail_type,1),0,'S',1,'A'), '-'),
+decode(bitand(success,2), 0, '-', 2, decode(bitand(suc_type,2),0,'S',2,'A'), '-')
+ || '/' ||
+decode(bitand(failure,2), 0, '-',2,decode(bitand(fail_type,2),0,'S',2,'A'), '-'),
+decode(bitand(success,4), 0, '-', 4, decode(bitand(suc_type,4),0,'S',4,'A'), '-')
+ || '/' ||
+decode(bitand(failure,4), 0, '-', 4, decode(bitand(fail_type,4),0,'S',4,'A'), '-'),
+decode(option_priv#, 0, '-', decode(success_priv, 0, '-', 
+                                                decode(suc_priv_type,0,'S','A')))
+ || '/' || 
+decode(option_priv#, 0, '-', decode(failure_priv, 0, '-', 
+                                               decode(fail_priv_type,0,'S','A')))
+  FROM LBACSYS.lbac$pol p, LBACSYS.lbac$audit a
+  WHERE p.pol# = a.pol#;
+CREATE PUBLIC SYNONYM dba_lbac_policies FOR LBACSYS.dba_lbac_policies;
+CREATE PUBLIC SYNONYM dba_lbac_schema_policies
+                  FOR LBACSYS.dba_lbac_schema_policies;
+CREATE PUBLIC SYNONYM dba_lbac_table_policies
+                  FOR LBACSYS.dba_lbac_table_policies;
+CREATE PUBLIC SYNONYM dba_lbac_users       FOR LBACSYS.dba_lbac_users;
+CREATE PUBLIC SYNONYM dba_lbac_programs    FOR LBACSYS.dba_lbac_programs;
+CREATE PUBLIC SYNONYM dba_lbac_user_labels FOR LBACSYS.dba_lbac_user_labels;
+CREATE PUBLIC SYNONYM dba_lbac_user_privs  FOR LBACSYS.dba_lbac_user_privs;
+CREATE PUBLIC SYNONYM dba_lbac_prog_labels FOR LBACSYS.dba_lbac_prog_labels;
+CREATE PUBLIC SYNONYM dba_lbac_prog_privs  FOR LBACSYS.dba_lbac_prog_privs;
+CREATE PUBLIC SYNONYM dba_lbac_labels      FOR LBACSYS.dba_lbac_labels;
+CREATE PUBLIC SYNONYM dba_lbac_data_labels FOR LBACSYS.dba_lbac_data_labels;
+CREATE PUBLIC SYNONYM lbac_audit_actions   FOR LBACSYS.lbac_audit_actions;
+CREATE PUBLIC SYNONYM dba_lbac_audit_options
+                  FOR LBACSYS.dba_lbac_audit_options;
+CREATE PUBLIC SYNONYM dba_lbac_label_tags  FOR LBACSYS.dba_lbac_label_tags;
+CREATE OR REPLACE PROCEDURE LBACSYS.lbac_frame_grant wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+96e 1de
+fVlu8Hmq5o1tAJ5/7ToWCfUBJ3Ewgw092SdGfI45j+IQGIrJsR91XHfrNaVlMDeflFHJezcR
+FPQCvBCCnp858gwX07iUQ9lP2a0c2WasUz779KefXRp93YWYUYw1oZRGuFqbymeFIqWezF4d
+8sJ0BjaxcMZQuWkGNBkZlK3yhHZcID1OFb2DZTf84aQTfC5RVfnzB+fi8B1+CeSEmle/YlBa
+Bifwp6vBNz65I8ZWaJAmI0eY9ItANIqQCu9VdnizSO2zp4S7Z0y5bhOp8f5G8KCU2L+4rtKw
+uboYX3FAoXYG+D7oKpyM1mkD87XYcp4J4/z2heInO3KhnhlSYcPkkoj0uPDrBmeXZgIkhPnm
+HrlHOfzHOcetF0+2R+w+LLkaGnNtdLxmZM1qE7xzZnqKGJ19bbnVRcR3ACp3T9zBQf1mSQva
+61X5KLZx7qAFpbtKREI0n3ec0xdnbxe10kRCvk3I
+
+/
+BEGIN
+  LBACSYS.lbac_frame_grant;
+END;
+/
+CREATE OR REPLACE TRIGGER LBACSYS.lbac$after_drop
+  AFTER DROP ON DATABASE
+  BEGIN
+   LBACSYS.lbac_events.after_drop(dbms_standard.dictionary_obj_type,
+                          dbms_standard.dictionary_obj_name,
+                          dbms_standard.dictionary_obj_owner);
+  END;
+/
+show errors
+CREATE OR REPLACE TRIGGER LBACSYS.lbac$before_alter
+  BEFORE ALTER ON DATABASE
+  BEGIN
+    LBACSYS.lbac_events.before_alter(dbms_standard.dictionary_obj_type,
+                             dbms_standard.dictionary_obj_name,
+                             dbms_standard.dictionary_obj_owner);
+  END;
+/
+show errors
+CREATE OR REPLACE TRIGGER LBACSYS.lbac$after_create
+  AFTER CREATE ON DATABASE
+  BEGIN
+  LBACSYS.lbac_events.after_create(dbms_standard.dictionary_obj_type,
+                            dbms_standard.dictionary_obj_name,
+                            dbms_standard.dictionary_obj_owner);
+  END;
+/
+show errors
+CREATE OR REPLACE PROCEDURE LBACSYS.ols_init_session wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+5d 9a
+36w0p0SWL7WtnRx5Gx8EYp0o+Wwwg5nnm7+fMr2ywFyFcj5KckfZVvSW3GLR/0dy6+eBx9Iy
+XOfHdMAzuHRlJcO4dIvAwDL+0oYJaaVSwPXLSnQ8HbMI4jjiP6hnYZ2YnSyit+gqnApPbSod
+pt91q/Y=
+
+/
+show errors
+CREATE OR REPLACE PROCEDURE LBACSYS.init_ols_session wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+183 150
+EhOptVAln+N/pmbgepwkXACWfxQwg/BpAK5qfC8B/2RT10pGxU1143txioz0XUHvqqJ8QuDj
+RoOo5Ko9n7oYdbQZVe0o7RNuXBqM71RK2b97EDvec3GxQ/U20rJnkXovR313qUjVT09hlmI0
+uWf+W0/PZzx90tS0c4U+I8BM617Usl8gyi7QxT7DHXmKTbZ/M0D1mTgOR6kVvs67Z47itaXh
+2JiWHgbUOY8RWeqoiE+VOm6JQ2e7NRjx3HptgPeAwF8blP2zFX0Km5yzKqj+L8o/dim7f9y2
+rTqdiTMnanuxxc5K/P0RG8u8z5fC2L2T961VaoglkHBw
+
+/

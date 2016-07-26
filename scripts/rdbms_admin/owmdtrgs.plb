@@ -1,0 +1,30 @@
+create or replace package wmsys.ltdtrg wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+756 227
+ac+99Re72MB0mTcbuNCmcwcBUOcwg5WNLUgVfC9A2sE+NPsJB+XVt8ci1gIt605YGD4MY9GQ
+xRkPMg6oqKn9wnde9ZvBtW61uXGhtIWUGGRqxu74XnVpjpRCZ5S9RC/yYBsDo6gCvqW7yyaf
+wG2B3PFXO9JE9qFkcgJTmFSnb7usZoSsxDcmgPAbeFMgjwz1jil6/ZBwsDv7y7BwKe3pKcDE
+FB0yMAMNUgBcS7xH5Q3D2Hc28mukaYgRxmBMRPALWTOLVwHmbIg8WgCZxs7RN4x2q84EEeRY
+pB05kUtlOc/Df1hA27aO6xwCfBagf3DefWClu2W3rdHqggFuFgSwnuX0rCdRj4M2vAFQs5lr
+adkRk0duv1fZePLN1d8ZVRGOUiLBbB5Id3uyDKWeZLlQpGte9wthVtaByN+I1GjwMwOVwhZG
+SstK3sSC/WIVIIRHW+uY/QJV9blEv1phOhN5lx+IljaogMBMG/Aj/rgO9krDugoA8yveX5cL
+o3hByH+Q8RKhoz9SWDWrk7Xx5jfcYk8/psFFfs0=
+
+/

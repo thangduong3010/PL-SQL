@@ -1,0 +1,35 @@
+CREATE OR REPLACE PACKAGE BODY dbms_dg wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+c50 3ac
+do5nGNxfjkP1zbrdvgRLyt9oyGwwgzsrryeGfC9Vx7zgSFzKTAmEnGwBKBghn5WD8XvxBdf6
+S44zoLBzqlT6n/J22Uhow3U2XUIgGUf92WFx5F1EFRmFHTT5+fhkQnMdlzs5md3x8xb25g5o
+8yJ/Y2PzDiEvqjGmPr3oM0vq7OtrzIMLN6A/Efc0TVfbYpe+Z3Dg61LYLHCi7bBJOaR4ojNT
+g3RJ2cV0Ic1VOLzXntPVJ9ZKeVZStv7gYTDVG/IJ57ZRqjqMDhfcBvdeOcynFpQnmkYUCzV8
+sTdpJ+Ud5pxfe2HZmIhnPtH0LI+eDo4frROLg9JAXyA0gcC0hjEtuN+NNEuRkzeHoeYXC+WM
+W95q4bRmOoSMQgKZFWrDYcXQ7scJjOj3Kx5dmf5HjJ/w+hPyjWPAFnHltd6LQWatq4h/FyfT
+avFnUU7Wi9xyoW8JhBVoWW58xCho/SkOH+vUAWb62PVIVOSIuvtSEjUYBEFHONXSbjcth4jN
+yipRoQX7ZnzqQ1ji9HCT6jN6BItsxJcJK5toxUxLDj2KmE4+Um4uvb2vclrRjhIIqLSsm/Ef
+y3CITQlyppk1ixaWUo/c1kqbpzdZV25sdNQRG2hCufZbXpYKoe/anSXc08BCpRvB5V8CA9CT
+I5DEsVjPkAVJvhKCZpIQgiJqjQMZxDnwpBjkBHd93eMVyKL6j86KTD+jRxINWTDmCSdF7DCB
+lSq+a4vMIS3G2LVPEh68xJLilnmSiRqpqybqo0KUngCVSwSKeu21o0EJbol0A+xe5nuv6odC
+OwK7G4/CCbFnffZ7xDtziyI7LbpqDiulHJljroS/JHAFrRv+jfYUvmTH4N8A4r++6uvNlWJ3
+ZV0p/SlclLwdMAExLmHt2UjEv8QxxFUz+Ln5P8RVGdtv4uEOcnF6zzoo4NDGrg==
+
+/

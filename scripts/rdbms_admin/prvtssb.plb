@@ -1,0 +1,40 @@
+CREATE OR REPLACE PACKAGE BODY dbms_session_state wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+12d2 4c0
+kOI1SuNR67TF3l+U+bVdziWnU5cwgz3qLq6GfC9Vx6oClQIrlziVwKPbr6Fo4Pe0s7T7IxhU
+p2qeLW0W+LW/Bhr5WrZeoOmYw40Ohnhyhlj+aOhRMWxMf/GXzy68qhJoIRP414vGZE/Xi0Mz
+Q0FpKhPzrLuekdSbqwQ+PnHfiDshP3WGnqgYPpVjETDcR22Z5gnRFtj90SG6f1rhbuDd3n/w
+Hvr9jfoYgc/qjsKZnkmk5lrXnPbgD0Chl6zMsyBcChj0z45ndOZO8fqjB+MOdUTuGKDGeDIh
+rKdHp3+1m0JSYUz85xVdn38B1dFFwHZqsccJ6pTWQrjyhEDpVvpoakG3hvGZhyUGMDgnvHCk
+mp8LFAUl0t1KB5QnnPJk1UGI5QSu0BilVh7g0COjiWw4XhaoRB7MV2K8ehMycwkuyoKwS5EO
+UT/sapwxFiky8X5DyH6wvHz4cDa1y4FMbf7DMNXlaavliIpXEFSM8eL8NbO7HsYJi19GSJlz
+dcdwWKdLQaJWbInDxleeWMwaS+M8bmdkLmrJEPOQOQAfQXWnVgxVZIriDUKnx7GMdauTMgub
+Yb/LSAtBxwB0g9uf6l7XXw96mHXlyBamREGZ+isCWd44vmB1z9tKu+AFOrwD8KAXiouLpCXm
+S8U1Kp38/zztNEWD1GYMW9577I+pIsxiLzYnMK2Bdp8yWmqHmva4CorHa6DX8m4at6ciMZfH
+g6zdjuKdt0Tupm92q9jpMDnW46/PtpVx4e/RNzcMj8jRN6ru03ezn7QgJbNGRoO/DhSusFU/
+eii8aOiVNhLu1LlOzHY83FFR2eQegtRGgP5S+VVK7VOzdDZipQ+C+owHsNdVTlXN6/O+i5Ks
+kdO+SPUF757nZ6Ds/q8U5JK/O+Xr65FJhen/2rZN0pF1J5jBsINwdXvOPe57/ENFcH66sZFj
+N21c0zmZGyu04WpfBewCFpCQ4w/0stSuOLAUgkqGoRWPyrFWidI51dvdKeG+nkHh/0Fd3iar
+w38/IgX3nzCuHFSDS7Cg7lzeamfC+XmtbDHB+NcH91ZfoW8z8VZfoW/oFJlkoW/UkVuGwhMr
+MWnJ7yQGKNgquzGWGPgKBz14egrcl5sIOu5qhSUqPXINr7Rh4nKXY0VwoODa+5Y9RAsmSN+H
+5Zm5Jhk3MIBPNZDP/mm5/Wyb+Ai1jVrY9q+Ycy6BKShHoJZh
+
+/
+show errors

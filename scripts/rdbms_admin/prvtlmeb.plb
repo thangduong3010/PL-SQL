@@ -1,0 +1,36 @@
+CREATE OR REPLACE PACKAGE BODY logmnr_em_support wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+aa8 2fa
+YRc8vH1K4Fng/tDjF1ILrWChb7swg1WnLiDrZy9ArfjqRzu9ZcyeeNhmLjyGMD2Bg1XQUG4z
+RlNpo5TOtV+x3PzUUgyPojMvk05DWMGkgAUOU9Qqr+X/xKXN+R5V/salQ9HkzoGluLXOthou
+w+3ioL0Jug+OCVol0SFgSFamUDsO1PqjF6ELuEzutwK2GhMuG7ClucA67sBBbFuwfw0OaP3h
+R06PuGPj6wKbYWInNFGT4SuJwzhQVPOpd0s17/Ihu+s2RV//gvXXtkFEUJhluMJTy7KjDK2l
+XQ1mXb3xlDtj3I9Ud8bVS7qYfcZrxVSaIQ1SbbLFWIyMUIuRvYXhyYbS1RZpk+zW1fSapjlj
+bHVGajJawXFtLIOxiwqXQBCg74zMYhsIdI8aHXZf7G3JprZTxwnbx25abuue0pc3M/LtqbWT
+aB6j5A8JNEa5FCrULKnEkdQnoh4tzdDLxHl7BzM9GEe+s0EVwgfxIjh13XqDkl58LOLkf4v4
+dUNYuZIknnyH0rpY0ERwjMQj3Srw39lwgGH9EIvaqkZpxknNWBoABz6LjDu1gosH+CLTj1Td
+15ECgnPK+fKQFfazh6ePk/hwhUKMv2dmli/s92rLEXr4tXUAZSIIxsCuFTdN7Z8DxMcrFT15
+An1WWUyVUlYxtH6/E/hx0yBg+FaUCPDIOEzSMmkgr4h3bwvEH5PYauMF6CKvwAcDABC7/zD8
+FZ82tzd45S+t3Te4s9/xeBJO/VIjr2M=
+
+/
+show errors
+grant execute on logmnr_em_support to execute_catalog_role
+/

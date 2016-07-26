@@ -1,0 +1,32 @@
+CREATE OR REPLACE PACKAGE DBMS_MGD_ID_UTL_INTERNAL wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+963 23f
+mNm3+xJIbImRzU2qgx13O9FJKcAwg0On2cDWfHTpmP/qMFhHkT1i1T1vdzssw2/eA5u1temy
+FHrsZ+e3WNEGN0SPbUrRwlm9m7aejvzXQBGZlA0YlBNNpO+tfOEVye/bfVqwL0JDFPa7orn6
+4cYoV91hQmV/FHxvQUo+rFDcdqld2lAeh0f0wPBg6Ywd0CHH8dPnVhuSDDF+Fg9Sk1J+64iX
+n8fFqOe+UT9haTJ+Ckye4gGf1woB376JlcCS3J9nnjJNF5sw7fpyXG0LT9Nx3YUiM/QAGSE7
+UC3c831KGG5hzWsyJWNME8rtYu0MSzjaLAtUsu4cvLZoJvqfCOAl03ZkgfAkC1+aHZoIsvjQ
+MSb25L3oRDFZYe1/VrZTcAn7VRlJPD0xS1CnbTzicj2Z0skCSniDLseMFJbMXEasZwc8FeMk
+09mDBYoY6Pey9dQfBn5FspXdDaDMcaDCp+e063d01lshaup3nZlECXMwnCqFaVRaMTkbYq3T
+i1p9FEB54DFtILAV4mwkhmHG461AlrYdurmPE221ArsOklZQJvosTYpDH4acijM=
+
+/
+SHOW ERRORS;
+/

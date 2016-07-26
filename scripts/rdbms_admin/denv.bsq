@@ -1,0 +1,377 @@
+Rem
+Rem $Header: rdbms/admin/denv.bsq /main/18 2010/02/23 14:41:41 jomcdon Exp $
+Rem
+Rem denv.bsq
+Rem
+Rem Copyright (c) 2005, 2010, Oracle and/or its affiliates. 
+Rem All rights reserved. 
+Rem
+Rem    NAME
+Rem      denv.bsq
+Rem
+Rem    DESCRIPTION
+Rem      Called by sql.bsq.
+Rem
+Rem    NOTES
+Rem      Dependency on SYSAUX
+Rem
+Rem    MODIFIED   (MM/DD/YY)
+Rem    jomcdon     02/12/10 - bug 9368895: add parallel_queue_timeout
+Rem    suelee      01/07/10 - Fix comments
+Rem    wwchan      02/13/09 - specify cache size for sequence ora_tq_base
+Rem    jomcdon     02/03/09 - add max_utilization_limit
+Rem    vkolla      01/23/07 - add process mbps to resource_io_calibrate$
+Rem    suelee      12/14/06 - Add consumer group category
+Rem    vkolla      11/13/06 - add disks and lat to resource_io_calibrate$
+Rem    jaeblee     10/26/06 - move edition$ creation to dcore.bsq
+Rem    ciyer       08/04/06 - audit support for edition objects
+Rem    samepate    05/25/06 - Modifications to job$
+Rem    dalpern     07/05/06 - edition and trigger selection vars 
+Rem    achoi       06/17/06 - Add CODE to edition$ 
+Rem    suelee      06/11/06 - Add IO calibration tables 
+Rem    jaskwon     05/27/06 - Add internal_use attribute 
+Rem    jaskwon     05/26/06 - Add subplan attribute 
+Rem    jaskwon     05/15/06 - Remove max_concurrent_ios 
+Rem    suelee      03/28/06 - Modifications for IO Resource Management 
+Rem    jklein      08/01/05 - creation
+Rem
+
+create table profile$                                    /* resource profile */
+( profile#      number not null,   /* user$.resource$ and profname$.profile# */
+  resource#     number not null,                          /* resource number */
+  type#         number not null,  /* 0 = kernel resource, else tool resource */
+  limit#        number not null)                           /* resource limit */
+/
+create table profname$                /* mapping of profile# to profile name */
+( profile#      number not null,
+  name          varchar2("M_IDEN") not null)
+/
+create table resource_cost$
+( resource#     number not null,                         /* 2, 4, 6, 7, 8, 9 */
+  cost          number not null)                                     /* >= 0 */
+/
+insert into resource_cost$ values (0, 0)                         /* not used */
+/
+insert into resource_cost$ values (1, 0)                /* sessions_per_user */
+/
+insert into resource_cost$ values (2, 0)                  /* cpu_per_session */
+/
+insert into resource_cost$ values (3, 0)                         /* not used */
+/
+insert into resource_cost$ values (4, 0)        /* logical_reads_per_session */
+/
+insert into resource_cost$ values (5, 0)                         /* not used */
+/
+insert into resource_cost$ values (6, 0)                         /* not used */
+/
+insert into resource_cost$ values (7, 0)                     /* connect_time */
+/
+insert into resource_cost$ values (8, 0)                      /* private_sga */
+/
+insert into resource_cost$ values (9, 0)                         /* not used */
+/
+create unique index i_profname on profname$(name)
+/
+create index i_profile on profile$(profile#)
+/
+create sequence profnum$                   /* profile number sequence number */
+  increment by 1
+  start with 0                              /* profile# for DEFAULT always 0 */
+  minvalue 0
+  nocache                                           /* don't want to reuse 0 */
+/
+create profile "DEFAULT" limit            /* default value, always present */
+  composite_limit               unlimited                   /* service units */
+  sessions_per_user             unlimited              /* logins per user id */
+  cpu_per_session               unlimited            /* cpu usage in minutes */
+  cpu_per_call                  unlimited        /* max cpu minutes per call */
+  logical_reads_per_session     unlimited
+  logical_reads_per_call        unlimited
+  idle_time                     unlimited
+  connect_time                  unlimited
+  private_sga                   unlimited      /* valid only with TP-monitor */
+  failed_login_attempts         10
+  password_life_time            unlimited
+  password_reuse_time           unlimited
+  password_reuse_max            unlimited
+  password_verify_function      null
+  password_lock_time            unlimited
+  password_grace_time           unlimited
+/
+rem 
+rem  Job Queue
+rem
+create sequence jobseq
+  start with 1
+  increment by 1
+  minvalue 1
+  maxvalue 999999999                        /* should be less than MAXSB4VAL */
+  cache 20
+  noorder
+  cycle
+/
+create table job$
+( job             number not null,                  /* identifier of the job */
+  lowner          varchar2("M_IDEN") not null,             /* logged in user */
+  powner          varchar2("M_IDEN") not null,                   /* security */
+  cowner          varchar2("M_IDEN") not null,                    /* parsing */
+  last_date       date,                      /* when this job last succeeded */
+  this_date       date,    /* when the current execute started, usually null */
+  next_date       date not null,             /* when to execute the job next */
+  total           number default 0 not null, /* total time spent on this job */
+  interval#       varchar2("M_DATF") not null,/* function for next next_date */
+  failures        number,           /* number of failures since last success */
+  flag            number default 0 not null,     /* 0x01, this job is broken */
+  what            varchar2("M_VCSZ"),        /* PL/SQL text, what is the job */
+  nlsenv          varchar2("M_VCSZ"),                      /* nls parameters */
+  env             raw(32),                    /* other environment variables */
+  cur_ses_label   mlslabel,                       /* OBSOLETE: 8.0 and above */
+  clearance_hi    mlslabel,                       /* OBSOLETE: 8.0 and above */
+  clearance_lo    mlslabel,                       /* OBSOLETE: 8.0 and above */
+  charenv         varchar2("M_VCSZ"),         /* Reserved for Trusted Oracle */
+  field1          number default 0, /* instance number restricted to run  job*/
+  scheduler_flags number,                   /* flags for dbms_job conversion */
+  xid             varchar2(40))                            /* transaction id */
+/
+create unique index i_job_job on job$ (job)
+/
+create index i_job_next on job$ (next_date)
+/
+rem Dual and this sequence are required by the parallel query option.
+create sequence ora_tq_base$
+  start with 1
+  increment by 1
+  nominvalue
+  maxvalue 4294967  /* Ceiling as anything higher causes overflow internally */
+  cache 10000
+  noorder
+  cycle                        /* Needed to complement the ceiling specified */
+/
+remark
+remark FAMILY "RESOURCE PROFILES"
+remark
+create table RESOURCE_MAP (
+        RESOURCE#       number not null,
+        TYPE#           number not null,
+        NAME            varchar2(32) not null)
+/
+comment on table RESOURCE_MAP is
+'Description table for resources.  Maps resource name to number'
+/
+comment on column RESOURCE_MAP.RESOURCE# is
+'Numeric resource code'
+/
+comment on column RESOURCE_MAP.NAME is
+'Name of resource'
+/
+insert into resource_map values ( 0, 0, 'COMPOSITE_LIMIT' );
+insert into resource_map values ( 1, 0, 'SESSIONS_PER_USER' );
+insert into resource_map values ( 2, 0, 'CPU_PER_SESSION' );
+insert into resource_map values ( 3, 0, 'CPU_PER_CALL' );
+insert into resource_map values ( 4, 0, 'LOGICAL_READS_PER_SESSION' );
+insert into resource_map values ( 5, 0, 'LOGICAL_READS_PER_CALL' );
+insert into resource_map values ( 6, 0, 'IDLE_TIME' );
+insert into resource_map values ( 7, 0, 'CONNECT_TIME' );
+insert into resource_map values ( 8, 0, 'PRIVATE_SGA' );
+insert into resource_map values ( 0, 1, 'FAILED_LOGIN_ATTEMPTS' );
+insert into resource_map values ( 1, 1, 'PASSWORD_LIFE_TIME' );
+insert into resource_map values ( 2, 1, 'PASSWORD_REUSE_TIME' );
+insert into resource_map values ( 3, 1, 'PASSWORD_REUSE_MAX' );
+insert into resource_map values ( 4, 1, 'PASSWORD_VERIFY_FUNCTION' );
+insert into resource_map values ( 5, 1, 'PASSWORD_LOCK_TIME' );
+insert into resource_map values ( 6, 1, 'PASSWORD_GRACE_TIME' )
+/
+create table user_astatus_map
+( status#  number not null, 
+  status  varchar2(32) not null)
+/
+insert into user_astatus_map values (0, 'OPEN');
+insert into user_astatus_map values (1, 'EXPIRED');
+insert into user_astatus_map values (2, 'EXPIRED(GRACE)');
+insert into user_astatus_map values (4, 'LOCKED(TIMED)');
+insert into user_astatus_map values (8, 'LOCKED');
+insert into user_astatus_map values (5, 'EXPIRED & LOCKED(TIMED)');
+insert into user_astatus_map values (6, 'EXPIRED(GRACE) & LOCKED(TIMED)');
+insert into user_astatus_map values (9, 'EXPIRED & LOCKED');
+insert into user_astatus_map values (10, 'EXPIRED(GRACE) & LOCKED')
+/
+create table resource_plan$
+( obj#                number not null,                       /* obj# of plan */
+  name                varchar2("M_IDEN"),                    /* name of plan */
+  mandatory           number,                   /* whether plan is mandatory */
+  sub_plan            number,                  /* whether plan is a sub_plan */
+  mgmt_method         varchar2("M_IDEN"),      /* resource allocation method */
+  mast_method         varchar2("M_IDEN"),        /* active sess. pool method */
+  pdl_method          varchar2("M_IDEN"),    /* parallel degree limit method */
+  num_plan_directives number,           /* number of directives for the plan */
+  description         varchar2("M_CSIZ"),                         /* comment */
+  status              varchar2("M_IDEN"),       /* whether active or pending */
+  que_method          varchar2("M_IDEN"),                 /* queueing method */
+  max_iops            number,      /* max I/O reqs per sec for this database */
+  max_mbps            number     /* max MBs of I/O per sec for this database */
+)
+/
+create table resource_consumer_group$
+( obj#              number not null,                        /* obj# of group */
+  name              varchar2("M_IDEN"),                     /* name of group */
+  internal_use      number,            /* whether group is internal-use only */
+  mandatory         number,                    /* whether group is mandatory */
+  mgmt_method       varchar2("M_IDEN"),        /* resource allocation method */
+  description       varchar2("M_CSIZ"),                           /* comment */
+  status            varchar2("M_IDEN"),         /* whether active or pending */
+  category          varchar2("M_IDEN")            /* consumer group category */
+)
+/
+create table resource_category$
+( name              varchar2("M_IDEN"),                  /* name of category */
+  mandatory         number,                 /* whether category is mandatory */
+  description       varchar2("M_CSIZ"),                           /* comment */
+  status            varchar2("M_IDEN")          /* whether active or pending */
+)
+/
+insert into resource_category$ 
+  values ('ADMINISTRATIVE', 0, 'Administrative Consumer Groups', 'ACTIVE')
+/
+insert into resource_category$ 
+  values ('INTERACTIVE', 0, 'Interactive, OLTP Consumer Groups', 'ACTIVE')
+/
+insert into resource_category$ 
+  values ('BATCH', 0, 'Batch, Non-Interactive Consumer Groups', 'ACTIVE')
+/
+insert into resource_category$ 
+  values ('MAINTENANCE', 0, 'Maintenance Consumer Groups', 'ACTIVE')
+/
+insert into resource_category$ 
+  values ('OTHER', 1, 'Unclassified Consumer Groups', 'ACTIVE')
+/
+create table resource_plan_directive$
+( obj#                      number not null,          /* obj# of parent plan */
+  plan                      varchar2("M_IDEN"),       /* name of parent plan */
+  group_or_subplan          varchar2("M_IDEN"),  /* name of group or subplan */
+  is_subplan                number not null,  /* whether the above is a plan */
+  description               varchar2("M_CSIZ"),                   /* comment */
+  mandatory                 number,    /* whether the directive is mandatory */
+  mgmt_p1                   number,     /* first parameter for alloc. method */
+  mgmt_p2                   number,       /* second param. for alloc. method */
+  mgmt_p3                   number,     /* third parameter for alloc. method */
+  mgmt_p4                   number,       /* fourth param. for alloc. method */
+  mgmt_p5                   number,     /* fifth parameter for alloc. method */
+  mgmt_p6                   number,     /* sixth parameter for alloc. method */
+  mgmt_p7                   number,      /* seventh param. for alloc. method */
+  mgmt_p8                   number,       /* eighth param. for alloc. method */
+  max_active_sess_target_p1 number,            /* parallel_target_percentage */
+  parallel_degree_limit_p1  number,                         /* pdl parameter */
+  status                    varchar2("M_IDEN"), /* whether active or pending */
+  active_sess_pool_p1       number,                    /* NEW mast parameter */
+  queueing_p1               number,                  /* queue timeout in sec */
+  switch_group              varchar2("M_IDEN"),    /* new group to switch to */
+  switch_time               number, /* max allowed execution time in a group */
+  switch_estimate           number,          /* use execution time estimate? */
+  max_est_exec_time         number,             /* max. estimate time in sec */
+  undo_pool                 number,       /* max. cumulative undo allocation */
+  max_idle_time             number,                 /* max. idle time in sec */
+  max_idle_blocker_time     number,    /* max. idle time blocking other sess */
+  switch_for_call           number,       /* switch back at end of top call? */
+  switch_io_megabytes       number,             /* max MBs of I/O in a group */
+  switch_io_reqs            number,           /* max I/O requests in a group */
+  max_utilization_limit     number,        /* max cap on resource allocation */
+  parallel_queue_timeout    number                      /* pqq queue timeout */
+)
+/
+create table resource_group_mapping$
+( attribute           varchar2("M_IDEN"),          /* mapping attribute type */
+  value               varchar2(128),             /* attribute value to match */
+  consumer_group      varchar2("M_IDEN"),          /* name of consumer group */
+  status              varchar2("M_IDEN")        /* whether active or pending */
+)
+/
+create table resource_mapping_priority$
+( attribute           varchar2("M_IDEN"),          /* mapping attribute type */
+  priority            number,                 /* priority of mapping (1 - 8) */
+  status              varchar2("M_IDEN")        /* whether active or pending */
+)
+/
+insert into resource_group_mapping$ 
+  (attribute, value, consumer_group, status)
+  (select 'ORACLE_USER', name,  defschclass, 'ACTIVE' from user$
+   where defschclass is not null and defschclass != 'DEFAULT_CONSUMER_GROUP')
+/
+insert into resource_mapping_priority$ (attribute, priority, status)
+  values ('EXPLICIT', 1, 'ACTIVE')
+/
+insert into resource_mapping_priority$ (attribute, priority, status)
+  values ('ORACLE_USER', 7, 'ACTIVE')
+/
+insert into resource_mapping_priority$ (attribute, priority, status)
+  values ('SERVICE_NAME', 6, 'ACTIVE')
+/
+insert into resource_mapping_priority$ (attribute, priority, status)
+  values ('CLIENT_OS_USER', 9, 'ACTIVE')
+/
+insert into resource_mapping_priority$ (attribute, priority, status)
+  values ('CLIENT_PROGRAM', 8, 'ACTIVE')
+/
+insert into resource_mapping_priority$ (attribute, priority, status)
+  values ('CLIENT_MACHINE', 10, 'ACTIVE')
+/
+insert into resource_mapping_priority$ (attribute, priority, status)
+  values ('MODULE_NAME', 5, 'ACTIVE')
+/
+insert into resource_mapping_priority$ (attribute, priority, status)
+  values ('MODULE_NAME_ACTION', 4, 'ACTIVE')
+/
+insert into resource_mapping_priority$ (attribute, priority, status)
+  values ('SERVICE_MODULE', 3, 'ACTIVE')
+/
+insert into resource_mapping_priority$ (attribute, priority, status)
+  values ('SERVICE_MODULE_ACTION', 2, 'ACTIVE')
+/
+insert into resource_mapping_priority$ (attribute, priority, status)
+  values ('CLIENT_ID', 11, 'ACTIVE')
+/
+create table resource_storage_pool_mapping$
+( attribute           varchar2("M_IDEN"),               /* mapping attribute */
+  value               varchar2("M_IDEN"),                 /* attribute value */
+  pool_name           varchar2("M_IDEN"),            /* name of storage pool */
+  status              varchar2("M_IDEN")        /* whether active or pending */
+)
+/
+insert into resource_storage_pool_mapping$ 
+  (attribute, pool_name, status)
+  values ('LOG_FILES', 'MANAGED_FILES', 'ACTIVE')
+/
+insert into resource_storage_pool_mapping$ 
+  (attribute, pool_name, status)
+  values ('TEMP_FILES', 'MANAGED_FILES', 'ACTIVE')
+/
+insert into resource_storage_pool_mapping$ 
+  (attribute, pool_name, status)
+  values ('RECOVERY_AREA', 'MANAGED_FILES', 'ACTIVE')
+/
+create table resource_capability$
+( cpu_capable         number,                 /* TRUE, if CPU can be managed */
+  io_capable          varchar2("M_IDEN"),           /* type of IO management */
+  status              varchar2("M_IDEN")        /* whether active or pending */
+)
+/
+insert into resource_capability$ 
+  (cpu_capable, status)
+  values (1, 'ACTIVE')
+/
+create table resource_instance_capability$
+( instance_number     number,                             /* instance number */
+  io_shares           number,       /* number of IO shares for this instance */
+  status              varchar2("M_IDEN")        /* whether active or pending */
+)
+/
+create table resource_io_calibrate$
+( start_time          timestamp,                /* start time of calibration */
+  end_time            timestamp,                  /* end time of calibration */
+  max_iops            number,        /* maximum small IO requests per second */
+  max_mbps            number,           /* maximum MB per second of large IO */
+  max_pmbps           number,      /* per process - maximum MBPS of large IO */
+  latency             number,            /* latency for db-block sized i/o's */
+  num_disks           number        /* # of physical disks specified by user */
+)
+/
+

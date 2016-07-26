@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+
+<!--  $Header: rdbms/admin/bundledata_CPU.xml /main/1 2009/02/27 00:14:08 surman Exp $ -->
+
+<!-- 
+ Copyright (c) 2008, 2009, Oracle and/or its affiliates.All rights reserved. 
+
+   NAME
+     bundledata_CPU.xml - <one-line expansion of the name>
+
+   DESCRIPTION
+     <short description of component this file declares/defines>
+
+   NOTES
+     <other useful comments, qualifications, etc.>
+
+   MODIFIED   (MM/DD/YY)
+   surman      02/25/09 - Stub out and comments for main line merge
+   surman      08/07/08 - 
+   lmandali    06/06/08 - Adding CPUJul2008 files
+   surman      05/29/08 - Stub out file and add comments
+   surman      05/20/08 - Change to bundledata from bpdata
+   surman      05/20/08 - catcpu.sql replacement project
+   surman      05/20/08 - Creation
+-->
+
+<!--
+This XML file contains the details of the files used for the CPU bundle
+patches.  Here is a sample format:
+
+<bundledata version="10.2.0.4" series="CPU">
+  <bundle id="1" description="CPUJul2008 (bug 1234567)">
+    <component id="CONTEXT" name="Oracle Text" schema="ctxsys">
+      <file>?/ctx/admin/drixmd.plb</file>
+      <file>?/ctx/admin/drvdoc.plb</file>
+    </component>
+    <component id="CATPROC" name="Oracle Database Packages and Types" schema="sys">
+      <file>?/rdbms/admin/prvthsch.plb</file>
+    </component>
+  </bundle>
+</bundledata>
+-->
+
+<bundledata version="11.2.0.1" series="CPU">
+
+</bundledata>
+

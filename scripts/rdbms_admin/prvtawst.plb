@@ -1,0 +1,34 @@
+CREATE OR REPLACE PACKAGE BODY dbms_aw_stats wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+6e2 2fa
+YaewIrbqlaTsqFx14PpmqqH6u+4wg1XDDCDrZy+Lbg9//GNhWgoU7Y5myDwz24dLv+tVKt5T
+VDXSK1fI8np3LHLivzTccbBa47Yr4Pa/i/iLAPanvBet5mYDYs/50gGairx4+AdVahx1QVmm
+fRe19mxeRycCyIz3/TcY9FkbuzYKfMCWj+EifI1vWWLoUCep2C6qF6FBEOOK544dsWK56MkB
+1QLKbYttHjChCd5QbYAabItobonJJdhjSAAvMo0OGOLiCzBzOcncQVTYEYGDnNTTXh2TCSlA
+3vCXcXtyzhgLPH0Twr0pS0GZ7xKd6vIryDHrwJtWpBjfBK53ax2TH4sWBcpU/azitnnDjrhe
+S2P08o6+PpIFzuDzxgeiidMM3QJqW/8+bg9BXhnO5esSmYJ8RJ7FS5YQIHOmAMQ8vfX7TnV1
+kiXQrOcIZX0LJvep0mt6PN/WIl4ZB9ZWAC22dC+whX6iqk3w3JnYdZYu9qgiODsXvYHEG+2D
+howMUfjIeP/79j9CegHE7L0rSCTxbHhM35ZxXV596NdP3qKlPA7C55YA+C0XD7/+JKpVkJMx
+QBPhCT5fXMBgdcJ7K0yA9aFO/CYLCgmbon8NY3148AAkCJZi9z55dbOqHuAjqsT46FVFOsSH
+Snk70RNxdJxctH8inrVG6VIqjOIeI8FakuUFZjUhcWk/GEV7KDz69Fyr4WPZjO52IdRrJVQs
+DVySLFEcYQVaj0jjmIcRKpyWPx0V1EEL
+
+/
+show errors;

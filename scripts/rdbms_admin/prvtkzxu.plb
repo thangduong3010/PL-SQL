@@ -1,0 +1,125 @@
+CREATE OR REPLACE PACKAGE DBMS_XS_PRINCIPALS wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+497 164
+68WDEimeQXYOnuYvTu4RTJQJDnswgzuJctzbyi8H7UhP4Er2wpxzsPTwB/PJumZEZR0KQTC1
+xEsqJgUqJ4VArfNAILzkyqgOI5VKZ5108ZpsW9/cWKkrpl6K8DmNdfqVbkYEaezo+wQonoNa
+ewzQulSnm9xmReev8t/RCXjgrnJLAjOedtJSXDa5vK+hXNSKlmUtt+XI2kdxrcA0ygfmXThg
+5BmS/5jmilLb6NkoipQp2zYYve9DqWYgQYEjI2YHHTdSuGArAJtIHccSvhKaK6ugNzn5Js7z
+ffZ/Zm1XJNI+fXutSCzDbAdp2C8G1D4902701/ovte5BBVxoXdKWD64S/r07Im/R
+
+/
+CREATE OR REPLACE PACKAGE DBMS_XS_PRINCIPALS_INT wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+9
+5d5 1ee
+YcKSHaX6TOMSWo/NeIVJT0aIudswgzuJckoVyi/U/opeRy0TMJNkQS/Up7TLkTl3QTC1xC+D
+PT3l9uSE5hU3mniaxsgI8iDD8HArkBrtFHKnoIHljZE+qRhrLTn1kWCePp5lFljXyaZBkGC2
+iGtg5iv7XqDol/1xdGfc2podlUgC5O00HXTbNjgN/bkPby2gXDsqAntC2NywouXVv3AKVHgY
+H050JFSHAsldQIF2cXpPO3RP8RkD1+Lpr8o9u6gB9Jm54VYfNNMxrd9jlIWJHZw5NC+USvJy
+wGv+MHR9xiQ3gTKX4J9tfrFvOhADgGMo7NfSe/HLPPN9OYEbvYuueYRPIQu53AFu0Wi89m1H
+z44T5wGU1C9YcEPAKJRitbZKvKDtxZqK/JTKnPitZP5XhxtvLJ9XYK5Wt9KWRGJlT5cjpP6h
+DDm6bjTtRnpW/K/XmEXrTbtahhnyyLqCza46p9PxvoKgnA9bfT84Hg==
+
+/
+CREATE OR REPLACE PACKAGE BODY dbms_xs_principals_int wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+1515 442
+kyiBgV7fqMi/BdJKW9HUTuhxOjswg1VUTCATfI5Vxz8CPUkbgQE9GZJdqRNUbDkx6C5B2FY4
+/SenYMj1VT9zfryoddBszJiTGKyKC7ntwUELL9Ehu+42Ny0LYt2S2dBaNGDgHzkFXEu6SGbz
+fv6mwrPnppx7G8J6GN0286KogBVqp6iq3QhXykopU5lnNDEEs9DTKKbJptetUTaDqd2I4equ
+nQ8oBhOdgWpDGR8HcBCUHUPXqI2m9AFAKS/RxEyw1WPzB2VS0+YDSvQCLoWknrTOx/FA8MaO
+JURL1IIbi0e2wGaHMNvPniW4xEXThqv26QnOtAMVr2zoKpfnRT3yAntQdP95oqmwgIVD9Faa
+2gJsWRwO8GKVtwx/fy2Zee+d03/vdalbWtc+GniyJncHmTohMR/QOBNck2OoeP5pC0sQk0is
+Dfwr0fg1Ygo9mQSctrcc3eJgPAjpxuzdXAajwk372gNN7roDTTIO6zs9n5CVvmwuCcZgdFLJ
+Gh9mn3JnzEZy/SSb/rPKLonhYcBp1JBpqgKmMiQfZTN9aQxw8Y4XMFlzseTnZWhnjPqvH9GX
+cYuDVsshKXBcJRaf2RaSOnbLepQDXYHC0cqQwQtKinzD8i4TjWVaxPRlkT4bBCmTPRRc2Opm
+HPsHg7DiT1uiCKRgoAwk7RrxSopBag2fUV2H5HzOq87umJxx/8giyfspGJPKugtBDFLWbL/B
+87cLB6bHGEcSr8gpzEcfFRpaQVVAQ3Xlck5YO2VT3JtXSHrpaIyivO2X1o7x9ytbCrv5/KHl
+ODLn1nOWLZ4QQmHVNfUYNRvAeuuXP27lsXpVYZY76Suwxet8MROAclxyZ4QAvNAQ1QzOw+jE
+BUDAxtdE/cC0O/jfFGRNsxRjI4FZwco7Ko41sl47v1yOKllzHaOhekkUQ1wFkIp882AfZTFs
+R1HnV5wPSmLHwtqS8ToPiF00EGHI8CcH4PLTVxObsfnUqheAMRMj1e40uTuZs/kZeptvR4yt
+yW4qEPc+4yzcoLWrovhNkvAaE4t6wIJyY9uj4//Mo+i1rHii2HRpaZSdl2g/zh1riLF2
+
+/
+show errors; 
+grant execute on dbms_xs_principals_int to dba;
+CREATE OR REPLACE PACKAGE BODY dbms_xs_principals wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+5b3 181
+Vl3Pyd6Z/RWJ9/sTAbeLjJ5bdvkwg9e319xqfC9GrcE+M1pj5yZxx4O0DCf3ezziXoO36e4J
+vWnp0Xoi3MySHfBNop7OL4CHQski8IppVeA1yOoj+9DZwRs0KjhzRSNCVDu7T6tnodOmxo1m
+TII34Oaur2uFTJWSwm/gbV7hCzhA2BuFsT71hnPrzHd/0yStlNTUpGfBXr3HvUrwXNQ4Pq9U
+qmxdxDnNNR5pSJCf/N40xVQjJTUbV0DMb1z6/H5NhSkbAZqbmYATTzBqEKKwrM50bjteKHHN
+0ij4V/akhDn5ZHmKtDNs+TMB3Tgf1tTNu+7+e6mubHbm1+PX8Ki5N/zUSTUQavXTCRcwdCYT
+EDXyBp+iIZgwW6Gsx+U=
+
+/
+show errors;
+grant execute on dbms_xs_principals to dba;

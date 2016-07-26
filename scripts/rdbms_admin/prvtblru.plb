@@ -1,0 +1,32 @@
+CREATE OR REPLACE PACKAGE BODY dbms_logrep_def_proc_utl wrapped 
+a000000
+1
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+b
+f1e 2cd
+Dh/3+nwqtpWroQUsCYkJT5wzBRUwg80rr0iMfC/NrQ84gXdarYHsty1MJ2Jfs7Qh1/on/Z8N
+g4obUZiDmg/98Y4Jnj5IXN5cjqghyRwzE/7J8cwzAtSsohiW+vz5wYxMILyNlTziGGSfukgc
+ik+a9uaBRsiSnGvgrMEW/Ek7O2DJNVZ+4kSjvYsVWzA2IZSi4b5rheI+h/9xm72criuZL1pg
+FMdBVNfdJEWRhetaj4lanRJS9jbhLsUOJyDBJD876pp5i8sm2VsW+YvQ6UKHO0ll5hgMFYzD
+BaKVFmUe4D2D5uz2FY4EB1REZRjL/2sebUzOMUj9Xy+VGt8WqEENFdNTkXcWFHtFija0LcB0
+Syj+HSF1CKYqKgMrU0R8O0IOL8GHHH4iiNhzzkXQ4kKu7YIaUvK91/DhjeVxutaOIQFgxXWY
+H2bzDE0izJobMn8H6VUOc2ePd++ej5A6lL8Que5Nwtz4X0vd9xuHkBkr2x5629nXM+ui7Rur
+PGdacx0nmur+eKUlDNMkMVlbqTV4QgWIq2wGWBPmzSHfqv6BcCRKiCeLuT9M5GRAfvESNkso
+qm6MKHt0JXDj+eagsQqYeKviTNF5KkZz+0DBfkQqIE8eiSYFVRZgziFTzDa/GEsr7hf+F2TO
+Dp1Qrgl08TjINtZd/hlVBulkShEfrlTiZj8tJlLR4tiqMYsbWE9zHdm+AZs=
+
+/

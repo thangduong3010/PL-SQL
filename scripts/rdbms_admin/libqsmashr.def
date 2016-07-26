@@ -1,0 +1,10 @@
+{
+global:
+	qsmares;
+	qsmaghw;
+	qsmaresw;
+	qsmaevs;
+	qsmaevsw;
+local:
+	*;
+};
